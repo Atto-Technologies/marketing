@@ -1,0 +1,457 @@
+---
+import Base from '../layouts/Base.astro';
+
+const nav = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'frontmatter', label: 'Frontmatter' },
+  { id: 'sections', label: 'Sections' },
+  { id: 'inline-formatting', label: 'Inline Formatting' },
+  { id: 'inline-latex', label: 'Inline LaTeX' },
+  { id: 'display-latex', label: 'Display LaTeX' },
+  {
+    id: 'directives',
+    label: 'Directives',
+    sub: [
+      { id: 'directive-parties', label: '::parties' },
+      { id: 'directive-signature', label: '::signature-block' },
+      { id: 'directive-attachment', label: '::attachment' },
+      { id: 'directive-callout', label: '::callout' },
+      { id: 'directive-review', label: '::review-anchor' },
+    ],
+  },
+  { id: 'serialization', label: 'Serialization Rules' },
+  { id: 'ast-mapping', label: 'Abstract Syntax Tree' },
+  { id: 'mvp-scope', label: 'MVP Scope' },
+];
+---
+<Base
+  title="Docs"
+  description="The Atto Hybrid Syntax specification — frontmatter, directives, serialization, and syntax-tree mapping."
+>
+  <div class="docs-layout wrap">
+    <aside class="docs-sidebar" aria-label="Docs navigation">
+      <p class="eyebrow">Syntax Spec v0</p>
+      <nav>
+        <ol role="list">
+          {nav.map((item) => (
+            <li>
+              <a href={`#${item.id}`}>{item.label}</a>
+              {item.sub && (
+                <ol class="sub" role="list">
+                  {item.sub.map((s) => (
+                    <li><a href={`#${s.id}`}><code>{s.label}</code></a></li>
+                  ))}
+                </ol>
+              )}
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </aside>
+
+    <article class="docs-content">
+      {/* ─── Overview ─────────────────────────────────────────── */}
+      <section id="overview">
+        <p class="eyebrow">01 — Overview</p>
+        <h1>The Atto Hybrid Syntax.</h1>
+        <p class="lede">
+          Atto documents combine three layers into a single plain-text format.
+          Markdown carries prose, LaTeX carries notation, and Atto directives
+          carry structure. The parser walks them in order and produces a single
+          deterministic Abstract Syntax Tree (AST).
+        </p>
+        <p>
+          Every <code>.atto</code> file is human-readable, git-diffable, and
+          stable under round-trip serialization. Equal ASTs produce equal byte
+          streams.
+        </p>
+      </section>
+
+      <hr class="rule" />
+
+      {/* ─── Frontmatter ──────────────────────────────────────── */}
+      <section id="frontmatter">
+        <p class="eyebrow">02 — Frontmatter</p>
+        <h2>Frontmatter.</h2>
+        <p>
+          Every document begins with a YAML frontmatter block delimited by
+          <code>---</code>. Frontmatter declares document-level metadata:
+          title, type, effective date, parties, and any custom fields the
+          document model accepts.
+        </p>
+        <pre class="code-block"><code><span class="tok-comment">---</span>
+<span class="tok-key">title:</span> <span class="tok-string">Services Agreement</span>
+<span class="tok-key">document_type:</span> <span class="tok-string">services_agreement</span>
+<span class="tok-key">effective_date:</span> <span class="tok-string">2026-04-23</span>
+<span class="tok-key">version:</span> <span class="tok-string">1</span>
+<span class="tok-comment">---</span></code></pre>
+      </section>
+
+      <hr class="rule" />
+
+      {/* ─── Sections ─────────────────────────────────────────── */}
+      <section id="sections">
+        <p class="eyebrow">03 — Sections</p>
+        <h2>Sections.</h2>
+        <p>
+          Sections use standard Markdown headings, <code>##</code> through
+          <code>######</code>. The parser tracks heading depth to build the
+          section tree; heading text becomes the canonical section label.
+        </p>
+        <pre class="code-block"><code><span class="tok-heading">## Payment Terms</span>
+
+Client shall pay within 15 days of invoice.
+
+<span class="tok-heading">### Late Fees</span>
+
+Overdue amounts accrue at 1.5% per day.</code></pre>
+      </section>
+
+      <hr class="rule" />
+
+      {/* ─── Inline Formatting ────────────────────────────────── */}
+      <section id="inline-formatting">
+        <p class="eyebrow">04 — Inline Formatting</p>
+        <h2>Inline formatting.</h2>
+        <p>
+          Standard Markdown inline syntax: <code>**bold**</code>,
+          <code>*italic*</code>, <code>`code`</code>, and
+          <code>[links](https://)</code>. No HTML passthrough — if you need
+          something Markdown can&rsquo;t express, use a directive.
+        </p>
+        <pre class="code-block"><code>Client shall pay within <span class="tok-emph">**15 days**</span> of invoice.
+
+See the <span class="tok-emph">[master agreement](https://example.com)</span> for definitions.</code></pre>
+      </section>
+
+      <hr class="rule" />
+
+      {/* ─── Inline LaTeX ─────────────────────────────────────── */}
+      <section id="inline-latex">
+        <p class="eyebrow">05 — Inline LaTeX</p>
+        <h2>Inline LaTeX.</h2>
+        <p>
+          Wrap an expression in single dollar signs: <code>$…$</code>.
+          Renders in-line with surrounding prose.
+        </p>
+        <pre class="code-block"><code>The late fee is <span class="tok-math">$L = B \times 0.015$</span> per day.</code></pre>
+      </section>
+
+      <hr class="rule" />
+
+      {/* ─── Display LaTeX ────────────────────────────────────── */}
+      <section id="display-latex">
+        <p class="eyebrow">06 — Display LaTeX</p>
+        <h2>Display LaTeX.</h2>
+        <p>
+          Wrap an expression in double dollar signs: <code>$$…$$</code> on its
+          own lines. Renders as a centered display block.
+        </p>
+        <pre class="code-block"><code><span class="tok-math">$$
+V_&#123;post&#125; = V_&#123;pre&#125; + \sum_&#123;i=1&#125;^&#123;n&#125; I_i
+$$</span></code></pre>
+      </section>
+
+      <hr class="rule" />
+
+      {/* ─── Directives ───────────────────────────────────────── */}
+      <section id="directives">
+        <p class="eyebrow">07 — Directives</p>
+        <h2>Directives.</h2>
+        <p>
+          Directives are typed semantic blocks. They open with
+          <code>::name</code>, close with a bare <code>::</code>, and accept
+          YAML-shaped content between.
+        </p>
+
+        <h3 id="directive-parties"><code>::parties</code></h3>
+        <p>
+          Declares the parties to the document. Each party has a
+          <code>name</code>, a <code>role</code>, and an optional
+          <code>entity</code> type.
+        </p>
+        <pre class="code-block"><code><span class="tok-directive">::parties</span>
+<span class="tok-key">- name:</span> <span class="tok-string">Baldwinson Corp.</span>
+  <span class="tok-key">role:</span> <span class="tok-string">company</span>
+  <span class="tok-key">entity:</span> <span class="tok-string">delaware_corp</span>
+<span class="tok-key">- name:</span> <span class="tok-string">Atto Ventures</span>
+  <span class="tok-key">role:</span> <span class="tok-string">investor</span>
+<span class="tok-directive">::</span></code></pre>
+
+        <h3 id="directive-signature"><code>::signature-block</code></h3>
+        <p>
+          Declares one or more signatures. Each entry has a
+          <code>party</code>, a <code>signer</code>, and a
+          <code>sign_order</code>. The Baldwinson Protocol layer enforces the
+          order.
+        </p>
+        <pre class="code-block"><code><span class="tok-directive">::signature-block</span>
+<span class="tok-key">- party:</span> <span class="tok-string">Baldwinson Corp.</span>
+  <span class="tok-key">signer:</span> <span class="tok-string">Curtis Baldwinson</span>
+  <span class="tok-key">sign_order:</span> <span class="tok-string">1</span>
+<span class="tok-key">- party:</span> <span class="tok-string">Atto Ventures</span>
+  <span class="tok-key">signer:</span> <span class="tok-string">Jane Hart</span>
+  <span class="tok-key">sign_order:</span> <span class="tok-string">2</span>
+<span class="tok-directive">::</span></code></pre>
+
+        <h3 id="directive-attachment"><code>::attachment</code></h3>
+        <p>
+          References an external file by hash. The document treats the
+          attachment as part of its canonical content; a freeze event verifies
+          every hash.
+        </p>
+        <pre class="code-block"><code><span class="tok-directive">::attachment</span>
+<span class="tok-key">label:</span> <span class="tok-string">Schedule A</span>
+<span class="tok-key">uri:</span> <span class="tok-string">atto://attach/schedule-a.pdf</span>
+<span class="tok-key">sha256:</span> <span class="tok-string">4c1f...a7</span>
+<span class="tok-directive">::</span></code></pre>
+
+        <h3 id="directive-callout"><code>::callout</code></h3>
+        <p>
+          A typed admonition. Kinds: <code>note</code>, <code>warning</code>,
+          <code>info</code>. The editor renders each kind with a consistent
+          visual treatment.
+        </p>
+        <pre class="code-block"><code><span class="tok-directive">::callout</span> <span class="tok-key">kind:</span> <span class="tok-string">warning</span>
+This clause applies only on quarterly distributions.
+<span class="tok-directive">::</span></code></pre>
+
+        <h3 id="directive-review"><code>::review-anchor</code></h3>
+        <p>
+          Anchors a review thread to a specific AST node. Comments attach to
+          the anchor, not to line numbers — edits do not orphan threads.
+        </p>
+        <pre class="code-block"><code><span class="tok-directive">::review-anchor</span> <span class="tok-key">id:</span> <span class="tok-string">late-fee-review</span>
+The late fee calculation pending counsel approval.
+<span class="tok-directive">::</span></code></pre>
+      </section>
+
+      <hr class="rule" />
+
+      {/* ─── Serialization ────────────────────────────────────── */}
+      <section id="serialization">
+        <p class="eyebrow">08 — Serialization</p>
+        <h2>Serialization rules.</h2>
+        <p>
+          Serialization is deterministic. Two ASTs that are structurally equal
+          serialize to byte-identical output. The implications:
+        </p>
+        <ul>
+          <li>Trailing whitespace is stripped on every line.</li>
+          <li>Every block is separated by exactly one blank line.</li>
+          <li>YAML keys in frontmatter and directives are sorted alphabetically.</li>
+          <li>Line endings are <code>LF</code>, encoding is <code>UTF-8</code>.</li>
+          <li>The final byte is a single newline.</li>
+        </ul>
+        <p>
+          This makes <code>git diff</code> reflect semantic change, not
+          formatting drift.
+        </p>
+      </section>
+
+      <hr class="rule" />
+
+      {/* ─── AST Mapping ──────────────────────────────────────── */}
+      <section id="ast-mapping">
+        <p class="eyebrow">09 — Abstract Syntax Tree</p>
+        <h2>Abstract Syntax Tree mapping.</h2>
+        <p>
+          Each surface construct maps to a node type. The set is closed: the
+          parser rejects unknown directives rather than silently passing them
+          through.
+        </p>
+        <pre class="code-block"><code><span class="tok-key">document</span>     → Document &#123; frontmatter, children[] &#125;
+<span class="tok-key">##...######</span>   → Section &#123; depth, title, children[] &#125;
+<span class="tok-key">paragraph</span>    → Paragraph &#123; inlines[] &#125;
+<span class="tok-key">**x**</span>        → Strong &#123; children[] &#125;
+<span class="tok-key">*x*</span>          → Emphasis &#123; children[] &#125;
+<span class="tok-key">`x`</span>          → Code &#123; value &#125;
+<span class="tok-key">[text](url)</span>  → Link &#123; url, children[] &#125;
+<span class="tok-key">$x$</span>          → MathInline &#123; tex &#125;
+<span class="tok-key">$$x$$</span>        → MathDisplay &#123; tex &#125;
+<span class="tok-key">::name</span>       → Directive &#123; name, attrs, body &#125;</code></pre>
+      </section>
+
+      <hr class="rule" />
+
+      {/* ─── MVP Scope ────────────────────────────────────────── */}
+      <section id="mvp-scope">
+        <p class="eyebrow">10 — MVP Scope</p>
+        <h2>MVP scope.</h2>
+        <p>
+          The v0 parser implements the full set described above. The MVP
+          runtime implements: frontmatter, sections, inline formatting, inline
+          and display LaTeX, and the five core directives. Anything outside
+          that set is a post-v0 extension.
+        </p>
+        <p>
+          The signing pipeline targets <code>::signature-block</code> only.
+          Other directives have no lifecycle effect in v0 — they render and
+          serialize, but do not emit protocol events.
+        </p>
+      </section>
+    </article>
+  </div>
+</Base>
+
+<style>
+  .docs-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: var(--space-16);
+    padding-block: var(--space-12) var(--space-24);
+    align-items: start;
+  }
+
+  .docs-sidebar {
+    position: sticky;
+    top: calc(var(--space-16) + var(--space-4));
+    align-self: start;
+    border-right: 1px solid var(--color-border);
+    padding-right: var(--space-8);
+  }
+
+  .docs-sidebar .eyebrow {
+    margin-bottom: var(--space-5);
+  }
+
+  .docs-sidebar ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .docs-sidebar .sub {
+    margin-top: var(--space-2);
+    margin-left: var(--space-4);
+    padding-left: var(--space-3);
+    border-left: 1px solid var(--color-border);
+    gap: var(--space-1);
+  }
+
+  .docs-sidebar a {
+    display: block;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    padding-block: var(--space-1);
+  }
+
+  .docs-sidebar a:hover {
+    color: var(--color-text);
+  }
+
+  .docs-sidebar code {
+    font-family: var(--font-mono);
+    font-size: 0.95em;
+    color: var(--color-primary);
+  }
+
+  .docs-content {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+
+  .docs-content h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-3xl);
+    letter-spacing: -0.02em;
+    margin-block: var(--space-4) var(--space-6);
+  }
+
+  .docs-content h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-2xl);
+    margin-block: var(--space-4) var(--space-5);
+    scroll-margin-top: var(--space-16);
+  }
+
+  .docs-content h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-lg);
+    margin-block: var(--space-8) var(--space-3);
+    scroll-margin-top: var(--space-16);
+  }
+
+  .docs-content h3 code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    color: var(--color-primary);
+  }
+
+  .docs-content .lede {
+    font-size: var(--text-lg);
+    color: var(--color-text-muted);
+    max-width: 60ch;
+    margin-bottom: var(--space-4);
+  }
+
+  .docs-content p {
+    max-width: 68ch;
+    margin-bottom: var(--space-4);
+  }
+
+  .docs-content ul {
+    padding-left: var(--space-5);
+    max-width: 68ch;
+    margin-bottom: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .docs-content ul li {
+    max-width: none;
+  }
+
+  .docs-content code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 0.1em 0.35em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  .docs-content section {
+    scroll-margin-top: var(--space-16);
+  }
+
+  .docs-content section > .eyebrow {
+    margin-bottom: var(--space-2);
+  }
+
+  @media (max-width: 900px) {
+    .docs-layout {
+      grid-template-columns: 1fr;
+      gap: var(--space-8);
+    }
+
+    .docs-sidebar {
+      position: static;
+      border-right: none;
+      border-bottom: 1px solid var(--color-border);
+      padding-right: 0;
+      padding-bottom: var(--space-6);
+    }
+
+    .docs-sidebar ol {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: var(--space-3) var(--space-5);
+    }
+
+    .docs-sidebar .sub {
+      display: none;
+    }
+  }
+</style>

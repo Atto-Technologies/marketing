@@ -1,0 +1,352 @@
+---
+import Base from '../layouts/Base.astro';
+
+interface Tier {
+  name: string;
+  price: string;
+  cadence?: string;
+  tagline: string;
+  features: string[];
+  cta: { label: string; href: string; variant: 'primary' | 'secondary' };
+  featured?: boolean;
+}
+
+const tiers: Tier[] = [
+  {
+    name: 'Solo',
+    price: '$0',
+    cadence: '/ mo',
+    tagline: 'Individual authors. Drafts, notation, signing — just one seat.',
+    features: [
+      'Unlimited documents',
+      'Inline and display LaTeX',
+      'All core directives',
+      'Local export and git sync',
+      'Community support',
+    ],
+    cta: { label: 'Start free', href: '/product', variant: 'secondary' },
+  },
+  {
+    name: 'Team',
+    price: '$49',
+    cadence: '/ mo',
+    tagline: 'Up to 10 collaborators, working on the same documents in real time.',
+    features: [
+      'Everything in Solo',
+      'Real-time CRDT collaboration',
+      'Review threads with anchors',
+      'Shared templates and schemas',
+      'Role-based permissions',
+      'Email support',
+    ],
+    cta: { label: 'Start a team', href: '/product', variant: 'primary' },
+    featured: true,
+  },
+  {
+    name: 'Enterprise',
+    price: 'Custom',
+    tagline: 'Legal and finance teams with compliance, SSO, and deployment requirements.',
+    features: [
+      'Everything in Team',
+      'SSO / SAML',
+      'Self-hosted relay broker',
+      'Custom document schemas',
+      'Audit log export',
+      'Dedicated support',
+    ],
+    cta: { label: 'Talk to sales', href: '/product', variant: 'secondary' },
+  },
+];
+
+const faqs = [
+  {
+    q: 'Is my data portable?',
+    a: 'Yes. Every document is a plain-text .atto file. Export, clone, fork, or self-host the whole thing.',
+  },
+  {
+    q: 'Does Atto work offline?',
+    a: 'The editor runs fully client-side. Offline edits queue as patches and sync to the broker on reconnect.',
+  },
+  {
+    q: 'Do you offer self-hosting?',
+    a: 'The Enterprise tier includes a self-hosted relay broker deployable behind your firewall.',
+  },
+  {
+    q: 'Is Atto an AI product?',
+    a: 'No. Atto is a structured document platform. There is no generative AI in the signing or lifecycle path.',
+  },
+];
+---
+<Base
+  title="Pricing"
+  description="Three tiers. Flat per-seat pricing for teams. Custom terms for enterprise."
+>
+  {/* ─── Hero ─────────────────────────────────────────────────── */}
+  <section class="pricing-hero wrap-default">
+    <p class="eyebrow">Pricing</p>
+    <h1>Flat pricing. No seats tax.</h1>
+    <p class="lede">
+      Three tiers. Solo is free for single authors. Team is flat per collaborator.
+      Enterprise is a conversation. That&rsquo;s the whole thing.
+    </p>
+  </section>
+
+  {/* ─── Tiers ────────────────────────────────────────────────── */}
+  <section class="tiers wrap" aria-label="Plan tiers">
+    <div class="tier-grid">
+      {tiers.map((tier) => (
+        <article class={`tier${tier.featured ? ' tier-featured' : ''}`} aria-label={`${tier.name} tier`}>
+          <header class="tier-head">
+            <p class="tier-name">{tier.name}</p>
+            <p class="tier-price">
+              <span class="tier-amount">{tier.price}</span>
+              {tier.cadence && <span class="tier-cadence">{tier.cadence}</span>}
+            </p>
+            <p class="tier-tagline">{tier.tagline}</p>
+          </header>
+
+          <ul class="tier-features" role="list">
+            {tier.features.map((feature) => (
+              <li>{feature}</li>
+            ))}
+          </ul>
+
+          <a
+            href={tier.cta.href}
+            class={`btn ${tier.cta.variant === 'primary' ? 'btn-primary' : 'btn-secondary'} tier-cta`}
+          >
+            {tier.cta.label}
+            <span aria-hidden="true">→</span>
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  {/* ─── Comparison bullet ────────────────────────────────────── */}
+  <section class="compare-note section-surface">
+    <div class="wrap-default section">
+      <p class="eyebrow">Every tier includes</p>
+      <h2>The full format. Always.</h2>
+      <p class="lede">
+        No tier gates Markdown, LaTeX, or the core directive set. Every
+        document is portable, diffable, and readable. Paid tiers add
+        collaboration, review workflow, and enterprise deployment —
+        never restrict the format itself.
+      </p>
+    </div>
+  </section>
+
+  {/* ─── FAQ ──────────────────────────────────────────────────── */}
+  <section class="faq wrap-default section">
+    <p class="eyebrow">FAQ</p>
+    <h2>Questions teams ask.</h2>
+    <dl>
+      {faqs.map(({ q, a }) => (
+        <div class="faq-row">
+          <dt>{q}</dt>
+          <dd>{a}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+
+  {/* ─── CTA Banner ───────────────────────────────────────────── */}
+  <section class="cta-banner section-dark" aria-labelledby="cta-heading">
+    <div class="wrap-default cta-inner">
+      <h2 id="cta-heading">The document format for serious work.</h2>
+      <a href="/product" class="btn btn-on-dark">
+        Request early access <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .pricing-hero {
+    padding-block: var(--space-24) var(--space-12);
+    text-align: center;
+  }
+
+  .pricing-hero h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-3xl);
+    letter-spacing: -0.02em;
+    margin-block: var(--space-5) var(--space-6);
+  }
+
+  .pricing-hero .lede {
+    font-size: var(--text-lg);
+    color: var(--color-text-muted);
+    max-width: 52ch;
+    margin-inline: auto;
+  }
+
+  .pricing-hero .eyebrow {
+    display: inline-block;
+  }
+
+  /* Tier grid */
+  .tiers {
+    padding-block: var(--space-12) var(--space-24);
+  }
+
+  .tier-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+    align-items: stretch;
+  }
+
+  .tier {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-10) var(--space-8);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .tier-featured {
+    border: 2px solid var(--color-primary);
+    padding: calc(var(--space-10) - 1px) calc(var(--space-8) - 1px);
+  }
+
+  .tier-head {
+    margin-bottom: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .tier-name {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .tier-price {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    line-height: 1;
+    margin-block: var(--space-1);
+  }
+
+  .tier-amount {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-2xl);
+    color: var(--color-text);
+  }
+
+  .tier-cadence {
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .tier-tagline {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    max-width: 32ch;
+  }
+
+  .tier-features {
+    list-style: none;
+    margin: 0 0 var(--space-8);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+
+  .tier-features li {
+    padding: var(--space-3) 0 var(--space-3) var(--space-4);
+    border-left: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  .tier-featured .tier-features li {
+    border-left-color: var(--color-primary);
+  }
+
+  .tier-cta {
+    align-self: flex-start;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 900px) {
+    .tier-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* FAQ */
+  .faq h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-2xl);
+    margin-block: var(--space-4) var(--space-10);
+  }
+
+  .faq dl {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-10) var(--space-16);
+  }
+
+  .faq-row dt {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-lg);
+    color: var(--color-text);
+    margin-bottom: var(--space-3);
+  }
+
+  .faq-row dd {
+    font-size: var(--text-base);
+    color: var(--color-text-muted);
+    max-width: 50ch;
+  }
+
+  @media (max-width: 768px) {
+    .faq dl {
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+    }
+  }
+
+  /* Compare note */
+  .compare-note h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-2xl);
+    margin-block: var(--space-4) var(--space-5);
+  }
+
+  /* CTA banner */
+  .cta-banner { margin-top: var(--space-16); }
+
+  .cta-inner {
+    padding-block: var(--space-24);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-8);
+  }
+
+  .cta-inner h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-2xl);
+    max-width: 20ch;
+    color: var(--color-bg);
+  }
+</style>

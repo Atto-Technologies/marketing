@@ -1,0 +1,625 @@
+---
+import Base from '../layouts/Base.astro';
+import AttoDemo from '../components/AttoDemo.astro';
+
+const layers = [
+  {
+    num: '01',
+    label: 'Markdown for prose',
+    body: "Headings, paragraphs, lists, links. Everything a writer needs, nothing they don't.",
+  },
+  {
+    num: '02',
+    label: 'LaTeX for notation',
+    body: 'Inline and display math that renders correctly — for financial formulas, legal schedules, or scientific content.',
+  },
+  {
+    num: '03',
+    label: 'Atto directives for structure',
+    body: 'Parties, signatures, attachments, callouts — typed semantic blocks that the document model understands.',
+  },
+];
+
+const lifecycle = [
+  { name: 'Draft', desc: 'Authors compose and revise.' },
+  { name: 'Review', desc: 'Comments anchor to the AST.' },
+  { name: 'Sign', desc: 'Parties countersign in order.' },
+  { name: 'Freeze', desc: 'Content becomes immutable.' },
+  { name: 'Execute', desc: 'Protocol events fire on effect.' },
+];
+
+const rows = [
+  {
+    dim: 'Document format',
+    trad: 'Proprietary binary / XML',
+    atto: 'Open hybrid syntax (Markdown + LaTeX + directives)',
+  },
+  {
+    dim: 'Collaboration',
+    trad: 'File sharing, tracked changes',
+    atto: 'Real-time CRDT sync over MQTT',
+  },
+  {
+    dim: 'Version control',
+    trad: 'Manual saves, no canonical diff',
+    atto: 'Deterministic serialization, git-compatible',
+  },
+  {
+    dim: 'Signatures',
+    trad: 'Styled text or external tool',
+    atto: 'Typed ::signature-block nodes, protocol-native',
+  },
+  {
+    dim: 'Math notation',
+    trad: 'Insert object / external',
+    atto: 'Native inline and display LaTeX',
+  },
+  {
+    dim: 'Lifecycle awareness',
+    trad: 'None',
+    atto: 'Draft → Review → Sign → Freeze → Execute',
+  },
+];
+---
+<Base title="Structured documents for high-stakes work">
+  {/* ─── Section 1 — Hero ─────────────────────────────────────── */}
+  <section class="hero" aria-label="Hero">
+    <div class="hero-copy">
+      <p class="eyebrow">The document format for serious work</p>
+      <h1>
+        Documents with
+        <br />
+        <span class="primary-ink">structure.</span>
+      </h1>
+      <p class="hero-sub">
+        Atto replaces Word for high-stakes documents — combining collaborative
+        editing, mathematical notation, and legally-binding execution in a
+        single structured format.
+      </p>
+      <div class="hero-ctas">
+        <a href="/product" class="btn btn-primary">
+          Start writing <span aria-hidden="true">→</span>
+        </a>
+        <a href="/docs" class="btn btn-secondary">Read the spec</a>
+      </div>
+    </div>
+
+    <div class="hero-demo">
+      <AttoDemo filename="services-agreement.atto">
+        <article class="atto-doc" slot="rendered">
+          <header class="atto-doc-head">
+            <p class="atto-doc-kicker">Services Agreement · Effective 2026-04-23</p>
+            <h1 class="atto-doc-title">Services Agreement</h1>
+          </header>
+
+          <section class="atto-doc-section">
+            <h2>Payment Terms</h2>
+            <p>
+              Client shall pay within <strong>15 days</strong> of invoice.
+            </p>
+            <p>
+              The late fee is <span class="atto-math">L = B × 0.015</span>.
+            </p>
+          </section>
+
+          <aside class="atto-sig-block" aria-label="Signature block">
+            <p class="atto-sig-label">Signature Block</p>
+            <div class="atto-sig-entry">
+              <p class="atto-sig-party">Baldwinson Corp.</p>
+              <p class="atto-sig-signer">
+                <span>Curtis Baldwinson</span>
+                <span class="atto-sig-title">· CEO</span>
+              </p>
+              <p class="atto-sig-meta">Sign order 1 · awaiting signature</p>
+            </div>
+          </aside>
+        </article>
+
+        <pre class="code-block" slot="source"><code><span class="tok-comment">---</span>
+<span class="tok-key">title:</span> <span class="tok-string">Services Agreement</span>
+<span class="tok-key">document_type:</span> <span class="tok-string">services_agreement</span>
+<span class="tok-key">authoring_mode:</span> <span class="tok-string">hybrid</span>
+<span class="tok-key">effective_date:</span> <span class="tok-string">2026-04-23</span>
+<span class="tok-comment">---</span>
+
+<span class="tok-heading">## Payment Terms</span>
+
+Client shall pay within <span class="tok-emph">**15 days**</span> of invoice.
+
+The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
+
+<span class="tok-directive">::signature-block</span>
+<span class="tok-key">- party:</span> <span class="tok-string">Baldwinson Corp.</span>
+<span class="tok-key">  signer:</span> <span class="tok-string">Curtis Baldwinson</span>
+<span class="tok-key">  title:</span> <span class="tok-string">CEO</span>
+<span class="tok-key">  sign_order:</span> <span class="tok-string">1</span>
+<span class="tok-directive">::</span></code></pre>
+      </AttoDemo>
+    </div>
+  </section>
+
+  <hr class="rule" />
+
+  {/* ─── Section 2 — The Problem ──────────────────────────────── */}
+  <section class="problem wrap-default section">
+    <p class="eyebrow">The gap</p>
+    <h2>Word was not built for this.</h2>
+    <div class="problem-body">
+      <p>
+        A signature line in Word is just styled text. A tracked change is a
+        cosmetic marker. A due date is a string. There is no semantic model
+        under the surface — every meaning lives in the author&rsquo;s head and
+        the reviewer&rsquo;s intuition.
+      </p>
+      <p>
+        That works for letters. It breaks for contracts, term sheets, research
+        reports, and anything where the document itself is the event. There is
+        no canonical source of truth, no clean audit trail, no way to prove the
+        file you received is the file that was executed.
+      </p>
+      <p>
+        LaTeX solved notation at the cost of everything else — no collaboration,
+        no review workflow, no interchange format. Teams that need precision
+        end up maintaining two systems: one for writing, one for signing, and
+        a third for reconciling the two.
+      </p>
+    </div>
+  </section>
+
+  {/* ─── Section 3 — Three Layers ─────────────────────────────── */}
+  <section class="section-surface" aria-labelledby="layers-heading">
+    <div class="wrap section">
+      <p class="eyebrow">Architecture</p>
+      <h2 id="layers-heading" class="section-heading">
+        Three layers. One document.
+      </h2>
+      <p class="section-lede">
+        Markdown for humans. LaTeX for notation. Atto for structure. Each layer
+        is independent; the parser walks them in order and produces a single
+        deterministic Abstract Syntax Tree (AST).
+      </p>
+    </div>
+    <div class="three-layers">
+      {layers.map(({ num, label, body }) => (
+        <article class="layer-col">
+          <div class="layer-num">{num}</div>
+          <div class="layer-label">{label}</div>
+          <p>{body}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  {/* ─── Section 4 — Live Collaboration ───────────────────────── */}
+  <section class="collab wrap section">
+    <div class="collab-copy">
+      <p class="eyebrow">Transport</p>
+      <h2 class="section-heading">Real-time. By design.</h2>
+      <p>
+        Atto documents sync over MQTT with CRDT-based conflict resolution.
+        Every section, every directive, every LaTeX block is an independent
+        stream.
+      </p>
+      <p>
+        A signing event never blocks an edit in progress. A dropped
+        connection resumes from its last acknowledged patch. The broker is
+        horizontally scalable — the protocol is not.
+      </p>
+    </div>
+    <figure class="collab-diagram" aria-label="Atto transport architecture">
+      <pre class="code-block"><code>Browser Editor
+    │
+    ▼  MQTT / QUIC
+Atto Relay Broker
+    │
+    ▼
+Document State Service ──── Patch Log
+    │
+    ▼
+Baldwinson Protocol Layer</code></pre>
+    </figure>
+  </section>
+
+  {/* ─── Section 5 — Document Lifecycle ───────────────────────── */}
+  <section class="lifecycle wrap section">
+    <p class="eyebrow">Lifecycle</p>
+    <h2 class="section-heading">
+      Draft, review, sign, freeze, execute — in one format.
+    </h2>
+    <p class="section-lede">
+      Every stage is a typed transition, captured in the document and the
+      patch log. There is no external state.
+    </p>
+    <ol class="stages" role="list">
+      {lifecycle.map((stage, i) => (
+        <li class="stage" data-active={i === 0}>
+          <span class="stage-dot" aria-hidden="true"></span>
+          <span class="stage-name">{stage.name}</span>
+          <span class="stage-desc">{stage.desc}</span>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  {/* ─── Section 6 — Comparison ───────────────────────────────── */}
+  <section class="compare wrap section" aria-labelledby="compare-heading">
+    <p class="eyebrow">Comparison</p>
+    <h2 id="compare-heading" class="section-heading">
+      Why teams switch.
+    </h2>
+    <div class="compare-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Dimension</th>
+            <th scope="col">Traditional</th>
+            <th scope="col">Atto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ dim, trad, atto }) => (
+            <tr>
+              <th scope="row">{dim}</th>
+              <td class="trad">{trad}</td>
+              <td class="atto">{atto}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {/* ─── Section 7 — CTA Banner ───────────────────────────────── */}
+  <section class="cta-banner section-dark" aria-labelledby="cta-heading">
+    <div class="wrap-default cta-inner">
+      <h2 id="cta-heading">The document format for serious work.</h2>
+      <a href="/product" class="btn btn-on-dark">
+        Request early access <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ─── Hero ──────────────────────────────────────────────────── */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-16);
+    align-items: center;
+    min-height: 90vh;
+    padding: var(--space-24) var(--space-8);
+    max-width: var(--content-wide);
+    margin: 0 auto;
+  }
+
+  .hero-copy h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-hero);
+    letter-spacing: -0.02em;
+    line-height: 0.95;
+    margin-block: var(--space-6);
+  }
+
+  .primary-ink { color: var(--color-primary); }
+
+  .hero-sub {
+    font-size: var(--text-lg);
+    color: var(--color-text-muted);
+    max-width: 46ch;
+    margin-bottom: var(--space-8);
+  }
+
+  .hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .hero-demo {
+    position: relative;
+  }
+
+  @media (max-width: 1024px) {
+    .hero {
+      grid-template-columns: 1fr;
+      gap: var(--space-12);
+      min-height: auto;
+      padding: var(--space-16) var(--space-6);
+    }
+  }
+
+  /* ─── Problem ───────────────────────────────────────────────── */
+  .problem h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-2xl);
+    margin-block: var(--space-4) var(--space-10);
+    max-width: 20ch;
+  }
+
+  .problem-body {
+    display: grid;
+    gap: var(--space-6);
+    max-width: 68ch;
+  }
+
+  .problem-body p {
+    font-size: var(--text-base);
+    color: var(--color-text);
+  }
+
+  /* ─── Three Layers ──────────────────────────────────────────── */
+  .three-layers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    max-width: var(--content-wide);
+    margin: var(--space-12) auto 0;
+  }
+
+  .layer-col {
+    padding: var(--space-12) var(--space-8);
+    border-right: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .layer-col:last-child {
+    border-right: none;
+  }
+
+  .layer-num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-3xl);
+    color: var(--color-text-faint);
+    line-height: 1;
+    margin-bottom: var(--space-6);
+  }
+
+  .layer-label {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .layer-col p {
+    font-size: var(--text-base);
+    color: var(--color-text);
+  }
+
+  @media (max-width: 768px) {
+    .three-layers {
+      grid-template-columns: 1fr;
+    }
+
+    .layer-col {
+      border-right: none;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .layer-col:last-child {
+      border-bottom: none;
+    }
+  }
+
+  /* ─── Live Collaboration ────────────────────────────────────── */
+  .collab {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-16);
+    align-items: center;
+  }
+
+  .collab-copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .collab-copy p {
+    font-size: var(--text-base);
+    max-width: 48ch;
+  }
+
+  .collab-diagram .code-block {
+    font-size: var(--text-sm);
+    line-height: 1.8;
+  }
+
+  @media (max-width: 900px) {
+    .collab {
+      grid-template-columns: 1fr;
+      gap: var(--space-10);
+    }
+  }
+
+  /* ─── Lifecycle ─────────────────────────────────────────────── */
+  .stages {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    margin-top: var(--space-12);
+    position: relative;
+  }
+
+  .stages::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: var(--color-border);
+    z-index: 0;
+  }
+
+  .stage {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding-right: var(--space-4);
+    position: relative;
+    z-index: 1;
+  }
+
+  .stage-dot {
+    width: 11px;
+    height: 11px;
+    background: var(--color-border);
+    border: 2px solid var(--color-bg);
+    box-sizing: content-box;
+    display: inline-block;
+  }
+
+  .stage[data-active="true"] .stage-dot {
+    background: var(--color-primary);
+  }
+
+  .stage[data-active="true"] .stage-name {
+    color: var(--color-primary);
+  }
+
+  .stage-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-lg);
+    color: var(--color-text);
+    line-height: 1;
+    margin-top: var(--space-2);
+  }
+
+  .stage-desc {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    max-width: 18ch;
+  }
+
+  @media (max-width: 768px) {
+    .stages {
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+    }
+
+    .stages::before {
+      top: 0;
+      left: 5px;
+      right: auto;
+      bottom: 0;
+      width: 1px;
+      height: auto;
+    }
+
+    .stage {
+      padding-left: var(--space-6);
+      padding-right: 0;
+    }
+
+    .stage-dot {
+      position: absolute;
+      left: 0;
+      top: 4px;
+    }
+  }
+
+  /* ─── Comparison ────────────────────────────────────────────── */
+  .compare-wrap {
+    border: 1px solid var(--color-border);
+    overflow-x: auto;
+    margin-top: var(--space-10);
+  }
+
+  .compare table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--text-sm);
+  }
+
+  .compare thead th {
+    background: var(--color-surface);
+    text-align: left;
+    padding: var(--space-4) var(--space-6);
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .compare tbody th {
+    text-align: left;
+    padding: var(--space-5) var(--space-6);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-base);
+    color: var(--color-text);
+    width: 26%;
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+
+  .compare tbody td {
+    padding: var(--space-5) var(--space-6);
+    vertical-align: top;
+    border-bottom: 1px solid var(--color-border);
+    width: 37%;
+  }
+
+  .compare tbody tr:last-child th,
+  .compare tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .compare td.trad {
+    color: var(--color-text-muted);
+    border-right: 1px solid var(--color-border);
+  }
+
+  .compare td.atto {
+    color: var(--color-text);
+    font-weight: 500;
+    background: color-mix(in oklch, var(--color-primary) 6%, transparent);
+  }
+
+  @media (max-width: 768px) {
+    .compare tbody th {
+      width: 40%;
+    }
+  }
+
+  /* ─── CTA Banner ────────────────────────────────────────────── */
+  .cta-banner {
+    margin-top: var(--space-16);
+  }
+
+  .cta-inner {
+    padding-block: var(--space-24);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-8);
+  }
+
+  .cta-inner h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-2xl);
+    max-width: 20ch;
+    color: var(--color-bg);
+  }
+</style>
