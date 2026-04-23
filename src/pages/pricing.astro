@@ -24,7 +24,11 @@ const tiers: Tier[] = [
       'Local export and git sync',
       'Community support',
     ],
-    cta: { label: 'Start free', href: '/product', variant: 'secondary' },
+    cta: {
+      label: 'Join waitlist',
+      href: '/waitlist?plan=solo',
+      variant: 'secondary',
+    },
   },
   {
     name: 'Team',
@@ -39,7 +43,11 @@ const tiers: Tier[] = [
       'Role-based permissions',
       'Email support',
     ],
-    cta: { label: 'Start a team', href: '/product', variant: 'primary' },
+    cta: {
+      label: 'Join waitlist',
+      href: '/waitlist?plan=team',
+      variant: 'primary',
+    },
     featured: true,
   },
   {
@@ -54,7 +62,13 @@ const tiers: Tier[] = [
       'Audit log export',
       'Dedicated support',
     ],
-    cta: { label: 'Talk to sales', href: '/product', variant: 'secondary' },
+    // Enterprise keeps a direct sales path — these buyers need a conversation,
+    // not a waitlist entry.
+    cta: {
+      label: 'Talk to sales',
+      href: 'mailto:sales@atto.tech?subject=Enterprise%20inquiry',
+      variant: 'secondary',
+    },
   },
 ];
 
@@ -84,7 +98,7 @@ const faqs = [
   {/* ─── Hero ─────────────────────────────────────────────────── */}
   <section class="pricing-hero wrap-default">
     <p class="eyebrow">Pricing</p>
-    <h1>Flat pricing. No seats tax.</h1>
+    <h1>Flat pricing. No per-seat tax.</h1>
     <p class="lede">
       Three tiers. Solo is free for single authors. Team is flat per collaborator.
       Enterprise is a conversation. That&rsquo;s the whole thing.
@@ -99,7 +113,7 @@ const faqs = [
           <header class="tier-head">
             <p class="tier-name">{tier.name}</p>
             <p class="tier-price">
-              <span class="tier-amount">{tier.price}</span>
+              <span class="tier-amount tnum">{tier.price}</span>
               {tier.cadence && <span class="tier-cadence">{tier.cadence}</span>}
             </p>
             <p class="tier-tagline">{tier.tagline}</p>
@@ -155,8 +169,8 @@ const faqs = [
   <section class="cta-banner section-dark" aria-labelledby="cta-heading">
     <div class="wrap-default cta-inner">
       <h2 id="cta-heading">The document format for serious work.</h2>
-      <a href="/product" class="btn btn-on-dark">
-        Request early access <span aria-hidden="true">→</span>
+      <a href="/waitlist" class="btn btn-on-dark">
+        Join the waitlist <span aria-hidden="true">→</span>
       </a>
     </div>
   </section>
@@ -330,23 +344,5 @@ const faqs = [
     margin-block: var(--space-4) var(--space-5);
   }
 
-  /* CTA banner */
-  .cta-banner { margin-top: var(--space-16); }
-
-  .cta-inner {
-    padding-block: var(--space-24);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: var(--space-8);
-  }
-
-  .cta-inner h2 {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: var(--text-2xl);
-    max-width: 20ch;
-    color: var(--color-bg);
-  }
+  /* CTA banner styles are shared — see base.css. */
 </style>

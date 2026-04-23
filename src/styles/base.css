@@ -69,6 +69,16 @@
   --color-code-bg: #1E1D1B;
 }
 
+/* Theme-fixed tokens — do NOT flip between light/dark themes. Use these for
+   banners, badges, or inversions that must always read the same way (e.g.
+   a "dark" CTA banner stays dark regardless of the active theme). */
+:root {
+  --color-dark-surface: #141311;
+  --color-dark-ink: #F8F7F4;
+  --color-dark-muted: #9D9B96;
+  --color-dark-border: #2E2D2B;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     --color-bg: #141311;
@@ -122,6 +132,16 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display, sans-serif);
   line-height: 1.1;
   text-wrap: balance;
+  /* Inter stylistic alternates:
+     cv11 — single-story, open "1" (avoids the Helvetica-generic look)
+     ss03 — straight-sided capitals (more editorial) */
+  font-feature-settings: 'cv11' 1, 'ss03' 1;
+}
+
+/* Tabular-nums helper — use on columns of digits (pricing, tables, totals). */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
 }
 
 p, li, figcaption {
@@ -259,15 +279,17 @@ a, button, [role="button"] {
   border-color: var(--color-text);
 }
 
+/* Button variant for dark-surface sections — pinned to dark-fixed tokens so
+   it renders correctly regardless of the active theme. */
 .btn-on-dark {
-  color: var(--color-bg);
+  color: var(--color-dark-ink);
   background: transparent;
-  border-color: var(--color-bg);
+  border-color: var(--color-dark-ink);
 }
 
 .btn-on-dark:hover {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--color-dark-ink);
+  color: var(--color-dark-surface);
 }
 
 /* ============================================================
@@ -310,15 +332,50 @@ a, button, [role="button"] {
   border-block: 1px solid var(--color-border);
 }
 
+/* Dark-surface section — stable across themes. Always dark bg with light ink. */
 .section-dark {
-  background: var(--color-text);
-  color: var(--color-bg);
+  background: var(--color-dark-surface);
+  color: var(--color-dark-ink);
 }
 
 .section-dark h1,
 .section-dark h2,
 .section-dark h3 {
-  color: var(--color-bg);
+  color: var(--color-dark-ink);
+}
+
+.section-dark .muted {
+  color: var(--color-dark-muted);
+}
+
+/* Shared CTA banner — lives at the bottom of index / product / pricing.
+   Previously duplicated in three page-scoped stylesheets. */
+.cta-banner {
+  margin-top: var(--space-16);
+}
+
+.cta-inner {
+  padding-block: var(--space-24);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-8);
+}
+
+.cta-inner h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-2xl);
+  max-width: 22ch;
+  color: var(--color-dark-ink);
+}
+
+/* Shared hero CTA row — horizontal flex with wrap. */
+.hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
 .section-heading {

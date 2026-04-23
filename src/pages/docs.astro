@@ -55,7 +55,10 @@ const nav = [
       {/* ─── Overview ─────────────────────────────────────────── */}
       <section id="overview">
         <p class="eyebrow">01 — Overview</p>
-        <h1>The Atto Hybrid Syntax.</h1>
+        <div class="docs-title-row">
+          <h1>The Atto Hybrid Syntax.</h1>
+          <span class="docs-version" aria-label="Specification version">v0</span>
+        </div>
         <p class="lede">
           Atto documents combine three layers into a single plain-text format.
           Markdown carries prose, LaTeX carries notation, and Atto directives
@@ -764,7 +767,27 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
     font-weight: 800;
     font-size: var(--text-3xl);
     letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .docs-title-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-4);
     margin-block: var(--space-4) var(--space-6);
+  }
+
+  .docs-version {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.2em 0.6em;
+    color: var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 10%, transparent);
+    border: 1px solid var(--color-primary);
   }
 
   .docs-content h2 {

@@ -1,8 +1,10 @@
 ---
+// Footer links are intentionally limited to pages that actually exist.
+// Placeholder hash routes have been removed to avoid broken anchors.
 const product = [
   { href: '/product', label: 'Product' },
   { href: '/pricing', label: 'Pricing' },
-  { href: '/product#changelog', label: 'Changelog' },
+  { href: '/waitlist', label: 'Waitlist' },
 ];
 
 const docs = [
@@ -12,9 +14,8 @@ const docs = [
 ];
 
 const company = [
-  { href: '/#about', label: 'About' },
-  { href: '/#blog', label: 'Blog' },
-  { href: 'https://github.com/', label: 'GitHub' },
+  { href: 'mailto:hello@atto.tech', label: 'Contact' },
+  { href: 'mailto:sales@atto.tech', label: 'Sales' },
 ];
 ---
 <footer class="site-footer">
@@ -71,10 +72,7 @@ const company = [
 
   <div class="footer-bottom wrap">
     <span class="copyright">© 2026 Atto Technologies Inc.</span>
-    <ul class="legal" role="list">
-      <li><a href="/#privacy">Privacy</a></li>
-      <li><a href="/#terms">Terms</a></li>
-    </ul>
+    <span class="build-meta">Syntax v0 · pre-launch</span>
   </div>
 </footer>
 
@@ -161,25 +159,14 @@ const company = [
     color: var(--color-text-muted);
   }
 
-  .copyright {
+  .copyright,
+  .build-meta {
     font-size: var(--text-xs);
   }
 
-  .legal {
-    display: flex;
-    gap: var(--space-5);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .legal a {
+  .build-meta {
+    font-family: var(--font-mono);
     color: var(--color-text-muted);
-    text-decoration: none;
-  }
-
-  .legal a:hover {
-    color: var(--color-text);
   }
 
   @media (max-width: 768px) {

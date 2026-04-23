@@ -1,0 +1,85 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 1200 630"
+  width="1200"
+  height="630"
+  role="img"
+  aria-label="Atto — structured documents for high-stakes work"
+>
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#F8F7F4" />
+
+  <!-- Top rule -->
+  <rect x="0" y="0" width="1200" height="6" fill="#01696F" />
+
+  <!-- Decorative grid lines (subtle, editorial feel) -->
+  <g stroke="#D6D4CF" stroke-width="1">
+    <line x1="80" y1="120" x2="1120" y2="120" />
+    <line x1="80" y1="540" x2="1120" y2="540" />
+  </g>
+
+  <!-- Eyebrow -->
+  <text
+    x="80"
+    y="168"
+    font-family="'Inter', 'Helvetica Neue', sans-serif"
+    font-size="22"
+    font-weight="700"
+    letter-spacing="3"
+    fill="#01696F"
+  >THE DOCUMENT FORMAT FOR SERIOUS WORK</text>
+
+  <!-- Brand mark + wordmark -->
+  <g transform="translate(80, 210)">
+    <rect x="0" y="0" width="56" height="56" stroke="#1A1916" stroke-width="4.5" fill="none" />
+    <line x1="56" y1="21" x2="56" y2="77" stroke="#1A1916" stroke-width="4.5" />
+    <text
+      x="88"
+      y="47"
+      font-family="'Inter', 'Helvetica Neue', sans-serif"
+      font-size="48"
+      font-weight="800"
+      letter-spacing="-1"
+      fill="#1A1916"
+    >atto</text>
+  </g>
+
+  <!-- Headline -->
+  <text
+    x="80"
+    y="360"
+    font-family="'Inter', 'Helvetica Neue', sans-serif"
+    font-size="84"
+    font-weight="800"
+    letter-spacing="-2"
+    fill="#1A1916"
+  >Structured documents</text>
+  <text
+    x="80"
+    y="450"
+    font-family="'Inter', 'Helvetica Neue', sans-serif"
+    font-size="84"
+    font-weight="800"
+    letter-spacing="-2"
+    fill="#1A1916"
+  >for <tspan fill="#01696F">high-stakes work.</tspan></text>
+
+  <!-- Bottom meta row -->
+  <g transform="translate(80, 580)">
+    <text
+      font-family="'Inter', 'Helvetica Neue', sans-serif"
+      font-size="20"
+      font-weight="500"
+      fill="#76746F"
+    >Markdown · LaTeX · Atto directives</text>
+  </g>
+
+  <text
+    x="1120"
+    y="600"
+    text-anchor="end"
+    font-family="ui-monospace, 'SF Mono', monospace"
+    font-size="20"
+    fill="#76746F"
+  >atto.tech</text>
+</svg>

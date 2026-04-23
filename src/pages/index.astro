@@ -68,18 +68,18 @@ const rows = [
     <div class="hero-copy">
       <p class="eyebrow">The document format for serious work</p>
       <h1>
-        Documents with
+        Structured documents
         <br />
-        <span class="primary-ink">structure.</span>
+        for <span class="primary-ink">high-stakes work.</span>
       </h1>
       <p class="hero-sub">
-        Atto replaces Word for high-stakes documents — combining collaborative
-        editing, mathematical notation, and legally-binding execution in a
-        single structured format.
+        Atto replaces Word for contracts, term sheets, and research — combining
+        collaborative editing, mathematical notation, and legally-binding
+        execution in a single structured format.
       </p>
       <div class="hero-ctas">
         <a href="/product" class="btn btn-primary">
-          Start writing <span aria-hidden="true">→</span>
+          See the product <span aria-hidden="true">→</span>
         </a>
         <a href="/docs" class="btn btn-secondary">Read the spec</a>
       </div>
@@ -270,8 +270,8 @@ Baldwinson Protocol Layer</code></pre>
   <section class="cta-banner section-dark" aria-labelledby="cta-heading">
     <div class="wrap-default cta-inner">
       <h2 id="cta-heading">The document format for serious work.</h2>
-      <a href="/product" class="btn btn-on-dark">
-        Request early access <span aria-hidden="true">→</span>
+      <a href="/waitlist" class="btn btn-on-dark">
+        Join the waitlist <span aria-hidden="true">→</span>
       </a>
     </div>
   </section>
@@ -306,12 +306,6 @@ Baldwinson Protocol Layer</code></pre>
     color: var(--color-text-muted);
     max-width: 46ch;
     margin-bottom: var(--space-8);
-  }
-
-  .hero-ctas {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-3);
   }
 
   .hero-demo {
@@ -598,25 +592,5 @@ Baldwinson Protocol Layer</code></pre>
     }
   }
 
-  /* ─── CTA Banner ────────────────────────────────────────────── */
-  .cta-banner {
-    margin-top: var(--space-16);
-  }
-
-  .cta-inner {
-    padding-block: var(--space-24);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: var(--space-8);
-  }
-
-  .cta-inner h2 {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: var(--text-2xl);
-    max-width: 20ch;
-    color: var(--color-bg);
-  }
+  /* CTA banner styles are shared — see base.css `.cta-banner` / `.cta-inner`. */
 </style>
