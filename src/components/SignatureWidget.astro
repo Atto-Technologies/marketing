@@ -1,0 +1,610 @@
+---
+export interface Props {
+  party: string;
+  signer: string;
+  title?: string;
+  order?: number;
+  totalSigners?: number;
+}
+
+const { party, signer, title, order, totalSigners } = Astro.props;
+
+const uid = Math.random().toString(36).slice(2, 10);
+const inputId = `sig-input-${uid}`;
+const uploadId = `sig-upload-${uid}`;
+const typeTabId = `sig-tab-type-${uid}`;
+const uploadTabId = `sig-tab-upload-${uid}`;
+const typePanelId = `sig-panel-type-${uid}`;
+const uploadPanelId = `sig-panel-upload-${uid}`;
+---
+<aside class="sig-widget" data-sig-widget aria-label={`Signature block for ${party}`}>
+  <div class="sig-head">
+    <p class="sig-label">Signature Block</p>
+    {order !== undefined && totalSigners !== undefined && (
+      <span class="sig-queue">Signer {order} of {totalSigners}</span>
+    )}
+  </div>
+
+  <div class="sig-identity">
+    <p class="sig-party">{party}</p>
+    <p class="sig-signer">
+      <span>{signer}</span>
+      {title && <span class="sig-title">· {title}</span>}
+    </p>
+  </div>
+
+  {/* ─── Unsigned state ──────────────────────────────────────── */}
+  <div class="sig-workspace" data-sig-state="unsigned">
+    <div class="sig-mode-tabs" role="tablist" aria-label="Signature method">
+      <button
+        type="button"
+        role="tab"
+        id={typeTabId}
+        data-sig-mode="type"
+        aria-selected="true"
+        aria-controls={typePanelId}
+        tabindex="0"
+      >Type</button>
+      <button
+        type="button"
+        role="tab"
+        id={uploadTabId}
+        data-sig-mode="upload"
+        aria-selected="false"
+        aria-controls={uploadPanelId}
+        tabindex="-1"
+      >Upload</button>
+    </div>
+
+    <div
+      class="sig-mode-panel"
+      role="tabpanel"
+      id={typePanelId}
+      aria-labelledby={typeTabId}
+      data-sig-panel="type"
+    >
+      <label for={inputId} class="sig-field-label">
+        Type your full legal name
+      </label>
+      <input
+        id={inputId}
+        type="text"
+        class="sig-field"
+        placeholder={signer}
+        autocomplete="off"
+        spellcheck="false"
+        data-sig-input
+      />
+      <div class="sig-preview" data-sig-preview aria-live="polite">
+        <span class="sig-preview-hint">Preview will appear here</span>
+      </div>
+    </div>
+
+    <div
+      class="sig-mode-panel"
+      role="tabpanel"
+      id={uploadPanelId}
+      aria-labelledby={uploadTabId}
+      data-sig-panel="upload"
+      hidden
+    >
+      <label for={uploadId} class="sig-upload">
+        <input
+          id={uploadId}
+          type="file"
+          accept="image/png,image/jpeg,image/svg+xml"
+          data-sig-upload
+        />
+        <span class="sig-upload-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+        </span>
+        <span class="sig-upload-prompt">
+          <strong>Upload a signature image</strong>
+          <span>PNG, JPG, or SVG — up to 1 MB</span>
+        </span>
+      </label>
+      <div class="sig-upload-preview" data-sig-upload-preview hidden></div>
+    </div>
+
+    <p class="sig-legal">
+      By signing, I confirm this is my electronic signature and I intend
+      to execute this document.
+    </p>
+
+    <button
+      type="button"
+      class="sig-submit"
+      data-sig-submit
+      disabled
+    >
+      Sign document
+      <span aria-hidden="true">→</span>
+    </button>
+  </div>
+
+  {/* ─── Signed state ────────────────────────────────────────── */}
+  <div class="sig-workspace" data-sig-state="signed" hidden>
+    <div class="sig-signed-preview" data-sig-signed-preview></div>
+    <div class="sig-signed-meta">
+      <p class="sig-signed-name" data-sig-signed-name></p>
+      <p class="sig-signed-when">
+        Signed <time data-sig-signed-time></time>
+      </p>
+      <p class="sig-signed-hash">
+        <code>ed25519:AQ…dF</code>
+        <span aria-hidden="true">·</span>
+        <code>sha256:4c1f…a7</code>
+      </p>
+    </div>
+  </div>
+</aside>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-sig-widget]').forEach((root) => {
+    const modeTabs = root.querySelectorAll<HTMLButtonElement>('[data-sig-mode]');
+    const panels = root.querySelectorAll<HTMLElement>('[data-sig-panel]');
+    const input = root.querySelector<HTMLInputElement>('[data-sig-input]');
+    const preview = root.querySelector<HTMLElement>('[data-sig-preview]');
+    const upload = root.querySelector<HTMLInputElement>('[data-sig-upload]');
+    const uploadPreview = root.querySelector<HTMLElement>('[data-sig-upload-preview]');
+    const submit = root.querySelector<HTMLButtonElement>('[data-sig-submit]');
+    const unsigned = root.querySelector<HTMLElement>('[data-sig-state="unsigned"]');
+    const signed = root.querySelector<HTMLElement>('[data-sig-state="signed"]');
+    const signedPreview = root.querySelector<HTMLElement>('[data-sig-signed-preview]');
+    const signedName = root.querySelector<HTMLElement>('[data-sig-signed-name]');
+    const signedTime = root.querySelector<HTMLTimeElement>('[data-sig-signed-time]');
+
+    let mode: 'type' | 'upload' = 'type';
+    let typed = '';
+    let uploadedUrl: string | null = null;
+    let uploadedName: string | null = null;
+
+    function activateMode(next: 'type' | 'upload') {
+      mode = next;
+      modeTabs.forEach((t) => {
+        const match = t.dataset.sigMode === next;
+        t.setAttribute('aria-selected', String(match));
+        t.tabIndex = match ? 0 : -1;
+      });
+      panels.forEach((p) => {
+        p.hidden = p.dataset.sigPanel !== next;
+      });
+      updateSubmitEnabled();
+    }
+
+    function updatePreview() {
+      if (!preview) return;
+      const trimmed = typed.trim();
+      if (trimmed.length === 0) {
+        preview.innerHTML = '<span class="sig-preview-hint">Preview will appear here</span>';
+        preview.classList.remove('has-value');
+      } else {
+        preview.textContent = trimmed;
+        preview.classList.add('has-value');
+      }
+    }
+
+    function updateSubmitEnabled() {
+      if (!submit) return;
+      const ok = mode === 'type' ? typed.trim().length > 0 : uploadedUrl !== null;
+      submit.disabled = !ok;
+    }
+
+    modeTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const next = tab.dataset.sigMode === 'upload' ? 'upload' : 'type';
+        activateMode(next);
+      });
+      tab.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        const next = tab.dataset.sigMode === 'type' ? 'upload' : 'type';
+        activateMode(next);
+        root.querySelector<HTMLButtonElement>(`[data-sig-mode="${next}"]`)?.focus();
+      });
+    });
+
+    input?.addEventListener('input', () => {
+      typed = input.value;
+      updatePreview();
+      updateSubmitEnabled();
+    });
+
+    upload?.addEventListener('change', () => {
+      const file = upload.files?.[0] ?? null;
+      if (!file) {
+        uploadedUrl = null;
+        uploadedName = null;
+        if (uploadPreview) {
+          uploadPreview.hidden = true;
+          uploadPreview.innerHTML = '';
+        }
+      } else {
+        if (uploadedUrl) URL.revokeObjectURL(uploadedUrl);
+        uploadedUrl = URL.createObjectURL(file);
+        uploadedName = file.name;
+        if (uploadPreview) {
+          uploadPreview.hidden = false;
+          uploadPreview.innerHTML = `<img src="${uploadedUrl}" alt="Signature preview" />`;
+        }
+      }
+      updateSubmitEnabled();
+    });
+
+    submit?.addEventListener('click', () => {
+      if (submit.disabled) return;
+      if (unsigned) unsigned.hidden = true;
+      if (signed) signed.hidden = false;
+
+      if (signedPreview) {
+        if (mode === 'type') {
+          signedPreview.innerHTML = `<span class="sig-script">${escapeHtml(typed)}</span>`;
+        } else if (uploadedUrl) {
+          signedPreview.innerHTML = `<img src="${uploadedUrl}" alt="Signature" />`;
+        }
+      }
+
+      if (signedName) {
+        signedName.textContent = mode === 'type' ? typed : (uploadedName ?? '');
+      }
+
+      if (signedTime) {
+        const now = new Date();
+        signedTime.textContent = now.toLocaleString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        });
+        signedTime.dateTime = now.toISOString();
+      }
+    });
+
+    function escapeHtml(value: string): string {
+      return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+  });
+</script>
+
+<style>
+  .sig-widget {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-5) var(--space-6) var(--space-6);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-primary);
+    background: var(--color-surface);
+  }
+
+  .sig-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .sig-label {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .sig-queue {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .sig-identity {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .sig-party {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-base);
+    color: var(--color-text);
+  }
+
+  .sig-signer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  .sig-title {
+    color: var(--color-text-muted);
+  }
+
+  /* ─── Workspace (mode panels) ────────────────────────────── */
+
+  .sig-workspace {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .sig-mode-tabs {
+    display: inline-flex;
+    align-self: flex-start;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .sig-mode-tabs button {
+    padding: var(--space-2) var(--space-5);
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .sig-mode-tabs button + button {
+    border-left: 1px solid var(--color-border);
+  }
+
+  .sig-mode-tabs button:hover {
+    color: var(--color-text);
+  }
+
+  .sig-mode-tabs button[aria-selected="true"] {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+  }
+
+  .sig-mode-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .sig-field-label {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .sig-field {
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+  }
+
+  .sig-field:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-color: var(--color-primary);
+  }
+
+  .sig-preview {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 72px;
+    padding: var(--space-4) var(--space-5);
+    background: var(--color-bg);
+    border: 1px dashed var(--color-border);
+    font-family: 'Garamond', 'Georgia', 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--color-text);
+    letter-spacing: -0.01em;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .sig-preview.has-value {
+    border-style: solid;
+    border-color: var(--color-primary);
+  }
+
+  .sig-preview-hint {
+    font-family: var(--font-body);
+    font-style: normal;
+    font-size: var(--text-sm);
+    letter-spacing: 0;
+    color: var(--color-text-faint);
+  }
+
+  /* Upload panel */
+  .sig-upload {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    background: var(--color-bg);
+    border: 1px dashed var(--color-border);
+    cursor: pointer;
+    transition: border-color 180ms ease, background 180ms ease;
+  }
+
+  .sig-upload:hover {
+    border-color: var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 4%, var(--color-bg));
+  }
+
+  .sig-upload input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .sig-upload-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    color: var(--color-primary);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    flex-shrink: 0;
+  }
+
+  .sig-upload-prompt {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .sig-upload-prompt strong {
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .sig-upload-prompt span {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .sig-upload-preview {
+    padding: var(--space-3);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+  }
+
+  .sig-upload-preview img {
+    display: block;
+    max-height: 96px;
+    margin: 0 auto;
+  }
+
+  .sig-legal {
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    max-width: 56ch;
+  }
+
+  /* Submit button — primary filled */
+  .sig-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    align-self: flex-start;
+    padding: var(--space-3) var(--space-5);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    cursor: pointer;
+  }
+
+  .sig-submit:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+  }
+
+  .sig-submit:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* ─── Signed state ──────────────────────────────────────── */
+
+  .sig-signed-preview {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 72px;
+    padding: var(--space-4) var(--space-5);
+    background: var(--color-bg);
+    border: 1px solid var(--color-primary);
+    border-left: 3px solid var(--color-primary);
+    overflow: hidden;
+  }
+
+  .sig-signed-preview :global(.sig-script) {
+    font-family: 'Garamond', 'Georgia', 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 2rem;
+    letter-spacing: -0.01em;
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+
+  .sig-signed-preview :global(img) {
+    display: block;
+    max-height: 72px;
+  }
+
+  .sig-signed-meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .sig-signed-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  .sig-signed-when {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .sig-signed-hash {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: var(--space-1);
+  }
+
+  .sig-signed-hash code {
+    font-family: var(--font-mono);
+    font-size: 0.95em;
+    padding: 0.1em 0.35em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+  }
+</style>

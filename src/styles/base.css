@@ -17,10 +17,14 @@
   --color-on-primary: #F8F7F4;
   --color-code-bg: #EDECEA;
 
-  /* Typography */
-  --font-display: 'Cabinet Grotesk', 'Helvetica Neue', sans-serif;
-  --font-body: 'Satoshi', 'Helvetica Neue', sans-serif;
-  --font-mono: 'Consolas', 'Courier New', monospace;
+  /* Typography
+     Display — Inter (Swiss grotesque, Neue Haas Grotesk lineage).
+     Body    — Instrument Sans (humanist sans).
+     Mono    — Geist Mono (engineered monospace).
+     Each family has a generous fallback stack for first-paint. */
+  --font-display: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
 
   --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
   --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
@@ -473,6 +477,70 @@ a, button, [role="button"] {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   margin-top: var(--space-1);
+}
+
+.atto-sig-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.atto-sig-status {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.15em 0.5em;
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+}
+
+.atto-sig-status[data-status="awaiting"] {
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.atto-sig-preview {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 64px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.atto-sig-script {
+  font-family: 'Garamond', 'Georgia', 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 1.75rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.atto-sig-attest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-2);
+}
+
+.atto-sig-attest code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  padding: 0.1em 0.35em;
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
 }
 
 /* Parties block */

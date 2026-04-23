@@ -135,15 +135,25 @@ The post-money cap table reflects <span class="tok-math">$P_&#123;post&#125; = P
         </AttoDemo>
 
         <AttoDemo filename="signature.atto" label="::signature-block">
-          <aside class="atto-sig-block" slot="rendered" aria-label="Signature block">
-            <p class="atto-sig-label">Signature Block</p>
+          <aside class="atto-sig-block" slot="rendered" aria-label="Signed signature block">
+            <div class="atto-sig-block-head">
+              <p class="atto-sig-label">Signature Block</p>
+              <span class="atto-sig-status" data-status="signed">Signed</span>
+            </div>
+            <div class="atto-sig-preview">
+              <span class="atto-sig-script">Jane Hart</span>
+            </div>
             <div class="atto-sig-entry">
               <p class="atto-sig-party">Atto Ventures</p>
               <p class="atto-sig-signer">
                 <span>Jane Hart</span>
                 <span class="atto-sig-title">· Managing Partner</span>
               </p>
-              <p class="atto-sig-meta">Sign order 2 · awaiting signature</p>
+              <p class="atto-sig-attest">
+                <code>ed25519:AQ…dF</code>
+                <span aria-hidden="true">·</span>
+                <code>sha256:4c1f…a7</code>
+              </p>
             </div>
           </aside>
 

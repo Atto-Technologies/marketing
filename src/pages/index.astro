@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import AttoDemo from '../components/AttoDemo.astro';
+import SignatureWidget from '../components/SignatureWidget.astro';
 
 const layers = [
   {
@@ -102,17 +103,13 @@ const rows = [
             </p>
           </section>
 
-          <aside class="atto-sig-block" aria-label="Signature block">
-            <p class="atto-sig-label">Signature Block</p>
-            <div class="atto-sig-entry">
-              <p class="atto-sig-party">Baldwinson Corp.</p>
-              <p class="atto-sig-signer">
-                <span>Curtis Baldwinson</span>
-                <span class="atto-sig-title">· CEO</span>
-              </p>
-              <p class="atto-sig-meta">Sign order 1 · awaiting signature</p>
-            </div>
-          </aside>
+          <SignatureWidget
+            party="Baldwinson Corp."
+            signer="Curtis Baldwinson"
+            title="CEO"
+            order={1}
+            totalSigners={2}
+          />
         </article>
 
         <pre class="code-block" slot="source"><code><span class="tok-comment">---</span>
@@ -286,7 +283,7 @@ Baldwinson Protocol Layer</code></pre>
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-16);
-    align-items: center;
+    align-items: start;
     min-height: 90vh;
     padding: var(--space-24) var(--space-8);
     max-width: var(--content-wide);

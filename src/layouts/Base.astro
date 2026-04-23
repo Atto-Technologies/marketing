@@ -30,9 +30,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://atto.tech')
     <title>{title} — Atto</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@700,800&f[]=satoshi@400,500,700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Geist+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
 
