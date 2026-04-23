@@ -233,6 +233,10 @@ const uploadPanelId = `sig-panel-upload-${uid}`;
           uploadPreview.hidden = false;
           uploadPreview.innerHTML = `<img src="${uploadedUrl}" alt="Signature preview" />`;
         }
+        // A chosen file is an explicit choice of upload mode; switching here
+        // guarantees the sign handler reads the uploaded image even if the
+        // user never clicked the Upload tab directly.
+        if (mode !== 'upload') activateMode('upload');
       }
       updateSubmitEnabled();
     });
@@ -378,7 +382,11 @@ const uploadPanelId = `sig-panel-upload-${uid}`;
     background: var(--color-primary);
   }
 
-  .sig-mode-panel {
+  /* `:not([hidden])` ensures the HTML `hidden` attribute actually hides the
+     panel. Without it, the class's `display: flex` would override the UA's
+     `[hidden] { display: none }` (equal specificity, author wins source
+     order) and both panels would render at once. */
+  .sig-mode-panel:not([hidden]) {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
