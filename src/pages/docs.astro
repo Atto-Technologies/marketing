@@ -1,5 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
+import AttoDemo from '../components/AttoDemo.astro';
+import FieldTable from '../components/FieldTable.astro';
 
 const nav = [
   { id: 'overview', label: 'Overview' },
@@ -76,15 +78,43 @@ const nav = [
         <p>
           Every document begins with a YAML frontmatter block delimited by
           <code>---</code>. Frontmatter declares document-level metadata:
-          title, type, effective date, parties, and any custom fields the
-          document model accepts.
+          title, type, effective date, and any custom fields the document
+          model accepts. Keys are serialized alphabetically on output.
         </p>
-        <pre class="code-block"><code><span class="tok-comment">---</span>
+
+        <h3>Core fields</h3>
+        <FieldTable
+          caption="Core frontmatter fields"
+          fields={[
+            { name: 'title', type: 'string', required: true, description: 'Human-readable document title.' },
+            { name: 'document_type', type: 'string', required: true, description: 'Registered document type, e.g. services_agreement, term_sheet.' },
+            { name: 'authoring_mode', type: "'hybrid' | 'strict'", required: false, description: "Parse mode. 'hybrid' allows Markdown + LaTeX + directives. Defaults to 'hybrid'." },
+            { name: 'effective_date', type: 'date (YYYY-MM-DD)', required: false, description: 'Date the document takes effect. Used by the protocol layer.' },
+            { name: 'version', type: 'integer', required: false, description: 'Monotonic version counter, incremented on each signed revision.' },
+            { name: 'jurisdiction', type: 'string', required: false, description: 'Governing-law jurisdiction, e.g. delaware.' },
+          ]}
+        />
+
+        <h3>Example</h3>
+        <AttoDemo filename="frontmatter.atto">
+          <article class="atto-doc" slot="rendered">
+            <header class="atto-doc-head">
+              <p class="atto-doc-kicker">
+                Services Agreement · Effective 2026-04-23 · v1 · Delaware
+              </p>
+              <h1 class="atto-doc-title">Services Agreement</h1>
+            </header>
+          </article>
+
+          <pre class="code-block" slot="source"><code><span class="tok-comment">---</span>
 <span class="tok-key">title:</span> <span class="tok-string">Services Agreement</span>
 <span class="tok-key">document_type:</span> <span class="tok-string">services_agreement</span>
+<span class="tok-key">authoring_mode:</span> <span class="tok-string">hybrid</span>
 <span class="tok-key">effective_date:</span> <span class="tok-string">2026-04-23</span>
+<span class="tok-key">jurisdiction:</span> <span class="tok-string">delaware</span>
 <span class="tok-key">version:</span> <span class="tok-string">1</span>
 <span class="tok-comment">---</span></code></pre>
+        </AttoDemo>
       </section>
 
       <hr class="rule" />
@@ -97,14 +127,34 @@ const nav = [
           Sections use standard Markdown headings, <code>##</code> through
           <code>######</code>. The parser tracks heading depth to build the
           section tree; heading text becomes the canonical section label.
+          Top-level document title comes from frontmatter; body sections
+          start at <code>##</code>.
         </p>
-        <pre class="code-block"><code><span class="tok-heading">## Payment Terms</span>
+
+        <AttoDemo filename="sections.atto">
+          <article class="atto-doc" slot="rendered">
+            <section class="atto-doc-section">
+              <h2>Payment Terms</h2>
+              <p>Client shall pay within 15 days of invoice.</p>
+              <h3>Late Fees</h3>
+              <p>Overdue amounts accrue at 1.5% per day.</p>
+              <h3>Currency</h3>
+              <p>All amounts are in USD unless otherwise stated.</p>
+            </section>
+          </article>
+
+          <pre class="code-block" slot="source"><code><span class="tok-heading">## Payment Terms</span>
 
 Client shall pay within 15 days of invoice.
 
 <span class="tok-heading">### Late Fees</span>
 
-Overdue amounts accrue at 1.5% per day.</code></pre>
+Overdue amounts accrue at 1.5% per day.
+
+<span class="tok-heading">### Currency</span>
+
+All amounts are in USD unless otherwise stated.</code></pre>
+        </AttoDemo>
       </section>
 
       <hr class="rule" />
@@ -116,12 +166,41 @@ Overdue amounts accrue at 1.5% per day.</code></pre>
         <p>
           Standard Markdown inline syntax: <code>**bold**</code>,
           <code>*italic*</code>, <code>`code`</code>, and
-          <code>[links](https://)</code>. No HTML passthrough — if you need
-          something Markdown can&rsquo;t express, use a directive.
+          <code>[text](url)</code>. Raw HTML is rejected — the parser does
+          not pass through tags. If Markdown cannot express what you need,
+          use a directive.
         </p>
-        <pre class="code-block"><code>Client shall pay within <span class="tok-emph">**15 days**</span> of invoice.
 
-See the <span class="tok-emph">[master agreement](https://example.com)</span> for definitions.</code></pre>
+        <FieldTable
+          caption="Inline syntax reference"
+          fields={[
+            { name: '**bold**', type: 'Strong', required: false, description: 'Strong emphasis. Renders bold.' },
+            { name: '*italic*', type: 'Emphasis', required: false, description: 'Emphasis. Renders italic.' },
+            { name: '`code`', type: 'Code', required: false, description: 'Inline code span. Uses the mono font.' },
+            { name: '[text](url)', type: 'Link', required: false, description: 'Hyperlink. The parser validates URLs are absolute or atto://.' },
+            { name: '~~strike~~', type: 'Strikethrough', required: false, description: 'Strikethrough for redlines and deletions.' },
+          ]}
+        />
+
+        <h3>Example</h3>
+        <AttoDemo filename="inline.atto">
+          <article class="atto-doc" slot="rendered">
+            <p>
+              Client shall pay within <strong>15 days</strong> of invoice.
+              See the <a href="#">master agreement</a> for definitions,
+              including <em>reasonable notice</em>.
+            </p>
+            <p>
+              Amounts invoiced under clause <code>3.1.a</code> are
+              non-refundable once <del>delivered</del> accepted in writing.
+            </p>
+          </article>
+
+          <pre class="code-block" slot="source"><code>Client shall pay within <span class="tok-emph">**15 days**</span> of invoice.
+See the <span class="tok-emph">[master agreement](https://example.com)</span> for definitions, including <span class="tok-emph">*reasonable notice*</span>.
+
+Amounts invoiced under clause <span class="tok-emph">`3.1.a`</span> are non-refundable once <span class="tok-emph">~~delivered~~</span> accepted in writing.</code></pre>
+        </AttoDemo>
       </section>
 
       <hr class="rule" />
@@ -132,9 +211,53 @@ See the <span class="tok-emph">[master agreement](https://example.com)</span> fo
         <h2>Inline LaTeX.</h2>
         <p>
           Wrap an expression in single dollar signs: <code>$…$</code>.
-          Renders in-line with surrounding prose.
+          Renders in-line with surrounding prose at body text size. Dollar
+          signs inside the expression must be escaped as <code>\$</code>.
         </p>
-        <pre class="code-block"><code>The late fee is <span class="tok-math">$L = B \times 0.015$</span> per day.</code></pre>
+
+        <h3>Variables and operators</h3>
+        <AttoDemo filename="math-simple.atto">
+          <article class="atto-doc" slot="rendered">
+            <p>
+              The late fee is
+              <span class="atto-math">L = B × 0.015</span> per day.
+              Present value equals
+              <span class="atto-math">PV = FV / (1 + r)<sup>n</sup></span>.
+            </p>
+          </article>
+
+          <pre class="code-block" slot="source"><code>The late fee is <span class="tok-math">$L = B \times 0.015$</span> per day.
+Present value equals <span class="tok-math">$PV = FV / (1 + r)^n$</span>.</code></pre>
+        </AttoDemo>
+
+        <h3>Greek letters and fractions</h3>
+        <AttoDemo filename="math-greek.atto">
+          <article class="atto-doc" slot="rendered">
+            <p>
+              Interest accrues at rate
+              <span class="atto-math">α = r / n</span>
+              where <span class="atto-math">n</span> is the number of
+              compounding periods and
+              <span class="atto-math">β ≈ 0.05</span> is the service margin.
+            </p>
+          </article>
+
+          <pre class="code-block" slot="source"><code>Interest accrues at rate <span class="tok-math">$\alpha = \frac&#123;r&#125;&#123;n&#125;$</span> where <span class="tok-math">$n$</span> is the number of compounding periods and <span class="tok-math">$\beta \approx 0.05$</span> is the service margin.</code></pre>
+        </AttoDemo>
+
+        <h3>Subscripts and aggregates</h3>
+        <AttoDemo filename="math-sub.atto">
+          <article class="atto-doc" slot="rendered">
+            <p>
+              Total liability is bounded by
+              <span class="atto-math">L<sub>max</sub> = Σ C<sub>i</sub></span>
+              across all invoices
+              <span class="atto-math">i ∈ &#123;1, …, n&#125;</span>.
+            </p>
+          </article>
+
+          <pre class="code-block" slot="source"><code>Total liability is bounded by <span class="tok-math">$L_&#123;max&#125; = \sum C_i$</span> across all invoices <span class="tok-math">$i \in \&#123;1, \ldots, n\&#125;$</span>.</code></pre>
+        </AttoDemo>
       </section>
 
       <hr class="rule" />
@@ -144,12 +267,68 @@ See the <span class="tok-emph">[master agreement](https://example.com)</span> fo
         <p class="eyebrow">06 — Display LaTeX</p>
         <h2>Display LaTeX.</h2>
         <p>
-          Wrap an expression in double dollar signs: <code>$$…$$</code> on its
-          own lines. Renders as a centered display block.
+          Wrap an expression in double dollar signs: <code>$$…$$</code> on
+          their own lines. Renders as a centered display block, isolated
+          from surrounding prose.
         </p>
-        <pre class="code-block"><code><span class="tok-math">$$
+
+        <h3>Compound interest</h3>
+        <AttoDemo filename="display-compound.atto">
+          <article class="atto-doc" slot="rendered">
+            <p>The value after <span class="atto-math">t</span> years of compounding:</p>
+            <span class="atto-math-display">
+              A = P(1 + <sup>r</sup>&frasl;<sub>n</sub>)<sup>nt</sup>
+            </span>
+          </article>
+
+          <pre class="code-block" slot="source"><code>The value after <span class="tok-math">$t$</span> years of compounding:
+
+<span class="tok-math">$$
+A = P\left(1 + \frac&#123;r&#125;&#123;n&#125;\right)^&#123;nt&#125;
+$$</span></code></pre>
+        </AttoDemo>
+
+        <h3>Summation</h3>
+        <AttoDemo filename="display-sum.atto">
+          <article class="atto-doc" slot="rendered">
+            <p>Post-money valuation aggregates pre-money plus all investment tranches:</p>
+            <span class="atto-math-display">
+              V<sub>post</sub> = V<sub>pre</sub> +&nbsp;
+              <span style="font-size: 1.4em; vertical-align: -0.2em;">Σ</span>
+              <sub style="font-size: 0.7em;">i=1</sub>
+              <sup style="font-size: 0.7em;">n</sup>
+              &nbsp;I<sub>i</sub>
+            </span>
+          </article>
+
+          <pre class="code-block" slot="source"><code>Post-money valuation aggregates pre-money plus all investment tranches:
+
+<span class="tok-math">$$
 V_&#123;post&#125; = V_&#123;pre&#125; + \sum_&#123;i=1&#125;^&#123;n&#125; I_i
 $$</span></code></pre>
+        </AttoDemo>
+
+        <h3>Aligned equations</h3>
+        <AttoDemo filename="display-aligned.atto">
+          <article class="atto-doc" slot="rendered">
+            <p>The late-fee calculation, written out:</p>
+            <span class="atto-math-display" style="text-align: left; padding-left: var(--space-8);">
+              L &nbsp;&nbsp;= B × r<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= B × 0.015<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 0.015B&nbsp;&nbsp;(per day)
+            </span>
+          </article>
+
+          <pre class="code-block" slot="source"><code>The late-fee calculation, written out:
+
+<span class="tok-math">$$
+\begin&#123;aligned&#125;
+L &amp;= B \times r \\
+  &amp;= B \times 0.015 \\
+  &amp;= 0.015 B \quad \text&#123;(per day)&#125;
+\end&#123;aligned&#125;
+$$</span></code></pre>
+        </AttoDemo>
       </section>
 
       <hr class="rule" />
@@ -160,70 +339,292 @@ $$</span></code></pre>
         <h2>Directives.</h2>
         <p>
           Directives are typed semantic blocks. They open with
-          <code>::name</code>, close with a bare <code>::</code>, and accept
-          YAML-shaped content between.
+          <code>::name</code> on a line by itself, close with a bare
+          <code>::</code>, and accept YAML-shaped content between. The parser
+          validates directive names against a closed registry — unknown
+          names are rejected at parse time.
         </p>
 
+        {/* ─── ::parties ───────────────────────────────────────── */}
         <h3 id="directive-parties"><code>::parties</code></h3>
         <p>
-          Declares the parties to the document. Each party has a
-          <code>name</code>, a <code>role</code>, and an optional
-          <code>entity</code> type.
+          Declares the parties to the document. Each party is a list entry
+          keyed first by <code>role</code>, then <code>name</code>. Optional
+          <code>entity</code> and <code>jurisdiction</code> attributes
+          describe the legal form.
         </p>
-        <pre class="code-block"><code><span class="tok-directive">::parties</span>
-<span class="tok-key">- name:</span> <span class="tok-string">Baldwinson Corp.</span>
-  <span class="tok-key">role:</span> <span class="tok-string">company</span>
-  <span class="tok-key">entity:</span> <span class="tok-string">delaware_corp</span>
-<span class="tok-key">- name:</span> <span class="tok-string">Atto Ventures</span>
-  <span class="tok-key">role:</span> <span class="tok-string">investor</span>
-<span class="tok-directive">::</span></code></pre>
 
+        <FieldTable
+          caption="::parties entry fields"
+          fields={[
+            { name: 'role', type: 'string', required: true, description: 'Human-readable role label, e.g. Provider, Client, Investor.' },
+            { name: 'name', type: 'string', required: true, description: 'Legal name of the party.' },
+            { name: 'entity', type: 'string', required: false, description: 'Entity type slug, e.g. delaware_corp, llc, natural_person.' },
+            { name: 'jurisdiction', type: 'string', required: false, description: 'Incorporation or residence jurisdiction.' },
+          ]}
+        />
+
+        <AttoDemo filename="parties.atto">
+          <aside class="atto-parties" slot="rendered" aria-label="Parties">
+            <p class="atto-parties-label">Parties</p>
+            <div class="atto-party">
+              <span class="atto-party-role">Provider</span>
+              <span class="atto-party-name">Baldwinson Corp.</span>
+            </div>
+            <div class="atto-party">
+              <span class="atto-party-role">Client</span>
+              <span class="atto-party-name">Example Client LLC</span>
+            </div>
+            <div class="atto-party">
+              <span class="atto-party-role">Guarantor</span>
+              <span class="atto-party-name">Atto Ventures</span>
+            </div>
+          </aside>
+
+          <pre class="code-block" slot="source"><code><span class="tok-directive">::parties</span>
+<span class="tok-key">- role:</span> <span class="tok-string">Provider</span>
+  <span class="tok-key">name:</span> <span class="tok-string">Baldwinson Corp.</span>
+  <span class="tok-key">entity:</span> <span class="tok-string">delaware_corp</span>
+  <span class="tok-key">jurisdiction:</span> <span class="tok-string">delaware</span>
+<span class="tok-key">- role:</span> <span class="tok-string">Client</span>
+  <span class="tok-key">name:</span> <span class="tok-string">Example Client LLC</span>
+  <span class="tok-key">entity:</span> <span class="tok-string">llc</span>
+<span class="tok-key">- role:</span> <span class="tok-string">Guarantor</span>
+  <span class="tok-key">name:</span> <span class="tok-string">Atto Ventures</span>
+<span class="tok-directive">::</span></code></pre>
+        </AttoDemo>
+
+        {/* ─── ::signature-block ───────────────────────────────── */}
         <h3 id="directive-signature"><code>::signature-block</code></h3>
         <p>
-          Declares one or more signatures. Each entry has a
-          <code>party</code>, a <code>signer</code>, and a
-          <code>sign_order</code>. The Baldwinson Protocol layer enforces the
-          order.
+          Declares one or more signatures. Each entry binds a
+          <code>party</code> to a named <code>signer</code> with a
+          <code>sign_order</code>. The Baldwinson Protocol layer enforces
+          the order — signer 2 cannot countersign until signer 1 has.
         </p>
-        <pre class="code-block"><code><span class="tok-directive">::signature-block</span>
+
+        <FieldTable
+          caption="::signature-block entry fields"
+          fields={[
+            { name: 'party', type: 'string', required: true, description: 'Party name — must match a role declared in ::parties.' },
+            { name: 'signer', type: 'string', required: true, description: 'Legal name of the individual countersigning.' },
+            { name: 'sign_order', type: 'integer', required: true, description: 'Queue position for signing, 1-indexed.' },
+            { name: 'title', type: 'string', required: false, description: "Signer's title at the party, e.g. CEO, Managing Partner." },
+            { name: 'email', type: 'string', required: false, description: 'Contact email; used for signing invite dispatch.' },
+          ]}
+        />
+
+        <AttoDemo filename="signature-block.atto">
+          <aside class="atto-sig-block" slot="rendered" aria-label="Signed signature block">
+            <div class="atto-sig-block-head">
+              <p class="atto-sig-label">Signature Block</p>
+              <span class="atto-sig-status" data-status="signed">Signed</span>
+            </div>
+            <div class="atto-sig-preview">
+              <span class="atto-sig-script">Curtis Baldwinson</span>
+            </div>
+            <div class="atto-sig-entry">
+              <p class="atto-sig-party">Baldwinson Corp.</p>
+              <p class="atto-sig-signer">
+                <span>Curtis Baldwinson</span>
+                <span class="atto-sig-title">· CEO</span>
+              </p>
+              <p class="atto-sig-attest">
+                <code>ed25519:AQ…dF</code>
+                <span aria-hidden="true">·</span>
+                <code>sha256:4c1f…a7</code>
+              </p>
+            </div>
+          </aside>
+
+          <pre class="code-block" slot="source"><code><span class="tok-directive">::signature-block</span>
 <span class="tok-key">- party:</span> <span class="tok-string">Baldwinson Corp.</span>
   <span class="tok-key">signer:</span> <span class="tok-string">Curtis Baldwinson</span>
+  <span class="tok-key">title:</span> <span class="tok-string">CEO</span>
+  <span class="tok-key">email:</span> <span class="tok-string">curtis@baldwinson.co</span>
   <span class="tok-key">sign_order:</span> <span class="tok-string">1</span>
-<span class="tok-key">- party:</span> <span class="tok-string">Atto Ventures</span>
+<span class="tok-key">- party:</span> <span class="tok-string">Example Client LLC</span>
   <span class="tok-key">signer:</span> <span class="tok-string">Jane Hart</span>
+  <span class="tok-key">title:</span> <span class="tok-string">Managing Partner</span>
+  <span class="tok-key">email:</span> <span class="tok-string">jane@example.com</span>
   <span class="tok-key">sign_order:</span> <span class="tok-string">2</span>
 <span class="tok-directive">::</span></code></pre>
+        </AttoDemo>
 
+        {/* ─── ::attachment ────────────────────────────────────── */}
         <h3 id="directive-attachment"><code>::attachment</code></h3>
         <p>
-          References an external file by hash. The document treats the
-          attachment as part of its canonical content; a freeze event verifies
-          every hash.
+          References an external file by content hash. The document treats
+          the attachment as part of its canonical content; the freeze event
+          verifies every hash before emitting <code>doc.freeze</code>.
         </p>
-        <pre class="code-block"><code><span class="tok-directive">::attachment</span>
+
+        <FieldTable
+          caption="::attachment fields"
+          fields={[
+            { name: 'label', type: 'string', required: true, description: 'Human-readable label, e.g. Schedule A, Exhibit 1.' },
+            { name: 'uri', type: 'uri', required: true, description: 'Location of the file. Accepts atto://, https://, or ipfs://.' },
+            { name: 'sha256', type: 'hex', required: true, description: '64-character SHA-256 digest of the file contents.' },
+            { name: 'media_type', type: 'string', required: false, description: 'IANA media type, e.g. application/pdf.' },
+            { name: 'bytes', type: 'integer', required: false, description: 'File size in bytes. Used for UI display and integrity checks.' },
+          ]}
+        />
+
+        <AttoDemo filename="attachment.atto">
+          <aside class="atto-attachment" slot="rendered" aria-label="Attachment">
+            <span class="atto-attachment-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            </span>
+            <div class="atto-attachment-body">
+              <p class="atto-attachment-label">Schedule A</p>
+              <p class="atto-attachment-meta">
+                <code>atto://attach/schedule-a.pdf</code>
+                <span>sha256:4c1f…a7</span>
+                <span>·</span>
+                <span>PDF · 128 KB</span>
+              </p>
+            </div>
+            <a class="atto-attachment-action" href="#">Open ↗</a>
+          </aside>
+
+          <pre class="code-block" slot="source"><code><span class="tok-directive">::attachment</span>
 <span class="tok-key">label:</span> <span class="tok-string">Schedule A</span>
 <span class="tok-key">uri:</span> <span class="tok-string">atto://attach/schedule-a.pdf</span>
 <span class="tok-key">sha256:</span> <span class="tok-string">4c1f...a7</span>
+<span class="tok-key">media_type:</span> <span class="tok-string">application/pdf</span>
+<span class="tok-key">bytes:</span> <span class="tok-string">131072</span>
 <span class="tok-directive">::</span></code></pre>
+        </AttoDemo>
 
+        {/* ─── ::callout ───────────────────────────────────────── */}
         <h3 id="directive-callout"><code>::callout</code></h3>
         <p>
-          A typed admonition. Kinds: <code>note</code>, <code>warning</code>,
-          <code>info</code>. The editor renders each kind with a consistent
-          visual treatment.
+          A typed admonition. The <code>tone</code> attribute selects the
+          visual and semantic treatment; an optional <code>title</code>
+          gives the callout a one-line header. The body is parsed as
+          Markdown.
         </p>
-        <pre class="code-block"><code><span class="tok-directive">::callout</span> <span class="tok-key">kind:</span> <span class="tok-string">warning</span>
-This clause applies only on quarterly distributions.
-<span class="tok-directive">::</span></code></pre>
 
+        <FieldTable
+          caption="::callout fields"
+          fields={[
+            { name: 'tone', type: "'note' | 'info' | 'warning' | 'danger'", required: true, description: 'Visual treatment and semantic severity.' },
+            { name: 'title', type: 'string', required: false, description: 'One-line heading shown next to the tone label.' },
+          ]}
+        />
+
+        <h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-5) var(--space-2);">All tones</h4>
+        <AttoDemo filename="callout-tones.atto">
+          <div slot="rendered" style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <aside class="atto-callout" aria-label="Note callout">
+              <div class="atto-callout-head">
+                <span class="atto-callout-tone">Note</span>
+                <span class="atto-callout-title">Definitions</span>
+              </div>
+              <p>Capitalized terms take the meanings given in §1.</p>
+            </aside>
+
+            <aside class="atto-callout" aria-label="Info callout">
+              <div class="atto-callout-head">
+                <span class="atto-callout-tone">Info</span>
+                <span class="atto-callout-title">Reference</span>
+              </div>
+              <p>See the master agreement for fallback provisions.</p>
+            </aside>
+
+            <aside class="atto-callout" data-tone="warning" aria-label="Warning callout">
+              <div class="atto-callout-head">
+                <span class="atto-callout-tone">Warning</span>
+                <span class="atto-callout-title">Review Required</span>
+              </div>
+              <p>This clause applies only on quarterly distributions.</p>
+            </aside>
+
+            <aside class="atto-callout" data-tone="danger" aria-label="Danger callout">
+              <div class="atto-callout-head">
+                <span class="atto-callout-tone">Danger</span>
+                <span class="atto-callout-title">Irrevocable</span>
+              </div>
+              <p>Once executed, this waiver cannot be revoked without both parties' written consent.</p>
+            </aside>
+          </div>
+
+          <pre class="code-block" slot="source"><code><span class="tok-directive">::callout</span>
+<span class="tok-key">tone:</span> <span class="tok-string">note</span>
+<span class="tok-key">title:</span> <span class="tok-string">Definitions</span>
+Capitalized terms take the meanings given in §1.
+<span class="tok-directive">::</span>
+
+<span class="tok-directive">::callout</span>
+<span class="tok-key">tone:</span> <span class="tok-string">info</span>
+<span class="tok-key">title:</span> <span class="tok-string">Reference</span>
+See the master agreement for fallback provisions.
+<span class="tok-directive">::</span>
+
+<span class="tok-directive">::callout</span>
+<span class="tok-key">tone:</span> <span class="tok-string">warning</span>
+<span class="tok-key">title:</span> <span class="tok-string">Review Required</span>
+This clause applies only on quarterly distributions.
+<span class="tok-directive">::</span>
+
+<span class="tok-directive">::callout</span>
+<span class="tok-key">tone:</span> <span class="tok-string">danger</span>
+<span class="tok-key">title:</span> <span class="tok-string">Irrevocable</span>
+Once executed, this waiver cannot be revoked without both parties&rsquo; written consent.
+<span class="tok-directive">::</span></code></pre>
+        </AttoDemo>
+
+        {/* ─── ::review-anchor ─────────────────────────────────── */}
         <h3 id="directive-review"><code>::review-anchor</code></h3>
         <p>
-          Anchors a review thread to a specific AST node. Comments attach to
-          the anchor, not to line numbers — edits do not orphan threads.
+          Anchors a review thread to a specific AST node. Comments attach
+          to the anchor by <code>id</code>, not to line numbers — edits
+          around the anchor do not orphan the thread. The body is the
+          content under review.
         </p>
-        <pre class="code-block"><code><span class="tok-directive">::review-anchor</span> <span class="tok-key">id:</span> <span class="tok-string">late-fee-review</span>
-The late fee calculation pending counsel approval.
+
+        <FieldTable
+          caption="::review-anchor fields"
+          fields={[
+            { name: 'id', type: 'slug', required: true, description: 'Stable identifier for the review thread. Must be unique per document.' },
+            { name: 'status', type: "'open' | 'pending' | 'resolved'", required: false, description: "Review state. Defaults to 'open'." },
+            { name: 'assignee', type: 'string', required: false, description: 'Email of the reviewer responsible for resolving the thread.' },
+            { name: 'tags', type: 'string[]', required: false, description: 'Free-form tags for filtering, e.g. [legal, pricing].' },
+          ]}
+        />
+
+        <AttoDemo filename="review-anchor.atto">
+          <aside class="atto-review" slot="rendered" data-status="pending" aria-label="Review anchor">
+            <div class="atto-review-head">
+              <span class="atto-review-status">Review pending</span>
+              <span class="atto-review-meta">late-fee-review · counsel@example.com</span>
+            </div>
+            <div class="atto-review-body">
+              <p>
+                The late fee calculation in §3.2 is pending counsel approval.
+                Current formula: <span class="atto-math">L = B × 0.015</span>
+                per day.
+              </p>
+              <p class="atto-review-footer">
+                2 comments · opened 3 days ago
+              </p>
+            </div>
+          </aside>
+
+          <pre class="code-block" slot="source"><code><span class="tok-directive">::review-anchor</span>
+<span class="tok-key">id:</span> <span class="tok-string">late-fee-review</span>
+<span class="tok-key">status:</span> <span class="tok-string">pending</span>
+<span class="tok-key">assignee:</span> <span class="tok-string">counsel@example.com</span>
+<span class="tok-key">tags:</span> <span class="tok-string">[legal, pricing]</span>
+The late fee calculation in §3.2 is pending counsel approval.
+Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
 <span class="tok-directive">::</span></code></pre>
+        </AttoDemo>
       </section>
 
       <hr class="rule" />

@@ -386,6 +386,43 @@ a, button, [role="button"] {
   margin-bottom: var(--space-3);
 }
 
+.atto-doc h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--color-text);
+  margin-block: var(--space-4) var(--space-2);
+}
+
+.atto-doc a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.atto-doc a:hover {
+  color: var(--color-primary-hover);
+}
+
+.atto-doc code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 0.05em 0.3em;
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.atto-doc del,
+.atto-doc s {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.atto-doc em {
+  font-style: italic;
+}
+
 .atto-doc p {
   font-size: var(--text-sm);
   line-height: 1.65;
@@ -641,4 +678,226 @@ a, button, [role="button"] {
   line-height: 1.6;
   margin: 0;
   color: var(--color-text);
+}
+
+/* Attachment block */
+.atto-attachment {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-surface);
+}
+
+.atto-attachment-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--color-primary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.atto-attachment-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.atto-attachment-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.atto-attachment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.atto-attachment-meta code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  padding: 0.05em 0.3em;
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.atto-attachment-action {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.atto-attachment-action:hover {
+  color: var(--color-primary-hover);
+}
+
+/* Review anchor */
+.atto-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid #B5651D;
+  background: color-mix(in oklch, #B5651D 5%, var(--color-surface));
+}
+
+.atto-review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.atto-review-status {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #B5651D;
+}
+
+.atto-review-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.atto-review-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.atto-review-body p {
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.atto-review-footer {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+/* Field reference tables for docs */
+.atto-fields {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(80px, auto) auto minmax(120px, 1fr);
+  gap: 0;
+  margin-block: var(--space-4);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+}
+
+.atto-fields-head,
+.atto-fields-row {
+  display: contents;
+}
+
+.atto-fields-head > * {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.atto-fields-row > * {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.atto-fields-row:first-of-type > * {
+  border-top: none;
+}
+
+.atto-fields-row code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  padding: 0.05em 0.3em;
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.atto-fields-type {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  color: var(--color-primary);
+}
+
+.atto-fields-req {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.atto-fields-req[data-required="true"] {
+  color: var(--color-primary);
+}
+
+.atto-fields-req[data-required="false"] {
+  color: var(--color-text-muted);
+}
+
+.atto-fields-desc {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 720px) {
+  .atto-fields {
+    grid-template-columns: 1fr;
+  }
+  .atto-fields-head {
+    display: none;
+  }
+  .atto-fields-row > * {
+    border-top: none;
+    padding-block: var(--space-1);
+  }
+  .atto-fields-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+  .atto-fields-row:first-of-type {
+    border-top: none;
+  }
 }
