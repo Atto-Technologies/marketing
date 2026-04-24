@@ -268,10 +268,10 @@ $$</span></code></pre>
 
   {/* ─── Feature 5 — Font Provenance (AFRP) ───────────────────
        Fonts are part of the document's cryptographic signature,
-       not just its presentation. The two-tier namespace
-       (permissionless URIs + governed @-sigils) and signed
-       manifest flow make documents renderable identically at
-       any future time. */}
+       not just its presentation. Two tiers (governed shorthand +
+       permissionless URI), three forms (@/, @scope/, host/), and
+       a SHA-256 subresource-integrity pin per binary make documents
+       renderable identically at any future time. */}
   <section class="feature wrap section">
     <div class="feature-copy">
       <p class="eyebrow">05 — Provenance</p>
@@ -284,8 +284,8 @@ $$</span></code></pre>
       </p>
       <p>
         The Atto Font Registry Protocol (AFRP) gives every reference a
-        portable identifier, a cryptographically-signed registry manifest,
-        and a SHA-384 integrity hash per binary. At signing, every
+        portable identifier, a machine-readable registry manifest, and a
+        SHA-256 subresource-integrity hash per binary. At signing, every
         reference is pinned. Any drift — a re-released version, a mutated
         binary, a missing asset — fails resolution.
       </p>
@@ -294,57 +294,66 @@ $$</span></code></pre>
       <AttoDemo filename="font-refs.atto" label="Identifier grammar">
         <article class="atto-doc" slot="rendered">
           <section class="atto-doc-section">
-            <h3>Three reference forms</h3>
+            <h3>Two tiers, three forms</h3>
             <p>
-              Canonical, bare and portable:
+              Canonical shorthand, bare and portable:
               <span class="atto-font-ref" data-tier="canonical">@/Lineal@^2</span>
             </p>
             <p>
-              Governed scope, identity-verified registry:
+              Registered scope, identity-verified registry:
               <span class="atto-font-ref" data-tier="scoped">@velvetyne/Bagnard@2.1.0</span>
             </p>
             <p>
-              Permissionless, any compliant host:
+              Permissionless URI, any compliant host:
               <span class="atto-font-ref" data-tier="permissionless">fonts.example.com/Grotesk@~1.4</span>
             </p>
           </section>
         </article>
 
-        <pre class="code-block" slot="source"><code><span class="tok-comment">---</span>
-<span class="tok-key">font_families:</span>
-  <span class="tok-key">- role:</span> <span class="tok-string">body</span>
-    <span class="tok-key">ref:</span>  <span class="tok-string">@/Lineal@^2</span>
-  <span class="tok-key">- role:</span> <span class="tok-string">display</span>
-    <span class="tok-key">ref:</span>  <span class="tok-string">@velvetyne/Bagnard@2.1.0</span>
-  <span class="tok-key">- role:</span> <span class="tok-string">fallback</span>
-    <span class="tok-key">ref:</span>  <span class="tok-string">fonts.example.com/Grotesk@~1.4</span>
+        <pre class="code-block" slot="source"><code><span class="tok-comment">---atto-meta</span>
+<span class="tok-key">protocol_version:</span> <span class="tok-string">"1.0"</span>
+<span class="tok-key">fonts:</span>
+  <span class="tok-key">- id:</span>   <span class="tok-string">body</span>
+    <span class="tok-key">ref:</span>  <span class="tok-string">"@/Lineal@^2"</span>
+  <span class="tok-key">- id:</span>   <span class="tok-string">display</span>
+    <span class="tok-key">ref:</span>  <span class="tok-string">"@velvetyne/Bagnard@2.1.0"</span>
+  <span class="tok-key">- id:</span>   <span class="tok-string">custom</span>
+    <span class="tok-key">ref:</span>  <span class="tok-string">"fonts.example.com/Grotesk@~1.4"</span>
 <span class="tok-comment">---</span></code></pre>
       </AttoDemo>
 
-      <AttoDemo filename="afrp-manifest" label="Signed manifest">
+      <AttoDemo filename="afrp-manifest" label="Registry manifest">
         <figure class="feature-demo-diagram" slot="rendered">
-          <figcaption class="code-caption">.well-known/afrp-manifest.json</figcaption>
-          <pre class="code-block"><code><span class="tok-key">"fonts"</span>: &#123;
-  <span class="tok-key">"Lineal"</span>: &#123;
-    <span class="tok-key">"versions"</span>: [<span class="tok-string">"2.0.0"</span>, <span class="tok-string">"2.1.0"</span>, <span class="tok-string">"2.1.1"</span>],
-    <span class="tok-key">"assets"</span>: &#123;
-      <span class="tok-key">"2.1.1"</span>: &#123;
-        <span class="tok-key">"woff2"</span>: <span class="tok-string">"https://cdn.../Lineal-2.1.1.woff2"</span>,
-        <span class="tok-key">"integrity"</span>: <span class="tok-string">"sha384-oqVu…"</span>
-      &#125;
-    &#125;
-  &#125;
+          <figcaption class="code-caption">.well-known/atto-font-registry.json</figcaption>
+          <pre class="code-block"><code><span class="tok-key">"registry"</span>: &#123;
+  <span class="tok-key">"protocol_version"</span>: <span class="tok-string">"1.0"</span>,
+  <span class="tok-key">"shorthand"</span>:        <span class="tok-string">"velvetyne"</span>
 &#125;,
-<span class="tok-key">"signature"</span>: <span class="tok-string">"ed25519:MEQCIB…"</span></code></pre>
+<span class="tok-key">"fonts"</span>: [&#123;
+  <span class="tok-key">"id"</span>: <span class="tok-string">"Bagnard"</span>,
+  <span class="tok-key">"versions"</span>: [&#123;
+    <span class="tok-key">"version"</span>: <span class="tok-string">"2.1.0"</span>,
+    <span class="tok-key">"styles"</span>: [&#123;
+      <span class="tok-key">"weight"</span>: <span class="tok-string">400</span>,
+      <span class="tok-key">"formats"</span>: [&#123;
+        <span class="tok-key">"type"</span>:      <span class="tok-string">"woff2"</span>,
+        <span class="tok-key">"url"</span>:       <span class="tok-string">"…/Bagnard-Regular.woff2"</span>,
+        <span class="tok-key">"integrity"</span>: <span class="tok-string">"sha256-abc…3456A="</span>
+      &#125;]
+    &#125;]
+  &#125;]
+&#125;]</code></pre>
         </figure>
 
-        <pre class="code-block" slot="source"><code><span class="tok-comment"># Resolver contract (non-negotiable)</span>
-<span class="tok-key">1.</span> fetch manifest at <span class="tok-string">/.well-known/afrp-manifest.json</span>
-<span class="tok-key">2.</span> verify <span class="tok-string">ed25519</span> signature on JCS-canonicalized body
-<span class="tok-key">3.</span> select version matching specifier
-<span class="tok-key">4.</span> download binary
-<span class="tok-key">5.</span> verify <span class="tok-string">sha384</span> hash against manifest integrity
-<span class="tok-key">6.</span> refuse any binary whose hash does not match</code></pre>
+        <pre class="code-block" slot="source"><code><span class="tok-comment"># Resolver contract (AFRP §5.2 — non-negotiable)</span>
+<span class="tok-key">1.</span> parse reference per ABNF; translate aliases
+<span class="tok-key">2.</span> fetch <span class="tok-string">/.well-known/atto-font-registry.json</span>
+<span class="tok-key">3.</span> validate schema + protocol version + TLS chain
+<span class="tok-key">4.</span> select version, style, format (<span class="tok-string">woff2</span> preferred)
+<span class="tok-key">5.</span> download binary; compute <span class="tok-string">sha256</span> of decompressed body
+<span class="tok-key">6.</span> constant-time compare against manifest <span class="tok-string">integrity</span>
+<span class="tok-key">7.</span> EXECUTED: also compare against <span class="tok-string">full_integrity</span> in pin
+<span class="tok-key">8.</span> refuse any binary whose hash does not match</code></pre>
       </AttoDemo>
     </div>
   </section>

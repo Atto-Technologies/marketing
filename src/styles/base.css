@@ -1047,6 +1047,75 @@ a, button, [role="button"] {
 }
 
 /* ============================================================
+   Spec Table — used in docs for comparison tables (fee tiers,
+   commerce models, error codes, lifecycle modes). FieldTable
+   handles field-schema tables; this handles free-form tables
+   with arbitrary columns and no required/optional column.
+   ============================================================ */
+
+.spec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  margin: var(--space-4) 0 var(--space-6);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.spec-table thead th {
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.spec-table tbody td {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  vertical-align: top;
+  color: var(--color-text);
+}
+
+.spec-table tbody tr:first-child td {
+  border-top: none;
+}
+
+.spec-table tbody td:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+.spec-table tbody td code {
+  background: var(--color-code-bg);
+  padding: 0.08em 0.32em;
+  border: 1px solid var(--color-border);
+  font-size: 0.92em;
+}
+
+.spec-table [data-level="error"] {
+  color: #B00020;
+  font-weight: 600;
+}
+
+.spec-table [data-level="warning"] {
+  color: #B5651D;
+  font-weight: 600;
+}
+
+.spec-table [data-level="info"] {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+/* ============================================================
    Font Reference (AFRP identifier) — inline tag used when the
    docs and product pages quote a font reference literal like
    `@/Lineal@2.1.0`. Visually distinguishes the sigil from
