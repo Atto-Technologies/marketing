@@ -1,25 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
+import { X } from '@lucide/astro';
 import AttoDemo from '../components/AttoDemo.astro';
+import LayerDemo from '../components/LayerDemo.astro';
 import SignatureWidget from '../components/SignatureWidget.astro';
-
-const layers = [
-  {
-    num: '01',
-    label: 'Markdown for prose',
-    body: "Headings, paragraphs, lists, links. Everything a writer needs, nothing they don't.",
-  },
-  {
-    num: '02',
-    label: 'LaTeX for notation',
-    body: 'Inline and display math that renders correctly — for financial formulas, legal schedules, or scientific content.',
-  },
-  {
-    num: '03',
-    label: 'Atto directives for structure',
-    body: 'Parties, signatures, attachments, callouts — typed semantic blocks that the document model understands.',
-  },
-];
 
 const lifecycle = [
   { name: 'Draft', desc: 'Authors compose and revise.' },
@@ -155,35 +139,228 @@ The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
         file you received is the file that was executed.
       </p>
       <p>
-        LaTeX solved notation at the cost of everything else — no collaboration,
-        no review workflow, no interchange format. Teams that need precision
-        end up maintaining two systems: one for writing, one for signing, and
-        a third for reconciling the two.
+        LaTeX solved notation and nothing else. No collaboration, no review
+        workflow, no path from draft to executed document. Teams that need
+        mathematical precision end up maintaining two systems — and a third
+        to reconcile them.
       </p>
     </div>
   </section>
 
-  {/* ─── Section 3 — Three Layers ─────────────────────────────── */}
+  {/* ─── Section 3 — The Hybrid Explainer ─────────────────────────
+       Four beats: Markdown → LaTeX → the reconciliation pain → Atto
+       as the hybrid. Reader sees each building block in source and
+       preview before being shown what happens when they combine. */}
   <section class="section-surface" aria-labelledby="layers-heading">
-    <div class="wrap section">
+    <div class="wrap section layers-intro">
       <p class="eyebrow">Architecture</p>
       <h2 id="layers-heading" class="section-heading">
-        Three layers. One document.
+        What Atto is, in three layers.
       </h2>
       <p class="section-lede">
-        Markdown for humans. LaTeX for notation. Atto for structure. Each layer
-        is independent; the parser walks them in order and produces a single
-        deterministic Abstract Syntax Tree (AST).
+        Atto is a hybrid: Markdown for prose, LaTeX for notation, and a typed
+        directive layer for structure. To see why the hybrid matters, look at
+        what each piece does on its own.
       </p>
     </div>
-    <div class="three-layers">
-      {layers.map(({ num, label, body }) => (
-        <article class="layer-col">
-          <div class="layer-num">{num}</div>
-          <div class="layer-label">{label}</div>
-          <p>{body}</p>
+
+    {/* ─── Beat A — Markdown ───────────────────────────────────── */}
+    <div class="layer-beat wrap section">
+      <div class="layer-beat-head">
+        <p class="beat-num">01</p>
+        <h3>Markdown: prose, solved.</h3>
+      </div>
+      <LayerDemo label="Markdown" filename="letter.md">
+        <pre slot="source"><code><span class="tok-heading"># Services Agreement</span>
+
+Between <span class="tok-emph">**Atto Technologies Inc.**</span> ("Vendor") and
+<span class="tok-emph">**Example Corp.**</span> ("Customer"),
+effective <span class="tok-emph">**April 23, 2026**</span>.
+
+<span class="tok-heading">## Scope</span>
+
+- Design consultation
+- Proof of concept delivery
+- Two rounds of revision
+
+Payment terms are <span class="tok-emph">*net thirty*</span>.</code></pre>
+
+        <article slot="preview" class="atto-doc" style="border: none; padding: 0;">
+          <h2 class="atto-doc-title">Services Agreement</h2>
+          <p>
+            Between <strong>Atto Technologies Inc.</strong> ("Vendor") and
+            <strong>Example Corp.</strong> ("Customer"), effective
+            <strong>April 23, 2026</strong>.
+          </p>
+          <h3>Scope</h3>
+          <ul>
+            <li>Design consultation</li>
+            <li>Proof of concept delivery</li>
+            <li>Two rounds of revision</li>
+          </ul>
+          <p>Payment terms are <em>net thirty</em>.</p>
         </article>
-      ))}
+      </LayerDemo>
+      <p class="layer-caption">
+        Markdown carries prose. It&rsquo;s portable, diffable, and human-readable
+        in any text editor. But it has no concept of notation, and no concept
+        of meaning — a heading is just a heading, a signature line is just a
+        bold word.
+      </p>
+    </div>
+
+    {/* ─── Beat B — LaTeX ──────────────────────────────────────── */}
+    <div class="layer-beat wrap section">
+      <div class="layer-beat-head">
+        <p class="beat-num">02</p>
+        <h3>LaTeX: notation, solved.</h3>
+      </div>
+      <LayerDemo label="LaTeX" filename="valuation.tex">
+        <pre slot="source"><code>The present value of future cash flows is:
+
+<span class="tok-directive">\[</span>
+  <span class="tok-math">PV = \sum_&#123;t=1&#125;^&#123;T&#125; \frac&#123;C_t&#125;&#123;(1 + r)^t&#125;</span>
+<span class="tok-directive">\]</span>
+
+where <span class="tok-math">\(C_t\)</span> is the cash flow in period
+<span class="tok-math">\(t\)</span> and <span class="tok-math">\(r\)</span>
+is the discount rate.</code></pre>
+
+        <article slot="preview" class="atto-doc" style="border: none; padding: 0;">
+          <p>The present value of future cash flows is:</p>
+          <span class="atto-math-display">
+            <span class="atto-math">PV</span> =
+            <span class="atto-sum">
+              <span class="lim">T</span>
+              <span class="sym">Σ</span>
+              <span class="lim"><span class="atto-math">t</span>=1</span>
+            </span>
+            <span class="atto-frac">
+              <span class="num"><span class="atto-math">C<sub>t</sub></span></span>
+              <span class="den">(1 + <span class="atto-math">r</span>)<sup><span class="atto-math">t</span></sup></span>
+            </span>
+          </span>
+          <p>
+            where <span class="atto-math">C<sub>t</sub></span> is the cash flow
+            in period <span class="atto-math">t</span> and
+            <span class="atto-math">r</span> is the discount rate.
+          </p>
+        </article>
+      </LayerDemo>
+      <p class="layer-caption">
+        LaTeX renders notation the way a typesetter would. But the ecosystem
+        was built for solo academic authors. No review threads, no signatures,
+        no handoff to collaborators who don&rsquo;t also write LaTeX.
+      </p>
+    </div>
+
+    {/* ─── Beat C — The reconciliation pain ────────────────────── */}
+    <div class="layer-pain wrap section">
+      <div class="layer-beat-head">
+        <p class="beat-num">03</p>
+        <h3>Two systems. A third to reconcile them.</h3>
+      </div>
+
+      <div class="pain-diagram" role="img" aria-label="Three disconnected document workflows">
+        <div class="pain-app pain-app-write">
+          <p class="pain-app-role">Draft</p>
+          <p class="pain-app-name">Microsoft Word</p>
+          <p class="pain-app-file"><code>term-sheet.docx</code></p>
+        </div>
+        <div class="pain-break" aria-hidden="true">
+          <span class="pain-break-mark">
+            <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
+          </span>
+          <span class="pain-break-label">manual paste</span>
+        </div>
+        <div class="pain-app pain-app-math">
+          <p class="pain-app-role">Notation</p>
+          <p class="pain-app-name">LaTeX · Overleaf</p>
+          <p class="pain-app-file"><code>valuation.tex</code></p>
+        </div>
+        <div class="pain-break" aria-hidden="true">
+          <span class="pain-break-mark">
+            <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
+          </span>
+          <span class="pain-break-label">export to PDF</span>
+        </div>
+        <div class="pain-app pain-app-sign">
+          <p class="pain-app-role">Signature</p>
+          <p class="pain-app-name">DocuSign</p>
+          <p class="pain-app-file"><code>executed.pdf</code></p>
+        </div>
+      </div>
+
+      <p class="layer-caption pain-caption">
+        Three workflows. No canonical document. The reconciliation is someone&rsquo;s
+        job — and the executed PDF has no semantic relationship to the draft
+        that was reviewed.
+      </p>
+    </div>
+
+    {/* ─── Beat D — The hybrid ─────────────────────────────────── */}
+    <div class="layer-beat wrap section layer-beat-hybrid">
+      <div class="layer-beat-head">
+        <p class="beat-num">04</p>
+        <h3>Atto: one source, all three layers.</h3>
+      </div>
+      <LayerDemo label="Atto" filename="services-agreement.atto">
+        <pre slot="source"><code><span class="tok-heading"># Services Agreement</span>
+
+Between <span class="tok-emph">**Atto Technologies Inc.**</span> ("Vendor") and
+<span class="tok-emph">**Example Corp.**</span>, effective
+<span class="tok-emph">**April 23, 2026**</span>.
+
+<span class="tok-heading">## Compensation</span>
+
+Vendor will be paid in quarterly installments, with net present value:
+
+<span class="tok-math">$$
+PV = \sum_&#123;t=1&#125;^&#123;T&#125; \frac&#123;C_t&#125;&#123;(1 + r)^t&#125;
+$$</span>
+
+<span class="tok-directive">::signature-block</span>
+<span class="tok-key">  party:</span> <span class="tok-string">Atto Technologies Inc.</span>
+<span class="tok-key">  signer:</span> <span class="tok-string">Curtis Baldwinson</span>
+<span class="tok-key">  title:</span> <span class="tok-string">CEO</span>
+<span class="tok-key">  sign_order:</span> <span class="tok-string">1</span>
+<span class="tok-directive">::</span></code></pre>
+
+        <article slot="preview" class="atto-doc" style="border: none; padding: 0;">
+          <h2 class="atto-doc-title">Services Agreement</h2>
+          <p>
+            Between <strong>Atto Technologies Inc.</strong> ("Vendor") and
+            <strong>Example Corp.</strong>, effective
+            <strong>April 23, 2026</strong>.
+          </p>
+          <h3>Compensation</h3>
+          <p>Vendor will be paid in quarterly installments, with net present value:</p>
+          <span class="atto-math-display">
+            <span class="atto-math">PV</span> =
+            <span class="atto-sum">
+              <span class="lim">T</span>
+              <span class="sym">Σ</span>
+              <span class="lim"><span class="atto-math">t</span>=1</span>
+            </span>
+            <span class="atto-frac">
+              <span class="num"><span class="atto-math">C<sub>t</sub></span></span>
+              <span class="den">(1 + <span class="atto-math">r</span>)<sup><span class="atto-math">t</span></sup></span>
+            </span>
+          </span>
+          <SignatureWidget
+            party="Atto Technologies Inc."
+            signer="Curtis Baldwinson"
+            title="CEO"
+            order={1}
+            totalSigners={2}
+          />
+        </article>
+      </LayerDemo>
+      <p class="layer-caption">
+        One source file. Markdown prose, LaTeX notation, and typed directives —
+        all parsed to a single deterministic tree. Diffable in git, reviewable
+        line-by-line, executable end-to-end.
+      </p>
     </div>
   </section>
 
@@ -341,63 +518,174 @@ Baldwinson Protocol Layer</code></pre>
     color: var(--color-text);
   }
 
-  /* ─── Three Layers ──────────────────────────────────────────── */
-  .three-layers {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-    border-top: 1px solid var(--color-border);
-    border-bottom: 1px solid var(--color-border);
-    max-width: var(--content-wide);
-    margin: var(--space-12) auto 0;
+  /* ─── Hybrid Explainer (four beats) ─────────────────────────
+     Each .layer-beat is a self-contained story unit: header with
+     beat number + inline h3, the LayerDemo component, and a caption
+     paragraph below. Beats are padded vertically so the transitions
+     feel paced, not crammed. */
+  .layers-intro {
+    padding-bottom: var(--space-8);
   }
 
-  .layer-col {
-    padding: var(--space-12) var(--space-8);
-    border-right: 1px solid var(--color-border);
+  .layer-beat,
+  .layer-pain {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding-block: var(--space-12);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .layer-beat-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .beat-num {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--color-text-faint);
+    margin: 0;
+  }
+
+  .layer-beat-head h3 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-2xl);
+    margin: 0;
+  }
+
+  .layer-caption {
+    font-size: var(--text-base);
+    color: var(--color-text-muted);
+    max-width: 64ch;
+  }
+
+  /* The hybrid beat gets a subtle left-edge accent so it reads as the
+     resolution of the preceding pain beat, not just another example. */
+  .layer-beat-hybrid {
+    position: relative;
+  }
+
+  .layer-beat-hybrid::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--space-8);
+    left: calc(var(--space-4) * -1);
+    width: 2px;
+    background: var(--color-primary);
+  }
+
+  @media (max-width: 768px) {
+    .layer-beat-hybrid::before {
+      display: none;
+    }
+  }
+
+  /* ─── Pain diagram (Beat C) ──────────────────────────────────
+     Three "app" cards with broken-link indicators between them,
+     visualizing the three-tool draft → typeset → sign workflow. */
+  .pain-diagram {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    border: 1px solid var(--color-border);
     background: var(--color-bg);
   }
 
-  .layer-col:last-child {
-    border-right: none;
+  .pain-app {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-5) var(--space-5);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    min-width: 0;
   }
 
-  .layer-num {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: var(--text-3xl);
-    color: var(--color-text-faint);
-    line-height: 1;
-    margin-bottom: var(--space-6);
-  }
-
-  .layer-label {
+  .pain-app-role {
     font-family: var(--font-body);
     font-size: var(--text-xs);
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-primary);
-    margin-bottom: var(--space-4);
+    margin: 0;
   }
 
-  .layer-col p {
+  .pain-app-name {
+    font-family: var(--font-display);
+    font-weight: 700;
     font-size: var(--text-base);
     color: var(--color-text);
+    margin: 0;
   }
 
-  @media (max-width: 768px) {
-    .three-layers {
+  .pain-app-file {
+    margin: 0;
+  }
+
+  .pain-app-file code {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    padding: 0.1em 0.35em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+  }
+
+  .pain-break {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-width: 64px;
+  }
+
+  /* Square wrapper around the Lucide X icon. The icon itself inherits color
+     via `currentColor`, so setting `color` here drives both stroke and
+     border tone together. */
+  .pain-break-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    color: #B5651D;
+    background: var(--color-bg);
+    border: 1px solid #B5651D;
+  }
+
+  .pain-break-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .pain-caption {
+    max-width: 64ch;
+  }
+
+  @media (max-width: 900px) {
+    .pain-diagram {
       grid-template-columns: 1fr;
     }
 
-    .layer-col {
-      border-right: none;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .layer-col:last-child {
-      border-bottom: none;
+    .pain-break {
+      flex-direction: row;
+      gap: var(--space-3);
+      min-width: 0;
+      padding-block: var(--space-2);
     }
   }
 

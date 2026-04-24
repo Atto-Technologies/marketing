@@ -1,0 +1,135 @@
+---
+// LayerDemo — a smaller sibling of AttoDemo used in the "Three Layers"
+// explainer. Shows source and rendered preview side-by-side with no tab
+// switching: both panes are always visible. Used to teach the reader what
+// Markdown, LaTeX, and Atto source/preview pairs look like.
+export interface Props {
+  /** Label shown in the small upper-left tag (e.g. "Markdown"). */
+  label: string;
+  /** Filename shown on the right of the head bar (e.g. "letter.md"). */
+  filename: string;
+  /** Optional small text rendered under the filename. */
+  note?: string;
+}
+
+const { label, filename, note } = Astro.props;
+---
+<figure class="layer-demo" aria-label={`${label} source and preview`}>
+  <header class="layer-demo-head">
+    <span class="layer-demo-label">{label}</span>
+    <span class="layer-demo-filename">{filename}</span>
+  </header>
+
+  <div class="layer-demo-body">
+    <div class="layer-demo-pane layer-demo-source">
+      <span class="layer-demo-pane-label">Source</span>
+      <slot name="source" />
+    </div>
+    <div class="layer-demo-pane layer-demo-preview">
+      <span class="layer-demo-pane-label">Preview</span>
+      <slot name="preview" />
+    </div>
+  </div>
+
+  {note && <figcaption class="layer-demo-note">{note}</figcaption>}
+</figure>
+
+<style>
+  .layer-demo {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .layer-demo-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+    min-height: 40px;
+  }
+
+  .layer-demo-label {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .layer-demo-filename {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .layer-demo-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 0;
+  }
+
+  .layer-demo-pane {
+    position: relative;
+    padding: var(--space-5) var(--space-5) var(--space-4);
+    min-width: 0;
+    overflow: auto;
+  }
+
+  /* Vertical rule between panes; becomes horizontal when stacked on mobile. */
+  .layer-demo-source {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .layer-demo-pane-label {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-faint);
+  }
+
+  /* Source pane uses monospace for code-like content. */
+  .layer-demo-source :global(pre),
+  .layer-demo-source :global(.code-block) {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1.7;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .layer-demo-note {
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  @media (max-width: 720px) {
+    .layer-demo-body {
+      grid-template-columns: 1fr;
+    }
+
+    .layer-demo-source {
+      border-right: none;
+      border-bottom: 1px solid var(--color-border);
+    }
+  }
+</style>

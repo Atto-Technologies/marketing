@@ -480,6 +480,31 @@ a, button, [role="button"] {
   font-style: italic;
 }
 
+/* Lists inside the rendered preview — the global reset zeros padding on
+   every <ul>/<ol>, which pushes `list-style-position: outside` bullets past
+   the container's left edge. Restore just enough left padding to seat the
+   bullet inside the content box. */
+.atto-doc ul,
+.atto-doc ol {
+  padding-left: 1.4em;
+  margin: 0;
+}
+
+.atto-doc ul { list-style: disc; }
+.atto-doc ol { list-style: decimal; }
+
+.atto-doc li {
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  color: var(--color-text);
+  padding-left: 0.25em;
+  max-width: none;
+}
+
+.atto-doc li::marker {
+  color: var(--color-text-muted);
+}
+
 .atto-doc p {
   font-size: var(--text-sm);
   line-height: 1.65;
@@ -514,6 +539,50 @@ a, button, [role="button"] {
   text-align: center;
   color: var(--color-text);
   border-block: 1px solid var(--color-border);
+}
+
+/* Typeset-math helpers — used inside .atto-math / .atto-math-display to
+   render fractions, summations, and limits without pulling in KaTeX. The
+   output is intentionally simple HTML+CSS; good enough for the in-page
+   preview snippets in the hybrid-syntax explainer. */
+.atto-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 0.15em;
+  font-size: 0.95em;
+  line-height: 1.1;
+}
+
+.atto-frac > .num {
+  padding: 0 0.35em 0.1em;
+  border-bottom: 1px solid currentColor;
+}
+
+.atto-frac > .den {
+  padding: 0.1em 0.35em 0;
+}
+
+.atto-sum {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  font-size: 0.9em;
+  line-height: 1;
+  margin: 0 0.2em;
+}
+
+.atto-sum > .lim {
+  font-size: 0.7em;
+  font-style: normal;
+}
+
+.atto-sum > .sym {
+  font-size: 1.6em;
+  font-style: normal;
+  line-height: 0.9;
 }
 
 .atto-doc-section {
