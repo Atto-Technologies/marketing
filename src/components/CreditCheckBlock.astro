@@ -1,0 +1,134 @@
+---
+// CreditCheckBlock — rendered preview of a :::credit-check authoring block.
+// Matches the component the AHS renderer outputs for a tenant when the
+// document is opened. Used as the `slot="rendered"` in AttoDemo instances
+// on both the docs and product pages so readers see exactly what the
+// :::credit-check authoring form produces.
+//
+// The component is visual-only: buttons are not interactive, scores are
+// never shown (per spec), and no state is held. All disclosure fields
+// appear verbatim from props — the whole point of the block is that what
+// the author writes is what the subject reads.
+export interface Props {
+  requestingParty: string;
+  purpose: string;
+  scoreModel?: 'FICO8' | 'FICO9' | 'VantageScore3' | 'VantageScore4';
+  bureau?: 'experian' | 'transunion' | 'equifax' | 'any';
+  pullType?: 'hard_pull' | 'soft_pull';
+  disclosedTo?: string[];
+  immediateFeedback?: boolean;
+  onFail?: 'withdraw' | 'notify_requesting_party' | 'human_review';
+  reviewWindowHours?: number;
+}
+
+const {
+  requestingParty,
+  purpose,
+  scoreModel = 'FICO8',
+  bureau = 'transunion',
+  pullType = 'hard_pull',
+  disclosedTo = [requestingParty],
+  immediateFeedback = false,
+  onFail = 'human_review',
+  reviewWindowHours,
+} = Astro.props;
+
+// Human-readable formatters for enum values. These exist so the rendered
+// surface reads like a real disclosure document rather than a JSON dump.
+const SCORE_MODEL_LABELS: Record<NonNullable<Props['scoreModel']>, string> = {
+  FICO8: 'FICO 8',
+  FICO9: 'FICO 9',
+  VantageScore3: 'VantageScore 3.0',
+  VantageScore4: 'VantageScore 4.0',
+};
+
+const BUREAU_LABELS: Record<NonNullable<Props['bureau']>, string> = {
+  experian: 'Experian',
+  transunion: 'TransUnion',
+  equifax: 'Equifax',
+  any: 'any major bureau',
+};
+
+const PULL_TYPE_LABELS: Record<NonNullable<Props['pullType']>, string> = {
+  hard_pull: 'hard pull',
+  soft_pull: 'soft pull',
+};
+
+const scoreModelLabel = SCORE_MODEL_LABELS[scoreModel];
+const bureauLabel = BUREAU_LABELS[bureau];
+const pullTypeLabel = PULL_TYPE_LABELS[pullType];
+const isHardPull = pullType === 'hard_pull';
+
+// Compose the outcome copy from the immediate_feedback / on_fail matrix.
+// The spec forbids immediate_feedback = true with on_fail = human_review,
+// but we defensively handle all four combinations anyway.
+let outcomeCopy: string;
+if (immediateFeedback) {
+  outcomeCopy =
+    'You will receive an immediate pass/fail result after your information is submitted.';
+} else if (onFail === 'human_review') {
+  const window = reviewWindowHours ? ` within ${reviewWindowHours} hours` : '';
+  outcomeCopy = `Your result will be reviewed by ${requestingParty}. You will be notified of the decision${window}.`;
+} else {
+  outcomeCopy = `Your result will be delivered to ${requestingParty}. You will be notified of the decision.`;
+}
+---
+<aside class="atto-credit-check" aria-label={`Credit check disclosure for ${requestingParty}`}>
+  {/* ─── Heading ─────────────────────────────────────────────── */}
+  <header class="atto-cc-head">
+    <p class="atto-cc-label">Credit Check Required</p>
+    <p class="atto-cc-party">{requestingParty}</p>
+  </header>
+
+  {/* ─── Why this is required ────────────────────────────────── */}
+  <section class="atto-cc-section">
+    <p class="atto-cc-eyebrow">Why this is required</p>
+    <p class="atto-cc-body atto-cc-purpose">&ldquo;{purpose}&rdquo;</p>
+  </section>
+
+  {/* ─── What will be checked ────────────────────────────────── */}
+  <section class="atto-cc-section">
+    <p class="atto-cc-eyebrow">What will be checked</p>
+    <p class="atto-cc-body">
+      Credit score ({scoreModelLabel}) via {bureauLabel}.
+    </p>
+    <p class="atto-cc-body atto-cc-pull-note" data-hard={isHardPull ? 'true' : 'false'}>
+      Pull type: <strong>{pullTypeLabel}</strong>
+      {isHardPull
+        ? ' — this will appear on your credit file.'
+        : ' — this will not affect your credit score.'}
+    </p>
+  </section>
+
+  {/* ─── Who will see the result ─────────────────────────────── */}
+  <section class="atto-cc-section">
+    <p class="atto-cc-eyebrow">Who will see the result</p>
+    <ul class="atto-cc-list">
+      {disclosedTo.map((party) => <li>{party}</li>)}
+    </ul>
+    <p class="atto-cc-body atto-cc-body-muted">
+      Your score will never be displayed to any party. Only a pass/fail
+      determination will be shared.
+    </p>
+  </section>
+
+  {/* ─── Outcome ─────────────────────────────────────────────── */}
+  <section class="atto-cc-section">
+    <p class="atto-cc-eyebrow">Outcome</p>
+    <p class="atto-cc-body">{outcomeCopy}</p>
+  </section>
+
+  {/* ─── Actions (visual only) ───────────────────────────────── */}
+  <footer class="atto-cc-actions">
+    <button type="button" class="atto-cc-action atto-cc-action-secondary" disabled>
+      Enter your information
+    </button>
+    <button type="button" class="atto-cc-action atto-cc-action-primary" disabled>
+      I consent and authorize this credit check
+    </button>
+    <p class="atto-cc-consent-copy">
+      By clicking, you authorize {requestingParty} to obtain your
+      {' '}{pullTypeLabel} from {bureauLabel} for the purpose stated above.
+    </p>
+  </footer>
+</aside>

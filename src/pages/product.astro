@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import AttoDemo from '../components/AttoDemo.astro';
+import CreditCheckBlock from '../components/CreditCheckBlock.astro';
 ---
 <Base
   title="Product"
@@ -262,6 +263,157 @@ $$</span></code></pre>
 <span class="tok-key">root:</span>  <span class="tok-string">sha256:8b22...e9</span>
 <span class="tok-key">final:</span> <span class="tok-string">true</span></code></pre>
       </figure>
+    </div>
+  </section>
+
+  {/* ─── Feature 5 — Font Provenance (AFRP) ───────────────────
+       Fonts are part of the document's cryptographic signature,
+       not just its presentation. The two-tier namespace
+       (permissionless URIs + governed @-sigils) and signed
+       manifest flow make documents renderable identically at
+       any future time. */}
+  <section class="feature wrap section">
+    <div class="feature-copy">
+      <p class="eyebrow">05 — Provenance</p>
+      <h2>Fonts as part of the signature.</h2>
+      <p>
+        An executed document must render identically in a year, or five,
+        or twenty. Atto treats the font binary as part of the execution
+        identity — not a presentational afterthought served by whoever
+        happens to be hosting.
+      </p>
+      <p>
+        The Atto Font Registry Protocol (AFRP) gives every reference a
+        portable identifier, a cryptographically-signed registry manifest,
+        and a SHA-384 integrity hash per binary. At signing, every
+        reference is pinned. Any drift — a re-released version, a mutated
+        binary, a missing asset — fails resolution.
+      </p>
+    </div>
+    <div class="feature-demo feature-demo-grid">
+      <AttoDemo filename="font-refs.atto" label="Identifier grammar">
+        <article class="atto-doc" slot="rendered">
+          <section class="atto-doc-section">
+            <h3>Three reference forms</h3>
+            <p>
+              Canonical, bare and portable:
+              <span class="atto-font-ref" data-tier="canonical">@/Lineal@^2</span>
+            </p>
+            <p>
+              Governed scope, identity-verified registry:
+              <span class="atto-font-ref" data-tier="scoped">@velvetyne/Bagnard@2.1.0</span>
+            </p>
+            <p>
+              Permissionless, any compliant host:
+              <span class="atto-font-ref" data-tier="permissionless">fonts.example.com/Grotesk@~1.4</span>
+            </p>
+          </section>
+        </article>
+
+        <pre class="code-block" slot="source"><code><span class="tok-comment">---</span>
+<span class="tok-key">font_families:</span>
+  <span class="tok-key">- role:</span> <span class="tok-string">body</span>
+    <span class="tok-key">ref:</span>  <span class="tok-string">@/Lineal@^2</span>
+  <span class="tok-key">- role:</span> <span class="tok-string">display</span>
+    <span class="tok-key">ref:</span>  <span class="tok-string">@velvetyne/Bagnard@2.1.0</span>
+  <span class="tok-key">- role:</span> <span class="tok-string">fallback</span>
+    <span class="tok-key">ref:</span>  <span class="tok-string">fonts.example.com/Grotesk@~1.4</span>
+<span class="tok-comment">---</span></code></pre>
+      </AttoDemo>
+
+      <AttoDemo filename="afrp-manifest" label="Signed manifest">
+        <figure class="feature-demo-diagram" slot="rendered">
+          <figcaption class="code-caption">.well-known/afrp-manifest.json</figcaption>
+          <pre class="code-block"><code><span class="tok-key">"fonts"</span>: &#123;
+  <span class="tok-key">"Lineal"</span>: &#123;
+    <span class="tok-key">"versions"</span>: [<span class="tok-string">"2.0.0"</span>, <span class="tok-string">"2.1.0"</span>, <span class="tok-string">"2.1.1"</span>],
+    <span class="tok-key">"assets"</span>: &#123;
+      <span class="tok-key">"2.1.1"</span>: &#123;
+        <span class="tok-key">"woff2"</span>: <span class="tok-string">"https://cdn.../Lineal-2.1.1.woff2"</span>,
+        <span class="tok-key">"integrity"</span>: <span class="tok-string">"sha384-oqVu…"</span>
+      &#125;
+    &#125;
+  &#125;
+&#125;,
+<span class="tok-key">"signature"</span>: <span class="tok-string">"ed25519:MEQCIB…"</span></code></pre>
+        </figure>
+
+        <pre class="code-block" slot="source"><code><span class="tok-comment"># Resolver contract (non-negotiable)</span>
+<span class="tok-key">1.</span> fetch manifest at <span class="tok-string">/.well-known/afrp-manifest.json</span>
+<span class="tok-key">2.</span> verify <span class="tok-string">ed25519</span> signature on JCS-canonicalized body
+<span class="tok-key">3.</span> select version matching specifier
+<span class="tok-key">4.</span> download binary
+<span class="tok-key">5.</span> verify <span class="tok-string">sha384</span> hash against manifest integrity
+<span class="tok-key">6.</span> refuse any binary whose hash does not match</code></pre>
+      </AttoDemo>
+    </div>
+  </section>
+
+  {/* ─── Feature 6 — Credit-Gated Execution ───────────────────
+       Execution can depend on external data. The :::credit-check
+       block is a disclosure-first authoring surface: required
+       fields make the consent surface self-documenting, the same
+       source renders both the PDEE precondition directive and
+       the tenant-facing UI. */}
+  <section class="feature feature-reverse section-surface">
+    <div class="wrap section feature-grid">
+      <div class="feature-copy">
+        <p class="eyebrow">06 — Preconditions</p>
+        <h2>Execution can gate on external data.</h2>
+        <p>
+          Signatures are not the only thing a document might wait on. A
+          residential lease might need a credit check. A loan application
+          might need income verification. A vendor agreement might need
+          insurance verification.
+        </p>
+        <p>
+          <code>:::credit-check</code> is the first of Atto&rsquo;s
+          <code>:::</code> protocol blocks — authoring surfaces that compile
+          to precondition directives <em>and</em> render the tenant-facing
+          consent form from the same source. Required disclosure fields
+          (purpose, requesting party, privacy scope, pull type) make the
+          document self-documenting. What you write is what the subject
+          reads. What the subject reads is what the bureau is told.
+        </p>
+      </div>
+      <div class="feature-demo">
+        <AttoDemo filename="credit-check.atto" label=":::credit-check">
+          <div slot="rendered">
+            <CreditCheckBlock
+              requestingParty="Westbrook Property Management LLC"
+              purpose="Residential tenancy application for 42 Elm Street, Unit 3B, Los Angeles, CA 90024."
+              scoreModel="FICO8"
+              bureau="transunion"
+              pullType="hard_pull"
+              disclosedTo={["Westbrook Property Management LLC"]}
+              immediateFeedback={false}
+              onFail="human_review"
+              reviewWindowHours={72}
+            />
+          </div>
+
+          <pre class="code-block" slot="source"><code><span class="tok-directive">:::credit-check</span> &#123;
+  <span class="tok-key">id</span>               = <span class="tok-string">"cc-001"</span>
+  <span class="tok-key">party</span>            = <span class="tok-string">"party-tenant"</span>
+
+  <span class="tok-key">purpose</span>          = <span class="tok-string">"Residential tenancy application</span>
+<span class="tok-string">                      for 42 Elm Street, Unit 3B."</span>
+  <span class="tok-key">requesting_party</span> = <span class="tok-string">"Westbrook Property Management LLC"</span>
+  <span class="tok-key">pull_type</span>        = <span class="tok-string">hard_pull</span>
+  <span class="tok-key">bureau</span>           = <span class="tok-string">transunion</span>
+  <span class="tok-key">score_model</span>      = <span class="tok-string">FICO8</span>
+
+  <span class="tok-key">disclosed_to</span>     = [<span class="tok-string">requesting_party</span>]
+  <span class="tok-key">extent</span>           = <span class="tok-string">score_only</span>
+  <span class="tok-key">min_score</span>        = <span class="tok-string">680</span>
+
+  <span class="tok-key">on_pass</span>          = <span class="tok-string">proceed</span>
+  <span class="tok-key">on_fail</span>          = <span class="tok-string">human_review</span>
+  <span class="tok-key">review_window_hours</span> = <span class="tok-string">72</span>
+&#125;
+<span class="tok-directive">:::</span></code></pre>
+        </AttoDemo>
+      </div>
     </div>
   </section>
 

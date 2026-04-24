@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import AttoDemo from '../components/AttoDemo.astro';
+import CreditCheckBlock from '../components/CreditCheckBlock.astro';
 import FieldTable from '../components/FieldTable.astro';
 
 const nav = [
@@ -19,6 +20,23 @@ const nav = [
       { id: 'directive-attachment', label: '::attachment' },
       { id: 'directive-callout', label: '::callout' },
       { id: 'directive-review', label: '::review-anchor' },
+    ],
+  },
+  {
+    id: 'font-references',
+    label: 'Font References',
+    sub: [
+      { id: 'afrp-grammar', label: 'Identifier grammar' },
+      { id: 'afrp-tiers', label: 'Two-tier namespace' },
+      { id: 'afrp-resolution', label: 'Resolution & integrity' },
+      { id: 'afrp-manifest', label: 'Registry manifest' },
+    ],
+  },
+  {
+    id: 'protocol-blocks',
+    label: 'Protocol Blocks',
+    sub: [
+      { id: 'block-credit-check', label: ':::credit-check' },
     ],
   },
   { id: 'serialization', label: 'Serialization Rules' },
@@ -632,9 +650,335 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
 
       <hr class="rule" />
 
+      {/* ─── Font References (AFRP) ──────────────────────────────
+           The Atto Font Registry Protocol defines a portable
+           identifier grammar for font assets plus a resolution
+           protocol that guarantees bit-exact reproducibility at
+           signing time. Lives in the syntax spec because the
+           identifier appears in document source; the resolution
+           algorithm lives in the protocol layer spec. */}
+      <section id="font-references">
+        <p class="eyebrow">08 — Font References</p>
+        <h2>Font references.</h2>
+        <p>
+          A document that can be signed must be renderable identically at
+          any future time. The Atto Font Registry Protocol (AFRP) introduces
+          a portable identifier grammar for font assets and a resolution
+          protocol that binds every executed document to the exact font
+          binaries present at signing.
+        </p>
+
+        <h3 id="afrp-grammar">Identifier grammar</h3>
+        <p>
+          A font reference is a sigil-prefixed identifier that may appear
+          anywhere a font family is named — in frontmatter, in directive
+          attributes, or in future typography directives. The grammar
+          (ABNF summary):
+        </p>
+
+        <pre class="code-block"><code><span class="tok-key">font-reference</span>  = font-identifier [qualifier...]
+<span class="tok-key">font-identifier</span> = form-a / form-b / form-c
+
+<span class="tok-key">form-a</span>          = <span class="tok-string">"@/"</span> typeface-name [version-specifier]   <span class="tok-comment">; canonical</span>
+<span class="tok-key">form-b</span>          = <span class="tok-string">"@"</span> scope <span class="tok-string">"/"</span> typeface-name [version-specifier]  <span class="tok-comment">; governed scope</span>
+<span class="tok-key">form-c</span>          = host <span class="tok-string">"/"</span> typeface-name [version-specifier]      <span class="tok-comment">; permissionless URI</span>
+
+<span class="tok-key">version-specifier</span> = <span class="tok-string">"@"</span> ( <span class="tok-string">"X.Y.Z"</span> | <span class="tok-string">"^X"</span> | <span class="tok-string">"^X.Y"</span> | <span class="tok-string">"~X.Y"</span> | <span class="tok-string">"latest"</span> | <span class="tok-string">"pinned"</span> )</code></pre>
+
+        <p>
+          Version semantics follow SemVer 2.0.0 exactly. <code>@latest</code>
+          is valid but <em>must not</em> be used in documents intended for
+          signing. <code>@pinned</code> is valid only in EXECUTED-state
+          documents — it resolves to the exact binary hash recorded at
+          signing time.
+        </p>
+
+        <h3 id="afrp-tiers">Two-tier namespace</h3>
+        <p>
+          AFRP defines two coexisting tiers over one resolution protocol.
+          The permissionless tier guarantees the governed tier can never
+          become a gatekeeper for the system.
+        </p>
+
+        <FieldTable
+          caption="AFRP namespace tiers"
+          fields={[
+            { name: '@/Typeface', type: 'Canonical', required: false, description: 'Bare sigil. Resolves via the platform\'s canonical registry — identity is a property of the protocol, not any vendor deployment. Portable across all compliant Atto implementations without hardcoding a domain.' },
+            { name: '@scope/Typeface', type: 'Governed', required: false, description: 'Registered scope (e.g. @velvetyne/Bagnard, @adobe/Garamond). Scopes are issued by the Atto Protocol Authority after identity verification, catalog audit, and license-transparency review. The Authority governs namespace identity, not font content.' },
+            { name: 'host/Typeface', type: 'Permissionless', required: false, description: 'Any DNS host implementing the AFRP resolution interface. No registration, approval, or contact with any authority required. Equivalent openness to the World Wide Web itself.' },
+          ]}
+        />
+
+        <h3>Examples</h3>
+        <AttoDemo filename="frontmatter-fonts.atto">
+          <article class="atto-doc" slot="rendered">
+            <header class="atto-doc-head">
+              <p class="atto-doc-kicker">
+                Services Agreement · Fonts declared
+              </p>
+              <h1 class="atto-doc-title">Services Agreement</h1>
+            </header>
+            <section class="atto-doc-section">
+              <h2>Typography</h2>
+              <p>The body is set in <span class="atto-font-ref" data-tier="canonical">@/Lineal@^2</span> (canonical) with display headings in <span class="atto-font-ref" data-tier="scoped">@velvetyne/Bagnard@2.1.0</span> (governed scope). Signing pins both to an exact binary hash.</p>
+              <p>An open-source fallback is loaded from <span class="atto-font-ref" data-tier="permissionless">fonts.example.com/Grotesk@~1.4</span> (permissionless).</p>
+            </section>
+          </article>
+
+          <pre class="code-block" slot="source"><code><span class="tok-comment">---</span>
+<span class="tok-key">title:</span> <span class="tok-string">Services Agreement</span>
+<span class="tok-key">font_families:</span>
+  <span class="tok-key">- role:</span> <span class="tok-string">body</span>
+    <span class="tok-key">ref:</span>  <span class="tok-string">@/Lineal@^2</span>
+  <span class="tok-key">- role:</span> <span class="tok-string">display</span>
+    <span class="tok-key">ref:</span>  <span class="tok-string">@velvetyne/Bagnard@2.1.0</span>
+  <span class="tok-key">- role:</span> <span class="tok-string">fallback</span>
+    <span class="tok-key">ref:</span>  <span class="tok-string">fonts.example.com/Grotesk@~1.4</span>
+<span class="tok-comment">---</span></code></pre>
+        </AttoDemo>
+
+        <h3 id="afrp-resolution">Resolution &amp; integrity</h3>
+        <p>
+          Resolution behavior depends on the document's lifecycle state.
+          An EXECUTED document is renderable identically at any future
+          time using exactly the font binaries present at signing.
+        </p>
+
+        <FieldTable
+          caption="Font resolution by document state"
+          fields={[
+            { name: 'DRAFT', type: 'Lifecycle state', required: false, description: '@latest and range specifiers (^X, ~X.Y) resolve to the current highest matching version. Version drift is permitted and expected.' },
+            { name: 'EXECUTED', type: 'Lifecycle state', required: false, description: 'All references resolve to @pinned — the exact binary hash recorded at signing. Any hash mismatch fails resolution. There is no fallback path.' },
+          ]}
+        />
+
+        <p>
+          The resolver algorithm is non-negotiable. Every compliant
+          implementation MUST:
+        </p>
+        <ul>
+          <li>Fetch the registry manifest from <code>/.well-known/afrp-manifest.json</code>.</li>
+          <li>Verify the manifest's Ed25519 signature before trusting any field.</li>
+          <li>Select a version satisfying the specifier.</li>
+          <li>Download the font binary.</li>
+          <li>Verify the binary's SHA-384 hash against the manifest's <code>integrity</code> field.</li>
+          <li>Refuse any binary whose hash does not match.</li>
+        </ul>
+
+        <h3 id="afrp-manifest">Registry manifest</h3>
+        <p>
+          Every AFRP registry serves a signed manifest at
+          <code>/.well-known/afrp-manifest.json</code>. The manifest carries
+          per-version asset URLs, SHA-384 integrity hashes, machine-readable
+          SPDX license metadata, and an Ed25519 signature over the
+          JCS-canonicalized body.
+        </p>
+
+        <pre class="code-block"><code><span class="tok-comment">// /.well-known/afrp-manifest.json</span>
+&#123;
+  <span class="tok-key">"version"</span>: <span class="tok-string">17</span>,
+  <span class="tok-key">"issued"</span>: <span class="tok-string">"2026-04-23T00:00:00Z"</span>,
+  <span class="tok-key">"scopes"</span>: &#123;
+    <span class="tok-key">""</span>: <span class="tok-string">"https://registry.atto.tech/canonical/"</span>,
+    <span class="tok-key">"velvetyne"</span>: <span class="tok-string">"https://fonts.velvetyne.com/"</span>,
+    <span class="tok-key">"adobe"</span>: <span class="tok-string">"https://fonts.adobe.com/afrp/"</span>
+  &#125;,
+  <span class="tok-key">"fonts"</span>: &#123;
+    <span class="tok-key">"Lineal"</span>: &#123;
+      <span class="tok-key">"versions"</span>: [<span class="tok-string">"2.0.0"</span>, <span class="tok-string">"2.1.0"</span>, <span class="tok-string">"2.1.1"</span>],
+      <span class="tok-key">"latest"</span>: <span class="tok-string">"2.1.1"</span>,
+      <span class="tok-key">"assets"</span>: &#123;
+        <span class="tok-key">"2.1.1"</span>: &#123;
+          <span class="tok-key">"woff2"</span>: <span class="tok-string">"https://cdn.../Lineal-2.1.1.woff2"</span>,
+          <span class="tok-key">"integrity"</span>: <span class="tok-string">"sha384-oqVuAfXRK..."</span>
+        &#125;
+      &#125;,
+      <span class="tok-key">"license"</span>: &#123; <span class="tok-key">"spdx"</span>: <span class="tok-string">"OFL-1.1"</span>, <span class="tok-key">"url"</span>: <span class="tok-string">"https://..."</span> &#125;
+    &#125;
+  &#125;,
+  <span class="tok-key">"signature"</span>: <span class="tok-string">"ed25519:MEQCIB..."</span>
+&#125;</code></pre>
+
+        <p>
+          A resolver that cannot verify the manifest signature falls back to
+          the most recent cached manifest whose signature was verified. It
+          never trusts an unsigned manifest and never trusts a binary whose
+          hash is absent from the verified manifest.
+        </p>
+      </section>
+
+      <hr class="rule" />
+
+      {/* ─── Protocol Blocks (:::) ────────────────────────────────
+           The triple-colon form is distinct from :: directives —
+           it is an authoring surface that compiles to one or more
+           :: directives at build time AND renders a UI component.
+           Hosted in the syntax spec so authors can find it, but
+           the compilation target lives in the Atto Leasing
+           Protocol (ALP) spec. */}
+      <section id="protocol-blocks">
+        <p class="eyebrow">09 — Protocol Blocks</p>
+        <h2>Protocol blocks.</h2>
+        <p>
+          Protocol blocks use the triple-colon form <code>:::name &#123; … &#125; :::</code>.
+          Unlike regular <code>::</code> directives, a <code>:::</code> block is an
+          authoring surface: it compiles to one or more <code>::</code> directives
+          at document build time <em>and</em> renders a UI component the
+          subject of the block sees when they open the document.
+        </p>
+        <p>
+          Every <code>:::</code> block is disclosure-first. Fields the author
+          might otherwise omit — purpose, requesting party, privacy scope —
+          are REQUIRED. The document is invalid if any required disclosure
+          field is missing. The tenant (or counterparty, or subject) reads
+          the rendered form; an auditor can read the block source and verify
+          exactly what consent was granted.
+        </p>
+
+        {/* ─── :::credit-check ─────────────────────────────────── */}
+        <h3 id="block-credit-check"><code>:::credit-check</code></h3>
+        <p>
+          Declares a credit-check precondition for document execution. The
+          block compiles to an <code>::alp:precondition:credit-check</code>
+          directive evaluated by the Precondition Directive Evaluation Engine
+          (PDEE), and simultaneously renders a tenant-facing consent form.
+          The subject cannot sign the document until the precondition is
+          satisfied.
+        </p>
+
+        <h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-5) var(--space-2);">Required disclosure fields</h4>
+        <FieldTable
+          caption=":::credit-check required fields"
+          fields={[
+            { name: 'id', type: 'string', required: true, description: 'Unique identifier within the document. Referenced by the compiled ::alp:precondition:credit-check directive as precondition_id.' },
+            { name: 'party', type: 'string', required: true, description: 'party_id of the subject whose credit is being checked. MUST resolve to a party declared in the execution preamble.' },
+            { name: 'purpose', type: 'string', required: true, description: 'Plain-language reason for the check. Shown verbatim in the tenant\'s consent disclosure and reported to the bureau adapter as permissible-purpose context. Template placeholders are rejected.' },
+            { name: 'requesting_party', type: 'string', required: true, description: 'Legal name of the entity requesting the check. Shown verbatim in the consent disclosure. MUST match the landlord party\'s legal_name.' },
+            { name: 'pull_type', type: "'hard_pull' | 'soft_pull'", required: true, description: 'Hard pulls appear on the consumer\'s credit file; soft pulls do not. A mismatch with the bureau adapter\'s actual pull type is a fatal validation error.' },
+            { name: 'bureau', type: "'experian' | 'transunion' | 'equifax' | 'any'", required: true, description: "'any' permits the PDEE to select the bureau. The bureau actually used is recorded in execution metadata." },
+            { name: 'score_model', type: "'FICO8' | 'FICO9' | 'VantageScore3' | 'VantageScore4'", required: true, description: 'Scoring model used for the pass/fail determination.' },
+            { name: 'disclosed_to', type: 'array of enum | party_id', required: true, description: 'Who receives the pass/fail outcome. Values: requesting_party, named_parties, all_signatories, or specific party_ids. The raw score is NEVER shared through this field — only the pass/fail result.' },
+            { name: 'extent', type: "'score_only' | 'full_report' | 'income_verified'", required: true, description: 'Breadth of the inquiry. See the extent reference below.' },
+            { name: 'min_score', type: 'integer 300–850', required: true, description: 'Required when extent is score_only or income_verified. Minimum score for a pass outcome.' },
+            { name: 'on_pass', type: "'proceed' | 'notify_requesting_party'", required: true, description: 'PDEE action on pass. proceed advances the execution queue.' },
+            { name: 'on_fail', type: "'withdraw' | 'notify_requesting_party' | 'human_review'", required: true, description: 'PDEE action on fail. human_review pauses execution for review_window_hours before auto-withdrawing.' },
+          ]}
+        />
+
+        <h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Optional fields</h4>
+        <FieldTable
+          caption=":::credit-check optional fields"
+          fields={[
+            { name: 'immediate_feedback', type: 'boolean', required: false, description: 'Default false. When true, the rendered form shows the tenant a pass/fail result as soon as the bureau responds. When false, the tenant sees only a "submitted — awaiting review" state.' },
+            { name: 'review_window_hours', type: 'integer', required: false, description: 'Only valid when on_fail = human_review. Default 48. Hours the requesting party has to decide before auto-withdrawal.' },
+            { name: 'timeout_hours', type: 'integer', required: false, description: 'Default 48. Hours the PDEE waits for a bureau response before treating the check as failed.' },
+          ]}
+        />
+
+        <h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Extent levels</h4>
+        <FieldTable
+          caption="extent field values"
+          fields={[
+            { name: 'score_only', type: 'Score only', required: false, description: 'Credit score only. No tradeline detail, no account history. Lowest privacy impact. min_score is required.' },
+            { name: 'full_report', type: 'Full report', required: false, description: 'Full consumer credit report including tradelines, inquiries, public records, and collections. Retained in execution metadata (encrypted, accessible only to requesting party). min_score optional.' },
+            { name: 'income_verified', type: 'Score + income', required: false, description: 'Credit score plus income verification via payroll connector (Argyle, Pinwheel). Requires chained ::alp:precondition:income-verify. min_score is required and applies to the score component only.' },
+          ]}
+        />
+
+        <h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Example — residential lease</h4>
+        <AttoDemo filename="credit-check.atto" label=":::credit-check">
+          <div slot="rendered">
+            <CreditCheckBlock
+              requestingParty="Westbrook Property Management LLC"
+              purpose="Residential tenancy application for 42 Elm Street, Unit 3B, Los Angeles, CA 90024. Requested by Westbrook Property Management LLC on behalf of property owner."
+              scoreModel="FICO8"
+              bureau="transunion"
+              pullType="hard_pull"
+              disclosedTo={["Westbrook Property Management LLC"]}
+              immediateFeedback={false}
+              onFail="human_review"
+              reviewWindowHours={72}
+            />
+          </div>
+
+          <pre class="code-block" slot="source"><code><span class="tok-directive">:::credit-check</span> &#123;
+  <span class="tok-key">id</span>               = <span class="tok-string">"cc-residential-001"</span>
+  <span class="tok-key">party</span>            = <span class="tok-string">"party-tenant-jane-doe"</span>
+
+  <span class="tok-key">purpose</span>          = <span class="tok-string">"Residential tenancy application for 42 Elm Street,</span>
+<span class="tok-string">                      Unit 3B, Los Angeles, CA 90024. Requested by</span>
+<span class="tok-string">                      Westbrook Property Management LLC on behalf of</span>
+<span class="tok-string">                      property owner."</span>
+
+  <span class="tok-key">requesting_party</span> = <span class="tok-string">"Westbrook Property Management LLC"</span>
+  <span class="tok-key">pull_type</span>        = <span class="tok-string">hard_pull</span>
+  <span class="tok-key">bureau</span>           = <span class="tok-string">transunion</span>
+  <span class="tok-key">score_model</span>      = <span class="tok-string">FICO8</span>
+
+  <span class="tok-key">disclosed_to</span>     = [<span class="tok-string">requesting_party</span>]
+  <span class="tok-key">extent</span>           = <span class="tok-string">score_only</span>
+  <span class="tok-key">min_score</span>        = <span class="tok-string">680</span>
+
+  <span class="tok-key">on_pass</span>          = <span class="tok-string">proceed</span>
+  <span class="tok-key">on_fail</span>          = <span class="tok-string">human_review</span>
+  <span class="tok-key">review_window_hours</span> = <span class="tok-string">72</span>
+
+  <span class="tok-key">immediate_feedback</span> = <span class="tok-string">false</span>
+  <span class="tok-key">timeout_hours</span>    = <span class="tok-string">24</span>
+&#125;
+<span class="tok-directive">:::</span></code></pre>
+        </AttoDemo>
+
+        <h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Compilation to ALP</h4>
+        <p>
+          The <code>:::credit-check</code> block compiles mechanically to an
+          <code>::alp:precondition:credit-check</code> directive at build
+          time. The field mapping is exact:
+        </p>
+
+        <FieldTable
+          caption="Compilation mapping"
+          fields={[
+            { name: 'id', type: '→ precondition_id', required: false, description: 'Direct mapping.' },
+            { name: 'party', type: '→ subject_party_id', required: false, description: 'Direct mapping.' },
+            { name: 'min_score / bureau / score_model / pull_type / timeout_hours', type: '→ same', required: false, description: 'Direct mapping of PDEE-relevant fields.' },
+            { name: 'on_fail = withdraw', type: '→ failure_action = "withdraw"', required: false, description: 'Document enters WITHDRAWN on fail.' },
+            { name: 'on_fail = notify_requesting_party', type: '→ failure_action = "notify_only"', required: false, description: 'Record failure; notify landlord; await their decision.' },
+            { name: 'on_fail = human_review', type: '→ failure_action = "notify_only" + review_window annotation', required: false, description: 'Pauses at PRECONDITION_PENDING for review_window_hours.' },
+            { name: 'purpose / requesting_party / disclosed_to / extent', type: '→ consent_scope.* fields', required: false, description: 'Embedded in the consent-scope object sent to the bureau adapter as permissible-purpose context.' },
+            { name: 'immediate_feedback', type: '→ renderer directive only', required: false, description: 'Not forwarded to the PDEE. Purely controls what the rendered form shows the subject.' },
+          ]}
+        />
+
+        <h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Validation rules</h4>
+        <p>A document containing a <code>:::credit-check</code> block is INVALID if any of the following are true:</p>
+        <ul>
+          <li><code>purpose</code> is absent, empty, or contains only template placeholder text (e.g. <code>[property address]</code>).</li>
+          <li><code>requesting_party</code> does not match the <code>legal_name</code> of any declared party.</li>
+          <li><code>party</code> does not resolve to a <code>party_id</code> in the execution preamble.</li>
+          <li><code>pull_type = hard_pull</code> and <code>consent_scope</code> has not been completed before PDEE dispatch.</li>
+          <li><code>extent</code> is <code>score_only</code> or <code>income_verified</code> and <code>min_score</code> is absent.</li>
+          <li><code>on_fail = human_review</code> and <code>review_window_hours</code> is absent.</li>
+          <li><code>disclosed_to</code> contains a party id not declared in the execution preamble.</li>
+          <li>Two <code>:::credit-check</code> blocks in the same document share an <code>id</code>.</li>
+          <li><code>immediate_feedback = true</code> and <code>on_fail = human_review</code> simultaneously — these are contradictory.</li>
+        </ul>
+
+        <p>
+          Raw-score disclosure is non-negotiable: regardless of
+          <code>disclosed_to</code>, the numeric score is NEVER exposed in
+          the rendered document or any interface accessible to disclosed
+          parties. Scores are stored encrypted in execution metadata,
+          accessible only to the PDEE and, after execution, to the
+          requesting party via a credentialed API call.
+        </p>
+      </section>
+
+      <hr class="rule" />
+
       {/* ─── Serialization ────────────────────────────────────── */}
       <section id="serialization">
-        <p class="eyebrow">08 — Serialization</p>
+        <p class="eyebrow">10 — Serialization</p>
         <h2>Serialization rules.</h2>
         <p>
           Serialization is deterministic. Two ASTs that are structurally equal
@@ -657,7 +1001,7 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
 
       {/* ─── AST Mapping ──────────────────────────────────────── */}
       <section id="ast-mapping">
-        <p class="eyebrow">09 — Abstract Syntax Tree</p>
+        <p class="eyebrow">11 — Abstract Syntax Tree</p>
         <h2>Abstract Syntax Tree mapping.</h2>
         <p>
           Each surface construct maps to a node type. The set is closed: the
@@ -673,14 +1017,16 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
 <span class="tok-key">[text](url)</span>  → Link &#123; url, children[] &#125;
 <span class="tok-key">$x$</span>          → MathInline &#123; tex &#125;
 <span class="tok-key">$$x$$</span>        → MathDisplay &#123; tex &#125;
-<span class="tok-key">::name</span>       → Directive &#123; name, attrs, body &#125;</code></pre>
+<span class="tok-key">::name</span>       → Directive &#123; name, attrs, body &#125;
+<span class="tok-key">:::name</span>      → ProtocolBlock &#123; name, fields, compiled[] &#125;
+<span class="tok-key">@/.../...</span>    → FontReference &#123; tier, scope, name, version &#125;</code></pre>
       </section>
 
       <hr class="rule" />
 
       {/* ─── MVP Scope ────────────────────────────────────────── */}
       <section id="mvp-scope">
-        <p class="eyebrow">10 — MVP Scope</p>
+        <p class="eyebrow">12 — MVP Scope</p>
         <h2>MVP scope.</h2>
         <p>
           The v0 parser implements the full set described above. The MVP
@@ -692,6 +1038,20 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
           The signing pipeline targets <code>::signature-block</code> only.
           Other directives have no lifecycle effect in v0 — they render and
           serialize, but do not emit protocol events.
+        </p>
+        <p>
+          Font references parse in v0 with the full identifier grammar, but
+          the AFRP resolver — manifest fetch, Ed25519 verification, SHA-384
+          integrity, pinning at signing — ships as a follow-on milestone.
+          Documents authored today that declare font references will be
+          compatible with the resolver when it lands.
+        </p>
+        <p>
+          <code>:::</code> protocol blocks parse in v0 with validation,
+          compile to their target <code>::</code> directives, and render
+          their UI components. Live precondition evaluation (PDEE dispatch,
+          bureau integration) is coordinated through the Atto Leasing
+          Protocol spec and ships in the ALP runtime.
         </p>
       </section>
     </article>
@@ -713,6 +1073,16 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
     align-self: start;
     border-right: 1px solid var(--color-border);
     padding-right: var(--space-8);
+    /* Without a max-height + overflow, sticky only constrains the top
+       edge. On short viewports (or long nav lists), the bottom nav items
+       render below the fold and can't be reached. Constraining the
+       sidebar to the available viewport height below its sticky top lets
+       it scroll internally while the page scrolls normally around it. */
+    max-height: calc(100vh - var(--space-16) - var(--space-8));
+    overflow-y: auto;
+    /* Keep inner scroll from chaining back to the main page scroll when
+       the sidebar reaches its top/bottom. */
+    overscroll-behavior: contain;
   }
 
   .docs-sidebar .eyebrow {
@@ -866,6 +1236,10 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
       border-bottom: 1px solid var(--color-border);
       padding-right: 0;
       padding-bottom: var(--space-6);
+      /* Undo the desktop scroll-container treatment — on mobile the
+         sidebar flows horizontally with the rest of the page. */
+      max-height: none;
+      overflow-y: visible;
     }
 
     .docs-sidebar ol {
