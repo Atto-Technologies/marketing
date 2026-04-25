@@ -3,9 +3,17 @@ export interface Props {
   filename: string;
   label?: string;
   defaultTab?: 'rendered' | 'source';
+  /**
+   * 'tabs'  — single panel, toggled by Rendered/Source tabs (default).
+   * 'split' — desktop shows source on the left and rendered on the right
+   *           simultaneously; mobile stacks them (source on top). No tabs.
+   *           Use when seeing the source and the rendered output side
+   *           by side aids comprehension (e.g. protocol → render demos).
+   */
+  layout?: 'tabs' | 'split';
 }
 
-const { filename, label, defaultTab = 'rendered' } = Astro.props;
+const { filename, label, defaultTab = 'rendered', layout = 'tabs' } = Astro.props;
 
 // Unique id per render so multiple instances can coexist with valid aria.
 const uid = Math.random().toString(36).slice(2, 10);
@@ -15,10 +23,15 @@ const renderedTabId = `atto-tab-${uid}-rendered`;
 const sourceTabId = `atto-tab-${uid}-source`;
 
 const renderedDefault = defaultTab === 'rendered';
+const isSplit = layout === 'split';
 ---
-<div class="atto-demo" data-atto-demo>
+<div class="atto-demo" data-atto-demo data-layout={layout}>
   <div class="atto-demo-head">
     {label && <span class="atto-demo-label">{label}</span>}
+    {/* Tabs are always rendered. In tabs layout they always control
+        which panel shows. In split layout they're hidden by CSS on
+        desktop (both columns visible side-by-side) and revealed below
+        720px to switch between Source and Rendered as a single panel. */}
     <div class="atto-demo-tabs" role="tablist" aria-label={`${filename} — view mode`}>
       <button
         type="button"
@@ -42,33 +55,74 @@ const renderedDefault = defaultTab === 'rendered';
     <span class="atto-demo-filename">{filename}</span>
   </div>
 
-  <div class="atto-demo-body">
-    <div
-      role="tabpanel"
-      id={renderedPanelId}
-      data-atto-panel="rendered"
-      aria-labelledby={renderedTabId}
-      hidden={!renderedDefault}
-    >
-      <slot name="rendered" />
+  {isSplit ? (
+    /* In split layout, both columns are always present in the DOM. CSS
+       handles visibility per breakpoint: desktop shows both, mobile
+       shows only the active one based on the .is-active-* class which
+       JS toggles on tab change. No `hidden` attribute is used here so
+       desktop a11y trees correctly include both panels. */
+    <div class={`atto-demo-body atto-demo-body-split is-active-${defaultTab}`}>
+      <div
+        class="atto-demo-split-col"
+        role="tabpanel"
+        id={sourcePanelId}
+        data-atto-panel="source"
+        aria-labelledby={sourceTabId}
+      >
+        <div class="atto-demo-split-label">Source</div>
+        <slot name="source" />
+      </div>
+      <div
+        class="atto-demo-split-col"
+        role="tabpanel"
+        id={renderedPanelId}
+        data-atto-panel="rendered"
+        aria-labelledby={renderedTabId}
+      >
+        <div class="atto-demo-split-label">Rendered</div>
+        <slot name="rendered" />
+      </div>
     </div>
-    <div
-      role="tabpanel"
-      id={sourcePanelId}
-      data-atto-panel="source"
-      aria-labelledby={sourceTabId}
-      hidden={renderedDefault}
-    >
-      <slot name="source" />
+  ) : (
+    <div class="atto-demo-body">
+      <div
+        role="tabpanel"
+        id={renderedPanelId}
+        data-atto-panel="rendered"
+        aria-labelledby={renderedTabId}
+        hidden={!renderedDefault}
+      >
+        <slot name="rendered" />
+      </div>
+      <div
+        role="tabpanel"
+        id={sourcePanelId}
+        data-atto-panel="source"
+        aria-labelledby={sourceTabId}
+        hidden={renderedDefault}
+      >
+        <slot name="source" />
+      </div>
     </div>
-  </div>
+  )}
 </div>
 
 <script>
-  // Scoped per-instance tab switching.
+  // Scoped per-instance tab switching. Two modes:
+  //   tabs  — the tab buttons toggle which panel is visible via the
+  //           `hidden` attribute. Single panel visible at all times.
+  //   split — both panels are present in the DOM. CSS handles
+  //           visibility per breakpoint: desktop shows both columns;
+  //           mobile shows only the panel matching `.is-active-<name>`
+  //           on the body container. We therefore toggle a class on
+  //           the body in split mode rather than `hidden` on panels —
+  //           that way the desktop ↔ mobile transition is automatic
+  //           and JS never has to track viewport changes.
   document.querySelectorAll<HTMLElement>('[data-atto-demo]').forEach((root) => {
+    const layout = root.dataset.layout === 'split' ? 'split' : 'tabs';
     const tabs = root.querySelectorAll<HTMLButtonElement>('[data-atto-tab]');
     const panels = root.querySelectorAll<HTMLElement>('[data-atto-panel]');
+    const splitBody = root.querySelector<HTMLElement>('.atto-demo-body-split');
 
     function activate(name: 'rendered' | 'source') {
       tabs.forEach((tab) => {
@@ -76,9 +130,15 @@ const renderedDefault = defaultTab === 'rendered';
         tab.setAttribute('aria-selected', String(match));
         tab.tabIndex = match ? 0 : -1;
       });
-      panels.forEach((panel) => {
-        panel.hidden = panel.dataset.attoPanel !== name;
-      });
+
+      if (layout === 'split' && splitBody) {
+        splitBody.classList.toggle('is-active-source', name === 'source');
+        splitBody.classList.toggle('is-active-rendered', name === 'rendered');
+      } else {
+        panels.forEach((panel) => {
+          panel.hidden = panel.dataset.attoPanel !== name;
+        });
+      }
     }
 
     tabs.forEach((tab) => {
@@ -178,8 +238,91 @@ const renderedDefault = defaultTab === 'rendered';
     border-left: 3px solid var(--color-primary);
   }
 
+  /* ─── Split layout ────────────────────────────────────────────
+     Two columns on desktop (source left, rendered right) with a thin
+     vertical rule between. Each column has a small label row on top
+     matching the tab typography so the two layouts feel like members
+     of the same family.
+
+     Below 720px the split collapses into the standard tabbed view:
+     the per-column "Source"/"Rendered" labels disappear, the tab
+     buttons in the head row become visible, and only the panel whose
+     name matches `.is-active-<name>` on the body is rendered. This is
+     CSS-driven so resizing between breakpoints requires no JS work. */
+  .atto-demo-body-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .atto-demo-split-col {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .atto-demo-split-col + .atto-demo-split-col {
+    border-left: 1px solid var(--color-border);
+  }
+
+  .atto-demo-split-label {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    padding: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  /* In split mode, code blocks sit flush against the column edge
+     without the left accent border that the tabbed variant uses —
+     the column divider already provides visual separation. Slot
+     content (both rendered and source) keeps its own padding,
+     matching the tabbed layout's behavior. */
+  .atto-demo-body-split :global(.code-block) {
+    border: none;
+    margin: 0;
+  }
+
+  /* Desktop split mode: the always-rendered tab buttons in the head
+     row are hidden because both columns are visible side-by-side.
+     The per-column labels in the body provide the orientation. */
+  .atto-demo[data-layout="split"] .atto-demo-tabs {
+    display: none;
+  }
+
   @media (max-width: 520px) {
     .atto-demo-filename {
+      display: none;
+    }
+  }
+
+  @media (max-width: 720px) {
+    /* Mobile split mode: collapse into the tabbed UI. Tab buttons
+       reappear, only the active column shows, the per-column label
+       row becomes redundant (the tab IS the label). */
+    .atto-demo[data-layout="split"] .atto-demo-tabs {
+      display: flex;
+    }
+    .atto-demo-body-split {
+      grid-template-columns: 1fr;
+    }
+    .atto-demo-split-col + .atto-demo-split-col {
+      border-left: none;
+      border-top: none;
+    }
+    .atto-demo-split-label {
+      display: none;
+    }
+    /* Hide the inactive panel based on the body's active-state class.
+       Default (no JS / pre-hydration) is rendered-active because the
+       Astro component hard-codes is-active-rendered when defaultTab
+       is 'rendered' (the default). */
+    .atto-demo-body-split.is-active-rendered .atto-demo-split-col[data-atto-panel="source"],
+    .atto-demo-body-split.is-active-source .atto-demo-split-col[data-atto-panel="rendered"] {
       display: none;
     }
   }

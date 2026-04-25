@@ -56,7 +56,19 @@ const nav = [
   title="Docs"
   description="The Atto Hybrid Syntax specification — frontmatter, directives, serialization, and syntax-tree mapping."
 >
-  <div class="docs-layout wrap">
+  {/* Demo-only typefaces. EB Garamond stands in for @adobe/Garamond
+      (same Garamond revival lineage) and Playfair Display stands in
+      for @velvetyne/Bagnard (visually-distinct historical serif) in
+      the §08.5 inline-reference example. Loaded here — not in Base —
+      so other pages don't pay the request cost. */}
+  <Fragment slot="head">
+    <link
+      href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+  </Fragment>
+
+  <div class="docs-layout">
     <aside class="docs-sidebar" aria-label="Docs navigation">
       <p class="eyebrow">Syntax Spec v0</p>
       <nav>
@@ -125,7 +137,7 @@ const nav = [
         />
 
         <h3>Example</h3>
-        <AttoDemo filename="frontmatter.atto">
+        <AttoDemo layout="split" filename="frontmatter.atto">
           <article class="atto-doc" slot="rendered">
             <header class="atto-doc-head">
               <p class="atto-doc-kicker">
@@ -160,7 +172,7 @@ const nav = [
           start at <code>##</code>.
         </p>
 
-        <AttoDemo filename="sections.atto">
+        <AttoDemo layout="split" filename="sections.atto">
           <article class="atto-doc" slot="rendered">
             <section class="atto-doc-section">
               <h2>Payment Terms</h2>
@@ -212,7 +224,7 @@ All amounts are in USD unless otherwise stated.</code></pre>
         />
 
         <h3>Example</h3>
-        <AttoDemo filename="inline.atto">
+        <AttoDemo layout="split" filename="inline.atto">
           <article class="atto-doc" slot="rendered">
             <p>
               Client shall pay within <strong>15 days</strong> of invoice.
@@ -245,7 +257,7 @@ Amounts invoiced under clause <span class="tok-emph">`3.1.a`</span> are non-refu
         </p>
 
         <h3>Variables and operators</h3>
-        <AttoDemo filename="math-simple.atto">
+        <AttoDemo layout="split" filename="math-simple.atto">
           <article class="atto-doc" slot="rendered">
             <p>
               The late fee is
@@ -260,7 +272,7 @@ Present value equals <span class="tok-math">$PV = FV / (1 + r)^n$</span>.</code>
         </AttoDemo>
 
         <h3>Greek letters and fractions</h3>
-        <AttoDemo filename="math-greek.atto">
+        <AttoDemo layout="split" filename="math-greek.atto">
           <article class="atto-doc" slot="rendered">
             <p>
               Interest accrues at rate
@@ -275,7 +287,7 @@ Present value equals <span class="tok-math">$PV = FV / (1 + r)^n$</span>.</code>
         </AttoDemo>
 
         <h3>Subscripts and aggregates</h3>
-        <AttoDemo filename="math-sub.atto">
+        <AttoDemo layout="split" filename="math-sub.atto">
           <article class="atto-doc" slot="rendered">
             <p>
               Total liability is bounded by
@@ -302,7 +314,7 @@ Present value equals <span class="tok-math">$PV = FV / (1 + r)^n$</span>.</code>
         </p>
 
         <h3>Compound interest</h3>
-        <AttoDemo filename="display-compound.atto">
+        <AttoDemo layout="split" filename="display-compound.atto">
           <article class="atto-doc" slot="rendered">
             <p>The value after <span class="atto-math">t</span> years of compounding:</p>
             <span class="atto-math-display">
@@ -318,7 +330,7 @@ $$</span></code></pre>
         </AttoDemo>
 
         <h3>Summation</h3>
-        <AttoDemo filename="display-sum.atto">
+        <AttoDemo layout="split" filename="display-sum.atto">
           <article class="atto-doc" slot="rendered">
             <p>Post-money valuation aggregates pre-money plus all investment tranches:</p>
             <span class="atto-math-display">
@@ -338,7 +350,7 @@ $$</span></code></pre>
         </AttoDemo>
 
         <h3>Aligned equations</h3>
-        <AttoDemo filename="display-aligned.atto">
+        <AttoDemo layout="split" filename="display-aligned.atto">
           <article class="atto-doc" slot="rendered">
             <p>The late-fee calculation, written out:</p>
             <span class="atto-math-display" style="text-align: left; padding-left: var(--space-8);">
@@ -393,7 +405,7 @@ $$</span></code></pre>
           ]}
         />
 
-        <AttoDemo filename="parties.atto">
+        <AttoDemo layout="split" filename="parties.atto">
           <aside class="atto-parties" slot="rendered" aria-label="Parties">
             <p class="atto-parties-label">Parties</p>
             <div class="atto-party">
@@ -443,7 +455,7 @@ $$</span></code></pre>
           ]}
         />
 
-        <AttoDemo filename="signature-block.atto">
+        <AttoDemo layout="split" filename="signature-block.atto">
           <aside class="atto-sig-block" slot="rendered" aria-label="Signed signature block">
             <div class="atto-sig-block-head">
               <p class="atto-sig-label">Signature Block</p>
@@ -499,7 +511,7 @@ $$</span></code></pre>
           ]}
         />
 
-        <AttoDemo filename="attachment.atto">
+        <AttoDemo layout="split" filename="attachment.atto">
           <aside class="atto-attachment" slot="rendered" aria-label="Attachment">
             <span class="atto-attachment-icon" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -548,7 +560,7 @@ $$</span></code></pre>
         />
 
         <h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-5) var(--space-2);">All tones</h4>
-        <AttoDemo filename="callout-tones.atto">
+        <AttoDemo layout="split" filename="callout-tones.atto">
           <div slot="rendered" style="display: flex; flex-direction: column; gap: var(--space-3);">
             <aside class="atto-callout" aria-label="Note callout">
               <div class="atto-callout-head">
@@ -627,7 +639,7 @@ Once executed, this waiver cannot be revoked without both parties&rsquo; written
           ]}
         />
 
-        <AttoDemo filename="review-anchor.atto">
+        <AttoDemo layout="split" filename="review-anchor.atto">
           <aside class="atto-review" slot="rendered" data-status="pending" aria-label="Review anchor">
             <div class="atto-review-head">
               <span class="atto-review-status">Review pending</span>
@@ -875,7 +887,7 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
           ]}
         />
 
-        <AttoDemo filename="atto-meta-fonts.atto">
+        <AttoDemo layout="split" filename="atto-meta-fonts.atto">
           <article class="atto-doc" slot="rendered">
             <header class="atto-doc-head">
               <p class="atto-doc-kicker">Services Agreement · Fonts declared</p>
@@ -934,33 +946,51 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
           through the algorithm in §08.7.
         </p>
 
-        <AttoDemo filename="inline-font-refs.atto">
-          <article class="atto-doc" slot="rendered">
-            <section class="atto-doc-section">
-              <p>
-                This term is rendered in a{' '}
-                <span class="atto-font-ref" data-tier="scoped">@adobe/Garamond</span>{' '}
-                custom face at weight 400.
-              </p>
-              <p>
-                This phrase uses a{' '}
-                <span class="atto-font-ref" data-tier="scoped">@velvetyne/Bagnard</span>{' '}
-                with <code>wght=400 ital=1</code>.
-              </p>
-              <p>
-                This identifier uses the document-declared{' '}
-                <code>mono</code> font.
-              </p>
-            </section>
+        {/* The split layout here renders the source on the left and the
+            rendered output on the right so readers can see the protocol
+            notation and its typographic effect side-by-side. The spans
+            wrapped in .font-demo-* classes below load open-source
+            typefaces (EB Garamond, Playfair Display, Geist Mono) via
+            the page-level head slot as visual stand-ins for the
+            registry-resolved binaries a production renderer would pin. */}
+        <AttoDemo layout="split" filename="inline-font-refs.atto">
+          <pre class="code-block" slot="source"><code>Primary clause — this [Services Agreement]&#123;<span class="tok-key">font</span>=<span class="tok-string">@adobe/Garamond wght=400</span>&#125;
+governs the relationship between the parties.
+
+Defined term — the phrase [Corporate Steed]&#123;<span class="tok-key">font</span>=<span class="tok-string">@velvetyne/Bagnard wght=400 ital=1</span>&#125;
+refers to the vehicle described in Exhibit A.
+
+Record ID — transaction [SEC-2025-0412]&#123;<span class="tok-key">font</span>=<span class="tok-string">mono</span>&#125;
+requires counter-signature.</code></pre>
+
+          <article class="atto-doc atto-doc-split-demo" slot="rendered">
+            <p>
+              Primary clause — this{' '}
+              <span class="font-demo-garamond">Services Agreement</span>{' '}
+              governs the relationship between the parties.
+            </p>
+            <p>
+              Defined term — the phrase{' '}
+              <span class="font-demo-bagnard">Corporate Steed</span>{' '}
+              refers to the vehicle described in Exhibit A.
+            </p>
+            <p>
+              Record ID — transaction{' '}
+              <span class="font-demo-mono">SEC-2025-0412</span>{' '}
+              requires counter-signature.
+            </p>
           </article>
-
-          <pre class="code-block" slot="source"><code>This term is rendered in [custom font]&#123;<span class="tok-key">font</span>=<span class="tok-string">@adobe/Garamond wght=400</span>&#125;.
-
-This phrase is [emphasized]&#123;<span class="tok-key">font</span>=<span class="tok-string">@velvetyne/Bagnard wght=400 ital=1</span>&#125;.
-
-This identifier uses the document-declared font:
-[monospaced text]&#123;<span class="tok-key">font</span>=<span class="tok-string">mono</span>&#125;.</code></pre>
         </AttoDemo>
+
+        <p class="afrp-inline-note">
+          <strong>Note.</strong> The rendered preview above uses open-source
+          stand-ins (EB Garamond for <code>@adobe/Garamond</code>,
+          Playfair Display for <code>@velvetyne/Bagnard</code>,{' '}
+          Geist Mono for the document-declared <code>mono</code>) purely
+          to illustrate the typographic switch. A production AFRP
+          resolver would pin the exact binary hashes declared by each
+          registry per §08.6 and §08.8.
+        </p>
 
         <p>
           When a declared <code>id</code> is used, the resolver MUST use
@@ -1540,7 +1570,7 @@ This identifier uses the document-declared font:
         />
 
         <h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Example — residential lease</h4>
-        <AttoDemo filename="credit-check.atto" label=":::credit-check">
+        <AttoDemo layout="split" filename="credit-check.atto" label=":::credit-check">
           <div slot="rendered">
             <CreditCheckBlock
               requestingParty="Westbrook Property Management LLC"
@@ -1713,11 +1743,20 @@ This identifier uses the document-declared font:
 </Base>
 
 <style>
+  /* The docs page uses a left-anchored layout — sidebar pinned to
+     the left edge of the viewport (with consistent inline padding),
+     content column free to extend rightward up to a generous 1800px
+     cap. This gives split-layout AttoDemos enough horizontal room to
+     show source and rendered side-by-side at comfortable reading
+     widths. The standard centered .wrap container is intentionally
+     not applied to this page. */
   .docs-layout {
     display: grid;
-    grid-template-columns: 240px 1fr;
-    gap: var(--space-16);
-    padding-block: var(--space-12) var(--space-24);
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: var(--space-12);
+    max-width: 1800px;
+    margin-inline: 0;
+    padding: var(--space-16) var(--space-8);
     align-items: start;
   }
 
@@ -1916,6 +1955,64 @@ This identifier uses the document-declared font:
 
   .docs-content section > .eyebrow {
     margin-bottom: var(--space-2);
+  }
+
+  /* ─── §08.5 Inline font-reference demo ─────────────────────
+     The rendered column of the inline-font-refs AttoDemo uses
+     open-source typefaces as visual stand-ins for the identifiers
+     quoted in the source panel. The goal is to make the typographic
+     switch literally visible, not just described. */
+
+  .atto-doc.atto-doc-split-demo {
+    padding: var(--space-5) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .atto-doc.atto-doc-split-demo p {
+    margin: 0;
+    line-height: 1.55;
+    color: var(--color-text);
+  }
+
+  /* Span classes used inside the rendered preview. Each applies the
+     stand-in typeface and adopts a slightly larger size than the
+     surrounding body so the switch reads clearly at reading distance. */
+  .font-demo-garamond {
+    font-family: 'EB Garamond', 'Iowan Old Style', Georgia, serif;
+    font-weight: 400;
+    font-size: 1.12em;
+    letter-spacing: 0.01em;
+  }
+
+  .font-demo-bagnard {
+    font-family: 'Playfair Display', 'EB Garamond', 'Times New Roman', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 1.12em;
+  }
+
+  .font-demo-mono {
+    font-family: var(--font-mono);
+    font-size: 0.95em;
+    padding: 0.1em 0.4em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    letter-spacing: 0.01em;
+  }
+
+  /* Small clarifying note sitting under the demo, explaining that
+     the rendered fonts are open-source stand-ins for illustrative
+     purposes. Sized down and muted so it doesn't compete with
+     primary content. */
+  .afrp-inline-note {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    border-left: 2px solid var(--color-border);
+    padding: var(--space-1) 0 var(--space-1) var(--space-4);
+    margin-block: var(--space-3) var(--space-6);
   }
 
   @media (max-width: 900px) {
