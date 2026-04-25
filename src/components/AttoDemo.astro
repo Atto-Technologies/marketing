@@ -279,12 +279,18 @@ const isSplit = layout === 'split';
 
   /* In split mode, code blocks sit flush against the column edge
      without the left accent border that the tabbed variant uses —
-     the column divider already provides visual separation. Slot
-     content (both rendered and source) keeps its own padding,
-     matching the tabbed layout's behavior. */
+     the column divider already provides visual separation.
+
+     `flex: 1` makes the source code-block fill the full column
+     height. Without it, when the rendered column is taller than
+     the source content, the source code-block ends partway down
+     the column and its overflow-x scrollbar appears mid-card.
+     Filling the column pins the scrollbar to the bottom edge of
+     the source card — exactly where it visually belongs. */
   .atto-demo-body-split :global(.code-block) {
     border: none;
     margin: 0;
+    flex: 1 1 auto;
   }
 
   /* Desktop split mode: the always-rendered tab buttons in the head
