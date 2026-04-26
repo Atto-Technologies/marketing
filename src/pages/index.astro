@@ -222,7 +222,8 @@ The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
         LaTeX solved notation and nothing else. No collaboration, no review
         workflow, no verification, no path from draft to executed document.
         Teams that need mathematical precision and counterparty screening
-        end up maintaining three systems — and a fourth to reconcile them.
+        end up assembling six tools by hand — and reconciling the gaps in a
+        seventh.
       </p>
     </div>
   </section>
@@ -347,17 +348,32 @@ is the discount rate.</code></pre>
       </p>
     </div>
 
-    {/* ─── Beat C — The reconciliation pain ────────────────────── */}
+    {/* ─── Beat C — The reconciliation pain ──────────────────────
+         Each stage card now lists the actual tool alternatives that
+         teams pick from at that step (rather than a single
+         representative). This makes the "Six tools" claim in the
+         heading visible inside the diagram itself: count names
+         across the four stages and you reach 6 document tools (Word,
+         Google Docs, Notion, LaTeX, DocuSign, Ironclad) — plus the
+         three credit bureaus that show up when verification is
+         required. Friction breaks (manual paste / rekey details /
+         attach report) sit between stages because the friction is
+         structural — picking a different tool inside a stage doesn't
+         change it. */}
     <div class="layer-pain wrap section">
       <div class="layer-beat-head">
         <p class="beat-num">03</p>
-        <h3>Three systems. A fourth to reconcile them.</h3>
+        <h3>Six tools to do what one document should do.</h3>
       </div>
 
-      <div class="pain-diagram" role="img" aria-label="Four disconnected document workflows">
+      <div class="pain-diagram" role="img" aria-label="Four-stage document workflow with multiple tool alternatives at each stage and broken connections between stages">
         <div class="pain-app pain-app-write">
-          <p class="pain-app-role">Draft</p>
-          <p class="pain-app-name">Microsoft Word</p>
+          <p class="pain-app-role">Drafting</p>
+          <ul class="pain-app-tools">
+            <li>Microsoft Word</li>
+            <li>Google Docs</li>
+            <li>Notion</li>
+          </ul>
           <p class="pain-app-file"><code>term-sheet.docx</code></p>
         </div>
         <div class="pain-break" aria-hidden="true">
@@ -368,7 +384,10 @@ is the discount rate.</code></pre>
         </div>
         <div class="pain-app pain-app-math">
           <p class="pain-app-role">Notation</p>
-          <p class="pain-app-name">LaTeX · Overleaf</p>
+          <ul class="pain-app-tools">
+            <li>LaTeX</li>
+            <li>Overleaf</li>
+          </ul>
           <p class="pain-app-file"><code>valuation.tex</code></p>
         </div>
         <div class="pain-break" aria-hidden="true">
@@ -379,7 +398,11 @@ is the discount rate.</code></pre>
         </div>
         <div class="pain-app pain-app-verify">
           <p class="pain-app-role">Credit check</p>
-          <p class="pain-app-name">TransUnion · SmartMove</p>
+          <ul class="pain-app-tools">
+            <li>TransUnion</li>
+            <li>Experian</li>
+            <li>Equifax</li>
+          </ul>
           <p class="pain-app-file"><code>report.pdf</code></p>
         </div>
         <div class="pain-break" aria-hidden="true">
@@ -389,19 +412,22 @@ is the discount rate.</code></pre>
           <span class="pain-break-label">attach report</span>
         </div>
         <div class="pain-app pain-app-sign">
-          <p class="pain-app-role">Signature</p>
-          <p class="pain-app-name">DocuSign</p>
+          <p class="pain-app-role">Signing</p>
+          <ul class="pain-app-tools">
+            <li>DocuSign</li>
+            <li>Ironclad</li>
+          </ul>
           <p class="pain-app-file"><code>executed.pdf</code></p>
         </div>
       </div>
 
       <p class="layer-caption pain-caption">
-        Four workflows when the doc requires verification — leases, financing
-        applications, regulated agreements. The bureau changes (TransUnion,
-        Experian, Equifax); the friction doesn&rsquo;t. No canonical document.
-        The reconciliation is someone&rsquo;s job — and the executed PDF has
-        no semantic relationship to the draft that was reviewed, the
-        screening that approved it, or the math that priced it.
+        For docs that need verification — leases, financing applications,
+        regulated agreements — every team picks from the same menu. The tools
+        change; the friction doesn&rsquo;t. Every step rekeys data the previous
+        step had, every artifact is a different file format, and the executed
+        PDF ends up with no semantic relationship to the draft that was
+        reviewed, the screening that approved it, or the math that priced it.
       </p>
     </div>
 
@@ -844,16 +870,39 @@ Baldwinson Protocol Layer</code></pre>
     margin: 0;
   }
 
-  .pain-app-name {
+  /* Tool alternatives list inside each stage card. Replaces the
+     previous .pain-app-name (single name per card) — each stage now
+     enumerates the 1-3 displaced tools that teams pick from at that
+     step. Same display-font weight as the old .pain-app-name so the
+     visual prominence carries through; tight line-height keeps the
+     stack readable inside the card without inflating the diagram's
+     vertical footprint. */
+  .pain-app-tools {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .pain-app-tools li {
     font-family: var(--font-display);
     font-weight: 700;
     font-size: var(--text-base);
     color: var(--color-text);
-    margin: 0;
+    line-height: 1.2;
   }
 
   .pain-app-file {
-    margin: 0;
+    /* `margin-top: auto` pushes the file-label row to the bottom of
+       the card. With cards now containing 1-3 tool names, content
+       heights differ; without this rule the file labels would sit
+       directly under the tools list at varying vertical positions
+       across cards. Auto-margin lets shorter cards absorb the
+       leftover space above the file label so file labels align
+       horizontally across the diagram. */
+    margin: auto 0 0;
   }
 
   .pain-app-file code {
@@ -1191,16 +1240,15 @@ Baldwinson Protocol Layer</code></pre>
     background: color-mix(in oklch, var(--color-primary) 6%, transparent);
   }
 
-  /* Unique-to-Atto rows: tint the whole row to flag "no other tool
-     does this". Atto's cell within the row gets a stronger tint so
-     it still reads as the standout. */
-  .cmp-row-unique .cmp-feature,
-  .cmp-row-unique .cmp-cell {
-    background: color-mix(in oklch, var(--color-primary) 4%, transparent);
-  }
-  .cmp-row-unique .cmp-cell-atto {
-    background: color-mix(in oklch, var(--color-primary) 14%, transparent);
-  }
+  /* Unique-to-Atto rows previously had a stronger Atto-cell tint to
+     mark them visually, but the darker shade on just two rows of
+     the column read as inconsistent. The Atto column now stays at
+     a uniform 6% tint top-to-bottom; the strategic claim ("only
+     Atto has ✓ on these rows") is left to the row content itself —
+     readers can scan across the – – – – – pattern in the
+     non-Atto cells of those rows. The .cmp-row-unique class is
+     retained on the <tr> for future use (e.g. an inline "Only Atto"
+     annotation) but currently has no visual treatment attached. */
 
   /* Last-row border cleanup */
   .cmp-table tbody tr:last-child .cmp-feature,
