@@ -1,0 +1,2328 @@
+---
+import Base from '../layouts/Base.astro';
+import SignatureWidget from '../components/SignatureWidget.astro';
+
+// AHRS subscription tiers — mirrors AFRP §7.2. Single source of truth
+// for the tier picker (Step 1), the feature matrix on the page header,
+// and the subscription summary on the review screen (Step 6).
+const tiers = [
+  {
+    id: 'indie',
+    label: 'Indie',
+    audience: 'Individual designers and informal collectives.',
+    families: '3 families',
+    storage: '1 GB',
+    bandwidth: '10 GB / mo',
+    sla: '99.9%',
+    customDomain: false,
+    annual: '$99',
+    monthly: '$12',
+  },
+  {
+    id: 'studio',
+    label: 'Studio',
+    audience: 'Small foundries and independent design studios.',
+    families: '20 families',
+    storage: '10 GB',
+    bandwidth: '100 GB / mo',
+    sla: '99.9%',
+    customDomain: true,
+    annual: '$399',
+    monthly: '$49',
+  },
+  {
+    id: 'foundry',
+    label: 'Foundry',
+    audience: 'Established foundries with larger catalogs.',
+    families: 'Unlimited',
+    storage: '50 GB',
+    bandwidth: '1 TB / mo',
+    sla: '99.95%',
+    customDomain: true,
+    annual: '$1,599',
+    monthly: '$199',
+  },
+  {
+    id: 'enterprise',
+    label: 'Enterprise',
+    audience: 'OEM integrations, platform partners, high-volume cases.',
+    families: 'Unlimited',
+    storage: 'Negotiated',
+    bandwidth: 'Negotiated',
+    sla: 'Negotiated',
+    customDomain: true,
+    annual: 'Negotiated',
+    monthly: 'Contact sales',
+  },
+];
+
+// AFRP §7.3 Step 1 — identity verification options. Two paths instead
+// of three (the old 'creative credentials' route is gone in AHRS — all
+// AHRS publishers must demonstrate name ownership, not just history).
+const verificationMethods = [
+  {
+    id: 'trademark',
+    label: 'Trademark',
+    sub: 'Registered trademark covering the requested publisher slug.',
+  },
+  {
+    id: 'domain',
+    label: 'WHOIS-verified domain',
+    sub: 'Domain whose WHOIS contact matches the publisher identity.',
+  },
+];
+
+// AFRP §7.4 — Publisher obligations. These are the AHRS-specific
+// prohibitions (a different, narrower set than the §6 Tier 1 Code of
+// Conduct because AHRS publishers do not hold a Tier 1 scope).
+const conductClauses = [
+  'Submit only original font designs or open-source fonts for which I hold the rights to distribute.',
+  'Declare license metadata that accurately reflects the actual distribution terms of each font.',
+  'Submit no font files containing malware, exploits, obfuscated code, or homoglyph phishing payloads.',
+  'Use a publisher slug that corresponds to my verified identity, never a name I do not control.',
+];
+
+const steps = [
+  { num: 1, label: 'Tier & slug' },
+  { num: 2, label: 'Identity' },
+  { num: 3, label: 'Fonts' },
+  { num: 4, label: 'License' },
+  { num: 5, label: 'Conduct' },
+  { num: 6, label: 'Review' },
+];
+---
+<Base
+  title="Apply for the Atto Hosted Registry or Tier 1 Shorthand"
+  description="Onboard to the Atto Hosted Registry Service (AHRS) for managed AFRP-compliant font hosting from $99/year, or express interest in Tier 1 @scope ratification."
+>
+  <section class="apply">
+    {/* ─── Header ──────────────────────────────────────── */}
+    <header class="apply-header wrap-default">
+      <p class="eyebrow">AFRP §6 + §7</p>
+      <h1>Apply for AFRP compliance.</h1>
+      <p class="lede">
+        Two paths into the Atto Font Registry Protocol: managed hosting via the Hosted Registry Service, or invitation-only ratification of a Tier 1 <code class="apply-h1-code">@scope</code>. Self-hosters need neither; see the <a href="/docs#afrp-manifest">manifest spec</a>.
+      </p>
+
+      <div class="apply-tabs" role="tablist" aria-label="Apply path">
+        <button
+          type="button"
+          role="tab"
+          class="apply-tab-btn"
+          data-apply-tab-btn="hosted"
+          data-apply-tab-active="true"
+          aria-selected="true"
+          aria-controls="apply-panel-hosted"
+          id="apply-tab-hosted"
+        >
+          <span class="apply-tab-name">Hosted Registry</span>
+          <span class="apply-tab-sub">Self-serve · from $99 / year</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="apply-tab-btn"
+          data-apply-tab-btn="tier1"
+          aria-selected="false"
+          aria-controls="apply-panel-tier1"
+          id="apply-tab-tier1"
+        >
+          <span class="apply-tab-name">Tier 1 Shorthand</span>
+          <span class="apply-tab-sub">Invitation only · $2,500 / year</span>
+        </button>
+      </div>
+    </header>
+
+    {/* ─── Tab panel: Hosted Registry (AHRS) ─────────────── */}
+    <div
+      class="apply-tab-panel"
+      data-apply-tab-panel="hosted"
+      id="apply-panel-hosted"
+      role="tabpanel"
+      aria-labelledby="apply-tab-hosted"
+    >
+      <div class="wrap-default">
+        <ol class="apply-stepper" data-apply-stepper aria-label="Application progress">
+          {steps.map(({ num, label }) => (
+            <li
+              class="apply-step"
+              data-apply-step-indicator={num}
+              data-apply-state={num === 1 ? 'current' : 'pending'}
+              aria-current={num === 1 ? 'step' : undefined}
+            >
+              <span class="apply-step-num" aria-hidden="true">{num}</span>
+              <span class="apply-step-label">{label}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <form class="apply-form wrap-default" data-apply-form novalidate>
+
+      {/* ─── Step 1: Tier & slug ─────────────────────── */}
+      <div class="apply-panel" data-apply-step="1" role="group" aria-labelledby="apply-step-1-heading">
+        <header class="apply-legend">
+          <span class="apply-step-tag">Step 1 of 6</span>
+          <h2 id="apply-step-1-heading">Tier & publisher slug</h2>
+          <p>Pick a subscription tier and propose the publisher slug your hosted registry will live under.</p>
+        </header>
+
+        <div class="apply-field">
+          <span class="apply-label">Subscription tier <span class="apply-required" aria-hidden="true">*</span></span>
+          <ul class="apply-tier-grid" role="list">
+            {tiers.map((t) => (
+              <li>
+                <label class="apply-tier-card" data-apply-tier-card={t.id}>
+                  <input
+                    type="radio"
+                    name="tier"
+                    value={t.id}
+                    required
+                    data-apply-required
+                    data-apply-tier
+                    data-apply-tier-custom-domain={t.customDomain ? 'true' : 'false'}
+                  />
+                  <span class="apply-tier-card-head">
+                    <span class="apply-tier-name">{t.label}</span>
+                    <span class="apply-tier-fee">
+                      <strong>{t.annual}</strong>
+                      <span>{t.monthly === 'Contact sales' ? t.monthly : `${t.monthly} / mo`}</span>
+                    </span>
+                  </span>
+                  <span class="apply-tier-def">{t.audience}</span>
+                  <ul class="apply-tier-meta" role="list">
+                    <li><span>Families</span><strong>{t.families}</strong></li>
+                    <li><span>Storage</span><strong>{t.storage}</strong></li>
+                    <li><span>Bandwidth</span><strong>{t.bandwidth}</strong></li>
+                    <li><span>SLA</span><strong>{t.sla}</strong></li>
+                    <li><span>Custom domain</span><strong>{t.customDomain ? 'Yes' : 'No'}</strong></li>
+                  </ul>
+                </label>
+              </li>
+            ))}
+          </ul>
+          <p class="apply-hint">
+            Bandwidth overage <code>$0.08 / GB</code>; storage overage <code>$0.20 / GB / mo</code>. Overage rates apply to Studio and Foundry tiers only.
+          </p>
+        </div>
+
+        <div class="apply-field">
+          <label for="ap-slug" class="apply-label">
+            Publisher slug <span class="apply-required" aria-hidden="true">*</span>
+          </label>
+          <div class="apply-scope-input">
+            <span class="apply-scope-prefix" aria-hidden="true">hosted.fonts.atto.tech /</span>
+            <input
+              id="ap-slug"
+              name="slug"
+              type="text"
+              class="apply-input apply-input-flush"
+              placeholder="velvetyne"
+              pattern="[a-z][a-z0-9-]*"
+              required
+              autocomplete="off"
+              spellcheck="false"
+              data-apply-required
+              data-apply-scope
+            />
+            <span class="apply-scope-suffix" aria-hidden="true">/</span>
+          </div>
+          <p class="apply-hint">
+            Lowercase letters, digits, and hyphens. Must begin with a letter. The slug must correspond to your verified identity, never a name you don't control.
+          </p>
+          <p class="apply-scope-status" data-apply-scope-status hidden></p>
+        </div>
+
+        <div class="apply-field" data-apply-custom-domain hidden>
+          <label for="ap-custom-domain" class="apply-label">
+            Custom domain <span class="apply-optional">optional · Studio+ only</span>
+          </label>
+          <input
+            id="ap-custom-domain"
+            name="custom_domain"
+            type="text"
+            class="apply-input"
+            placeholder="fonts.yourfoundry.com"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <p class="apply-hint">
+            Bring your own DNS host. We'll provision a CNAME so <code>{`{your-domain}/TypefaceName`}</code> resolves through Atto-hosted infrastructure. Foundry tier gets priority DNS.
+          </p>
+        </div>
+      </div>
+
+      {/* ─── Step 2: Identity ─────────────────────── */}
+      <div class="apply-panel" data-apply-step="2" hidden role="group" aria-labelledby="apply-step-2-heading">
+        <header class="apply-legend">
+          <span class="apply-step-tag">Step 2 of 6</span>
+          <h2 id="apply-step-2-heading">Identity</h2>
+          <p>Who is publishing, how to reach you, and how we'll verify your slug corresponds to a name you control.</p>
+        </header>
+
+        <div class="apply-grid-2">
+          <div class="apply-field">
+            <label for="ap-org-type" class="apply-label">Applicant type <span class="apply-required" aria-hidden="true">*</span></label>
+            <select id="ap-org-type" name="org_type" class="apply-input" required data-apply-required>
+              <option value="">Select…</option>
+              <option value="individual">Individual / sole designer</option>
+              <option value="collective">Collective / studio (informal)</option>
+              <option value="organization">Organization / foundry (registered)</option>
+            </select>
+          </div>
+
+          <div class="apply-field">
+            <label for="ap-legal" class="apply-label">Legal name <span class="apply-required" aria-hidden="true">*</span></label>
+            <input id="ap-legal" name="legal_name" type="text" class="apply-input" required data-apply-required autocomplete="organization" />
+          </div>
+
+          <div class="apply-field">
+            <label for="ap-trade" class="apply-label">Trade or foundry name <span class="apply-optional">if different</span></label>
+            <input id="ap-trade" name="trade_name" type="text" class="apply-input" autocomplete="off" />
+          </div>
+
+          <div class="apply-field">
+            <label for="ap-contact" class="apply-label">Primary contact <span class="apply-required" aria-hidden="true">*</span></label>
+            <input id="ap-contact" name="contact_name" type="text" class="apply-input" required data-apply-required autocomplete="name" />
+          </div>
+
+          <div class="apply-field">
+            <label for="ap-email" class="apply-label">Contact email <span class="apply-required" aria-hidden="true">*</span></label>
+            <input id="ap-email" name="email" type="email" class="apply-input" required data-apply-required autocomplete="email" placeholder="contact@example.com" />
+          </div>
+
+          <div class="apply-field">
+            <label for="ap-website" class="apply-label">Public website <span class="apply-required" aria-hidden="true">*</span></label>
+            <input id="ap-website" name="website" type="url" class="apply-input" placeholder="https://" required data-apply-required autocomplete="url" />
+          </div>
+        </div>
+
+        <div class="apply-field">
+          <span class="apply-label">Identity verification method <span class="apply-required" aria-hidden="true">*</span></span>
+          <ul class="apply-radio-stack" role="list">
+            {verificationMethods.map((m) => (
+              <li>
+                <label class="apply-radio-row">
+                  <input type="radio" name="verification" value={m.id} required data-apply-required />
+                  <span class="apply-radio-body">
+                    <span class="apply-radio-name">{m.label}</span>
+                    <span class="apply-radio-sub">{m.sub}</span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="apply-field">
+          <label for="ap-evidence" class="apply-label">Verification evidence <span class="apply-required" aria-hidden="true">*</span></label>
+          <textarea id="ap-evidence" name="evidence" class="apply-input apply-textarea" rows="3" placeholder="Trademark registration number, WHOIS contact email + domain registration date, or list of credited typefaces with release URLs." required data-apply-required></textarea>
+        </div>
+      </div>
+
+      {/* ─── Step 3: Fonts & metadata ─────────────────────── */}
+      <div class="apply-panel" data-apply-step="3" hidden role="group" aria-labelledby="apply-step-3-heading">
+        <header class="apply-legend">
+          <span class="apply-step-tag">Step 3 of 6</span>
+          <h2 id="apply-step-3-heading">Fonts & metadata</h2>
+          <p>List each typeface family and upload the binaries. Atto generates the manifest, computes integrity hashes, and runs ARCTS on your behalf; you only declare metadata.</p>
+        </header>
+
+        <div class="apply-field">
+          <label for="ap-families" class="apply-label">Typeface families <span class="apply-required" aria-hidden="true">*</span></label>
+          <textarea
+            id="ap-families"
+            name="families"
+            class="apply-input apply-textarea apply-textarea-tall"
+            rows="7"
+            placeholder={`One family per line: Name | Designer | SPDX-license
+
+Bagnard | Sebastien Sanfilippo | OFL-1.1
+Karrik | Jean-Baptiste Morizot, Lucas Le Bihan | OFL-1.1
+…`}
+            required
+            data-apply-required
+            data-apply-families
+          ></textarea>
+          <p class="apply-hint" data-apply-family-count>
+            <strong>0</strong> families listed.
+          </p>
+          <p class="apply-hint" data-apply-family-cap hidden>
+            <strong data-apply-family-cap-text></strong>
+          </p>
+        </div>
+
+        <div class="apply-field">
+          <span class="apply-label">Font binaries <span class="apply-required" aria-hidden="true">*</span></span>
+          <label class="apply-upload" for="ap-font-files">
+            <input
+              id="ap-font-files"
+              name="font_files"
+              type="file"
+              accept=".woff2,.woff,.ttf,.otf,application/font-woff2,application/font-woff,font/ttf,font/otf"
+              multiple
+              required
+              data-apply-required
+              data-apply-font-files
+            />
+            <span class="apply-upload-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </span>
+            <span class="apply-upload-prompt" data-apply-font-files-prompt>
+              <strong>Choose font files</strong>
+              <span>woff2 required · woff and ttf optional · multi-select</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="apply-field">
+          <span class="apply-label">Variable-axis declarations <span class="apply-optional">if applicable</span></span>
+          <textarea
+            id="ap-axes"
+            name="axes"
+            class="apply-input apply-textarea"
+            rows="3"
+            placeholder={`Optional. Declare OpenType axes for variable fonts.
+
+Bagnard: wght=100..900 (default 400), opsz=8..64 (default 12)`}
+          ></textarea>
+          <p class="apply-hint">
+            Per spec §3.3, variable-axis ranges and defaults are pinned at signing time. Atto records exactly what you declare here in the generated manifest.
+          </p>
+        </div>
+      </div>
+
+      {/* ─── Step 4: License declaration ─────────────────────── */}
+      <div class="apply-panel" data-apply-step="4" hidden role="group" aria-labelledby="apply-step-4-heading">
+        <header class="apply-legend">
+          <span class="apply-step-tag">Step 4 of 6</span>
+          <h2 id="apply-step-4-heading">License declaration</h2>
+          <p>Confirm the metadata accuracy and acknowledge the AHRS automation pipeline.</p>
+        </header>
+
+        <aside class="apply-process">
+          <p class="apply-process-label">What Atto does on submission</p>
+          <ol role="list">
+            <li><strong>Hashes every binary.</strong> SHA-256 over each woff2 / woff / ttf you submitted, formatted as SRI <code>sha256-…</code> per spec §4.2.</li>
+            <li><strong>Generates the AFRP manifest.</strong> Schema-valid JSON at <code>{`{base}/.well-known/atto-font-registry.json`}</code> from your Step 3 declarations.</li>
+            <li><strong>Runs the full ARCTS suite.</strong> Endpoint availability, schema, integrity, TLS, version resolution, cache headers, CORS. No work for you.</li>
+            <li><strong>Provisions the endpoint.</strong> Live at <code>hosted.fonts.atto.tech/{`{slug}`}/</code> (and your custom domain if Studio+) within five business days of acknowledgement.</li>
+          </ol>
+        </aside>
+
+        <div class="apply-field">
+          <span class="apply-label">License metadata declaration <span class="apply-required" aria-hidden="true">*</span></span>
+          <label class="apply-check-row">
+            <input type="checkbox" name="license_spdx" required data-apply-required />
+            <span>Every font I'm submitting has a valid SPDX license identifier declared in Step 3.</span>
+          </label>
+          <label class="apply-check-row">
+            <input type="checkbox" name="license_accuracy" required data-apply-required />
+            <span>Proprietary licenses accurately reflect <code>commercial_use</code>, <code>embedding_allowed</code>, and <code>web_embedding_allowed</code> values.</span>
+          </label>
+          <label class="apply-check-row">
+            <input type="checkbox" name="license_review" required data-apply-required />
+            <span>I'll review and confirm Atto's generated manifest before the registry goes live (per spec §7.3 Step 6).</span>
+          </label>
+        </div>
+      </div>
+
+      {/* ─── Step 5: Publisher obligations ─────────────────────── */}
+      <div class="apply-panel" data-apply-step="5" hidden role="group" aria-labelledby="apply-step-5-heading">
+        <header class="apply-legend">
+          <span class="apply-step-tag">Step 5 of 6</span>
+          <h2 id="apply-step-5-heading">Publisher obligations</h2>
+          <p>Sign a digital declaration of agreement to the AHRS publisher obligations. The signature key is bound to the contact identity from Step 2.</p>
+        </header>
+
+        <aside class="apply-conduct">
+          <p class="apply-conduct-label">Publisher obligations · AFRP §7.4</p>
+          <ul role="list">
+            {conductClauses.map((c) => (
+              <li>{c}</li>
+            ))}
+          </ul>
+          <p class="apply-conduct-foot">
+            Material breach is grounds for immediate termination. A terminated registry returns <code>REGISTRY_UNREACHABLE</code> in EXECUTED-mode rendering, so keep local copies of submitted binaries to ease migration to self-hosted infrastructure if service is terminated.
+          </p>
+        </aside>
+
+        <SignatureWidget
+          party="Atto Hosted Registry Service: Publisher Agreement"
+          signer="Authorised representative"
+          title="Bound to contact email from Step 2"
+        />
+
+        <p class="apply-hint">
+          The signed payload includes the application contents and a SHA-256 digest of the AFRP §7.4 Publisher Obligations as published on the date of submission.
+        </p>
+      </div>
+
+      {/* ─── Step 6: Review & subscribe ─────────────────────── */}
+      <div class="apply-panel" data-apply-step="6" hidden role="group" aria-labelledby="apply-step-6-heading">
+        <header class="apply-legend">
+          <span class="apply-step-tag">Step 6 of 6</span>
+          <h2 id="apply-step-6-heading">Review & subscribe</h2>
+          <p>One last look. Submitting opens onboarding for AHRS provisioning.</p>
+        </header>
+
+        <dl class="apply-review-list" data-apply-review></dl>
+
+        <div class="apply-fee-summary">
+          <p class="apply-fee-label">Subscription</p>
+          <p class="apply-fee-amount" data-apply-fee-amount>Pick a tier</p>
+          <p class="apply-fee-monthly" data-apply-fee-monthly hidden></p>
+          <p class="apply-fee-note">Payment instructions arrive with acknowledgement. Fees are not collected at submission. Bandwidth overages billed at $0.08/GB; storage overages at $0.20/GB/mo (Studio &amp; Foundry only).</p>
+        </div>
+
+        <p class="apply-legal">
+          Submitting transmits your application to the Atto Hosted
+          Registry Service onboarding queue. By submitting, you confirm
+          the information is accurate, that you have the rights to
+          distribute the submitted fonts, and that you are authorised to
+          make this application on behalf of the named publisher.
+        </p>
+      </div>
+
+      <nav class="apply-nav" aria-label="Application steps">
+        <button type="button" class="btn btn-secondary apply-back" data-apply-back hidden>
+          <span aria-hidden="true">←</span> Back
+        </button>
+        <span class="apply-nav-spacer" aria-hidden="true"></span>
+        <button type="button" class="btn btn-primary apply-next" data-apply-next>
+          Continue <span aria-hidden="true">→</span>
+        </button>
+        <button type="submit" class="btn btn-primary apply-submit" data-apply-submit hidden>
+          Submit application <span aria-hidden="true">→</span>
+        </button>
+      </nav>
+    </form>
+
+      <div
+        class="apply-success wrap-default"
+        data-apply-success
+        role="status"
+        aria-live="polite"
+        hidden
+      >
+        <p class="eyebrow">Received</p>
+        <h2>Your AHRS onboarding is in progress.</h2>
+        <dl class="apply-success-meta">
+          <div>
+            <dt>Tracking ID</dt>
+            <dd><code data-apply-success-id></code></dd>
+          </div>
+          <div>
+            <dt>Acknowledgement by</dt>
+            <dd data-apply-success-ack></dd>
+          </div>
+          <div>
+            <dt>Registry live by</dt>
+            <dd data-apply-success-decision></dd>
+          </div>
+        </dl>
+        <p>
+          We&rsquo;ll send a confirmation to the contact email on file with
+          the tracking ID and (where applicable) payment instructions.
+          Atto then computes integrity hashes for every submitted binary,
+          generates the AFRP manifest, runs the full ARCTS suite, and
+          provisions your hosted registry endpoint.
+        </p>
+        <p>
+          Status updates land at{' '}
+          <a href="mailto:hello@atto.tech">hello@atto.tech</a>. Termination
+          and appeal procedures follow AFRP §7.4.
+        </p>
+      </div>
+
+      <aside class="apply-aside wrap-default">
+        <p class="eyebrow">What happens after submission</p>
+        <ul role="list">
+          <li>
+            <h3>2 business days: acknowledgement.</h3>
+            <p>
+              A real read-through, not an auto-reply. We use the
+              window to look over your application ourselves and
+              sanity-check it against the spec, so if something is
+              missing or unclear, you hear back from a person with
+              specifics, not a one-line rejection. You'll always get
+              a confirmation email with a tracking ID; if anything
+              needs adjusting, we'll suggest concrete next steps so
+              we can sort it out together rather than make you start
+              over.
+            </p>
+          </li>
+          <li>
+            <h3>5 business days: registry live.</h3>
+            <p>Your AHRS endpoint is provisioned, ARCTS-verified, and publicly resolvable at <code>hosted.fonts.atto.tech/{`{slug}`}/</code>.</p>
+          </li>
+          <li>
+            <h3>Ongoing: compliance monitoring.</h3>
+            <p>Atto runs monthly ARCTS checks, weekly integrity spot-checks, and quarterly license audits on your behalf.</p>
+          </li>
+        </ul>
+      </aside>
+    </div>
+
+    {/* ─── Tab panel: Tier 1 Shorthand inquiry ────────── */}
+    <div
+      class="apply-tab-panel"
+      data-apply-tab-panel="tier1"
+      id="apply-panel-tier1"
+      role="tabpanel"
+      aria-labelledby="apply-tab-tier1"
+      hidden
+    >
+      <div class="apply-tier1 wrap-default">
+        <div class="apply-tier1-explainer">
+          <p class="eyebrow">AFRP §6 · Tier 1 Ratification</p>
+          <h2>Tier 1 <code class="apply-h1-code">@scope</code> grants are not self-serve.</h2>
+          <p>
+            Tier 1 shorthands are reserved for foundational font
+            infrastructure providers: organizations whose registries are
+            expected to remain operational, publicly accessible, and
+            independently maintained indefinitely. Examples on the
+            current registry: <code>@adobe</code>, <code>@google</code>,
+            <code>@monotype</code>, <code>@velvetyne</code>.
+          </p>
+          <p>
+            Express interest below and we'll route your message to the
+            Atto Protocol Authority. Acknowledgement within ten business
+            days; full ratification review within sixty calendar days of
+            a complete submission.
+          </p>
+
+          <div class="apply-fee-summary">
+            <p class="apply-fee-label">Annual compliance fee</p>
+            <p class="apply-fee-amount">$2,500 / year</p>
+            <p class="apply-fee-note">Flat fee for every Tier 1 holder. Funds the shorthand-registry compliance monitoring infrastructure (monthly ARCTS, weekly integrity spot-checks, quarterly license audits). Not a revenue instrument.</p>
+          </div>
+
+          <h3>Five eligibility criteria</h3>
+          <ol class="apply-criteria">
+            <li><strong>Infrastructure permanence.</strong> 5+ years of operational history; institutional backing or endowment; public commitment to long-term stewardship.</li>
+            <li><strong>Identity verification.</strong> Scope name corresponds to your verified legal or organizational identity. Trademark or WHOIS-verified domain.</li>
+            <li><strong>License transparency.</strong> Every font served includes machine-readable SPDX metadata.</li>
+            <li><strong>Protocol compliance.</strong> Registry passes the ARCTS test suite. Report dated within 30 days of submission.</li>
+            <li><strong>Code of Conduct.</strong> Digitally-signed agreement to the AFRP §6 Code of Conduct.</li>
+          </ol>
+
+          <p class="apply-hint">
+            Don't meet these yet? The{' '}
+            <button
+              type="button"
+              class="apply-link-btn"
+              data-apply-tab-switch="hosted"
+            >Hosted Registry</button>{' '}
+            path has no permanence requirement, runs on a subscription
+            model, and self-hosted Form C registries need no registration
+            at all.
+          </p>
+        </div>
+
+        <form class="apply-tier1-form" data-apply-tier1-form novalidate>
+          <h3>Express interest</h3>
+
+          <div class="apply-grid-2">
+            <div class="apply-field">
+              <label for="t1-org" class="apply-label">Organisation <span class="apply-required" aria-hidden="true">*</span></label>
+              <input id="t1-org" name="t1_org" type="text" class="apply-input" required data-apply-tier1-required autocomplete="organization" />
+            </div>
+            <div class="apply-field">
+              <label for="t1-scope" class="apply-label">Proposed scope <span class="apply-required" aria-hidden="true">*</span></label>
+              <div class="apply-scope-input">
+                <span class="apply-scope-prefix" aria-hidden="true">@</span>
+                <input
+                  id="t1-scope"
+                  name="t1_scope"
+                  type="text"
+                  class="apply-input apply-input-flush"
+                  placeholder="velvetyne"
+                  pattern="[a-z][a-z0-9-]*"
+                  required
+                  autocomplete="off"
+                  spellcheck="false"
+                  data-apply-tier1-required
+                />
+                <span class="apply-scope-suffix" aria-hidden="true">/</span>
+              </div>
+            </div>
+            <div class="apply-field">
+              <label for="t1-contact" class="apply-label">Contact name <span class="apply-required" aria-hidden="true">*</span></label>
+              <input id="t1-contact" name="t1_contact" type="text" class="apply-input" required data-apply-tier1-required autocomplete="name" />
+            </div>
+            <div class="apply-field">
+              <label for="t1-email" class="apply-label">Contact email <span class="apply-required" aria-hidden="true">*</span></label>
+              <input id="t1-email" name="t1_email" type="email" class="apply-input" required data-apply-tier1-required autocomplete="email" placeholder="contact@example.com" />
+            </div>
+          </div>
+
+          <div class="apply-field">
+            <label for="t1-context" class="apply-label">Why this scope <span class="apply-required" aria-hidden="true">*</span></label>
+            <textarea
+              id="t1-context"
+              name="t1_context"
+              class="apply-input apply-textarea apply-textarea-tall"
+              rows="6"
+              placeholder="Brief context: organisational age, identity-verification path you'd use (trademark / domain), public commitment to long-term stewardship, and any existing AFRP infrastructure you operate. The Authority uses this to decide whether to begin a full review."
+              required
+              data-apply-tier1-required
+            ></textarea>
+          </div>
+
+          <p class="apply-legal">
+            Submitting opens your mail client with a pre-filled message
+            to <code>registry@atto.tech</code>. Send the message as-is to
+            register your interest. Interest is not an application and
+            does not guarantee review.
+          </p>
+
+          <button type="submit" class="btn btn-primary apply-tier1-submit">
+            Email registry@atto.tech <span aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <div
+          class="apply-success"
+          data-apply-tier1-success
+          role="status"
+          aria-live="polite"
+          hidden
+        >
+          <p class="eyebrow">Sent</p>
+          <h2>Your mail client should have opened.</h2>
+          <p>
+            Send the pre-filled message to{' '}
+            <a href="mailto:registry@atto.tech">registry@atto.tech</a> as-is
+            and your expression of interest is on file. The Atto Protocol
+            Authority will acknowledge receipt within ten business days.
+          </p>
+          <p>
+            If your client didn't launch, email{' '}
+            <a href="mailto:registry@atto.tech">registry@atto.tech</a>{' '}
+            directly with the contents of the form above.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Apply page — two-tab wizard, NO BACKEND. Tab 1 (Hosted Registry) is a
+  // 6-step AHRS subscription wizard; Tab 2 (Tier 1 Shorthand) is a single
+  // inquiry form that fires a mailto to registry@atto.tech. Both are
+  // frontend-only scaffolds — the Go backend in the registry codebase
+  // will replace the submit handlers later.
+  const form = document.querySelector<HTMLFormElement>('[data-apply-form]');
+  const success = document.querySelector<HTMLElement>('[data-apply-success]');
+  const stepper = document.querySelector<HTMLElement>('[data-apply-stepper]');
+  const back = document.querySelector<HTMLButtonElement>('[data-apply-back]');
+  const next = document.querySelector<HTMLButtonElement>('[data-apply-next]');
+  const submit = document.querySelector<HTMLButtonElement>('[data-apply-submit]');
+  const familiesEl = document.querySelector<HTMLTextAreaElement>('[data-apply-families]');
+  const familyCountEl = document.querySelector<HTMLElement>('[data-apply-family-count]');
+  const familyCapEl = document.querySelector<HTMLElement>('[data-apply-family-cap]');
+  const familyCapTextEl = document.querySelector<HTMLElement>('[data-apply-family-cap-text]');
+  const scopeEl = document.querySelector<HTMLInputElement>('[data-apply-scope]');
+  const scopeStatusEl = document.querySelector<HTMLElement>('[data-apply-scope-status]');
+  const fontFilesEl = document.querySelector<HTMLInputElement>('[data-apply-font-files]');
+  const fontFilesPrompt = document.querySelector<HTMLElement>('[data-apply-font-files-prompt]');
+  const customDomainWrap = document.querySelector<HTMLElement>('[data-apply-custom-domain]');
+  const tierRadios = Array.from(
+    document.querySelectorAll<HTMLInputElement>('[data-apply-tier]'),
+  );
+  const reviewEl = document.querySelector<HTMLElement>('[data-apply-review]');
+  const feeAmountEl = document.querySelector<HTMLElement>('[data-apply-fee-amount]');
+  const feeMonthlyEl = document.querySelector<HTMLElement>('[data-apply-fee-monthly]');
+  const successId = document.querySelector<HTMLElement>('[data-apply-success-id]');
+  const successAck = document.querySelector<HTMLElement>('[data-apply-success-ack]');
+  const successDecision = document.querySelector<HTMLElement>('[data-apply-success-decision]');
+  const panels = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-apply-step]'),
+  );
+  const indicators = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-apply-step-indicator]'),
+  );
+
+  // Tier → display table mirrors the frontmatter `tiers` array. Each
+  // entry feeds the review summary fee callout (annual + monthly) and
+  // the Step 3 family-cap awareness hint.
+  // Cap is null for unlimited tiers (Foundry / Enterprise).
+  const TIER_INFO: Record<string, { annual: string; monthly: string; cap: number | null; label: string }> = {
+    indie:      { annual: '$99 / year',     monthly: '$12 / mo',         cap: 3,    label: 'Indie' },
+    studio:     { annual: '$399 / year',    monthly: '$49 / mo',         cap: 20,   label: 'Studio' },
+    foundry:    { annual: '$1,599 / year',  monthly: '$199 / mo',        cap: null, label: 'Foundry' },
+    enterprise: { annual: 'Negotiated',     monthly: 'Contact sales',    cap: null, label: 'Enterprise' },
+  };
+
+  // ABNF: scope / slug = lc-alpha *( lc-alpha / DIGIT / "-" )
+  const SCOPE_RE = /^[a-z][a-z0-9-]*$/;
+  // Conservative reserved-name list — canonical Atto + protocol-namespace
+  // words. The actual taken-list lives server-side; this is a UX hint.
+  const RESERVED = new Set(['atto', 'admin', 'system', 'protocol', 'authority', 'hosted']);
+
+  let currentStep = 1;
+
+  // ─── Tab switching ────────────────────────────────────────
+  // Two tabs (Hosted Registry / Tier 1 Shorthand). Switching toggles
+  // [hidden] on the tab panels and aria-selected on the buttons. The
+  // wizard inside the Hosted panel keeps its own state; tabs don't
+  // reset it.
+  const tabBtns = Array.from(
+    document.querySelectorAll<HTMLButtonElement>('[data-apply-tab-btn]'),
+  );
+  const tabPanels = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-apply-tab-panel]'),
+  );
+
+  function switchTab(target: string) {
+    tabBtns.forEach((btn) => {
+      const isActive = btn.dataset.applyTabBtn === target;
+      btn.dataset.applyTabActive = isActive ? 'true' : 'false';
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    tabPanels.forEach((panel) => {
+      panel.hidden = panel.dataset.applyTabPanel !== target;
+    });
+  }
+
+  tabBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.applyTabBtn;
+      if (target) switchTab(target);
+    });
+  });
+
+  // Inline link buttons inside copy that switch tabs (e.g. the "Hosted
+  // Registry" link in the Tier 1 explainer).
+  document.querySelectorAll<HTMLButtonElement>('[data-apply-tab-switch]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.applyTabSwitch;
+      if (target) {
+        switchTab(target);
+        document.querySelector<HTMLElement>(`[data-apply-tab-panel="${target}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  function setStep(n: number) {
+    currentStep = n;
+    panels.forEach((p) => {
+      const step = Number(p.dataset.applyStep);
+      p.hidden = step !== n;
+    });
+    indicators.forEach((ind) => {
+      const step = Number(ind.dataset.applyStepIndicator);
+      ind.dataset.applyState =
+        step < n ? 'done' : step === n ? 'current' : 'pending';
+      if (step === n) ind.setAttribute('aria-current', 'step');
+      else ind.removeAttribute('aria-current');
+    });
+    if (back) back.hidden = n === 1;
+    if (next) next.hidden = n === panels.length;
+    if (submit) submit.hidden = n !== panels.length;
+    // Landing on the review screen — populate it from current form state.
+    if (n === panels.length) populateReview();
+    const active = panels.find((p) => Number(p.dataset.applyStep) === n);
+    active?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function getActivePanel(): HTMLElement | undefined {
+    return panels.find((p) => Number(p.dataset.applyStep) === currentStep);
+  }
+
+  // Per-panel validity gate. Walks every [data-apply-required] descendant
+  // and returns false on the first that's empty / unchecked / invalid.
+  // Radio groups need a manual any-checked pass; checkboxes use the
+  // native checked state; file inputs check files.length.
+  function isPanelValid(panel: HTMLElement): boolean {
+    const required = panel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+      '[data-apply-required]',
+    );
+    const seenRadioGroups = new Set<string>();
+    for (const el of required) {
+      if (el instanceof HTMLInputElement && el.type === 'radio') {
+        if (seenRadioGroups.has(el.name)) continue;
+        seenRadioGroups.add(el.name);
+        const group = panel.querySelectorAll<HTMLInputElement>(
+          `input[name="${el.name}"]`,
+        );
+        const checked = Array.from(group).some((g) => g.checked);
+        if (!checked) return false;
+        continue;
+      }
+      if (el instanceof HTMLInputElement && el.type === 'checkbox') {
+        if (!el.checked) return false;
+        continue;
+      }
+      if (el instanceof HTMLInputElement && el.type === 'file') {
+        if (!el.files || el.files.length === 0) return false;
+        continue;
+      }
+      if (!el.value || !el.value.trim()) return false;
+      if (!el.checkValidity()) return false;
+    }
+    // Step 5 also requires the embedded SignatureWidget to be in its
+    // signed state. The widget itself doesn't expose a form-friendly
+    // value, so we read its visibility flag instead. Other steps don't
+    // contain a [data-sig-state] node, so this is a no-op for them.
+    const signedState = panel.querySelector<HTMLElement>('[data-sig-state="signed"]');
+    if (signedState && signedState.hidden) return false;
+    return true;
+  }
+
+  // First missing/invalid required field gets focus on a failed Continue.
+  function flashInvalid(panel: HTMLElement) {
+    const required = panel.querySelectorAll<HTMLElement>('[data-apply-required]');
+    for (const el of required) {
+      if (!('checkValidity' in el)) continue;
+      const input = el as HTMLInputElement;
+      if (!input.checkValidity() || (!input.value && input.type !== 'file' && input.type !== 'checkbox' && input.type !== 'radio')) {
+        input.focus();
+        return;
+      }
+    }
+  }
+
+  // Family count derived from non-empty newline-separated rows. Surfaces
+  // tier-cap awareness when the count exceeds the chosen tier's family
+  // limit (Indie 3, Studio 20, Foundry / Enterprise unlimited).
+  function updateFamilyCount() {
+    if (!familiesEl) return;
+    const lines = familiesEl.value
+      .split(/\n+/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const count = lines.length;
+    if (familyCountEl) {
+      const strong = familyCountEl.querySelector('strong');
+      if (strong) strong.textContent = String(count);
+    }
+    // Tier cap warning — if the picker has a selected tier with a finite
+    // cap and the count exceeds it, show the warn hint with copy that
+    // suggests upgrading.
+    const tier = getSelectedTier();
+    const info = tier ? TIER_INFO[tier] : null;
+    if (familyCapEl && familyCapTextEl) {
+      if (info && info.cap !== null && count > info.cap) {
+        familyCapEl.hidden = false;
+        familyCapEl.dataset.applyShort = 'true';
+        familyCapTextEl.textContent =
+          `${count} families exceeds the ${info.label} tier cap of ${info.cap}. Upgrade your tier in Step 1 or trim the list.`;
+      } else {
+        familyCapEl.hidden = true;
+      }
+    }
+  }
+
+  familiesEl?.addEventListener('input', updateFamilyCount);
+
+  // Slug live validation — ABNF format check plus a small reserved
+  // list. The actual availability check happens server-side at review.
+  function updateScopeStatus() {
+    if (!scopeEl || !scopeStatusEl) return;
+    const v = scopeEl.value.trim();
+    if (!v) {
+      scopeStatusEl.hidden = true;
+      return;
+    }
+    let msg = '';
+    let state: 'ok' | 'warn' = 'ok';
+    if (!SCOPE_RE.test(v)) {
+      msg = 'Invalid format. Lowercase letters / digits / hyphens; must start with a letter.';
+      state = 'warn';
+    } else if (RESERVED.has(v)) {
+      msg = 'Reserved name. Pick a different slug.';
+      state = 'warn';
+    } else {
+      msg = `hosted.fonts.atto.tech/${v}/ looks available. Final availability is confirmed at review.`;
+      state = 'ok';
+    }
+    scopeStatusEl.hidden = false;
+    scopeStatusEl.textContent = msg;
+    scopeStatusEl.dataset.applyScopeState = state;
+  }
+
+  scopeEl?.addEventListener('input', updateScopeStatus);
+
+  // Selected tier helper — reads the currently-checked tier radio's
+  // value (or null if none selected).
+  function getSelectedTier(): string | null {
+    const checked = tierRadios.find((r) => r.checked);
+    return checked ? checked.value : null;
+  }
+
+  // Tier picker change handler — toggles the optional custom-domain
+  // input (visible only on Studio+ tiers) and refreshes the family
+  // count hint so the cap awareness updates immediately when the tier
+  // changes.
+  tierRadios.forEach((radio) => {
+    radio.addEventListener('change', () => {
+      if (customDomainWrap) {
+        const allowsCustom = radio.dataset.applyTierCustomDomain === 'true';
+        customDomainWrap.hidden = !allowsCustom;
+      }
+      updateFamilyCount();
+    });
+  });
+
+  // Font-binary file picker — multi-select. Replace the prompt copy with
+  // a count + total size summary. No upload happens; refs are discarded
+  // when the form is submitted (no backend yet).
+  fontFilesEl?.addEventListener('change', () => {
+    if (!fontFilesPrompt) return;
+    const files = fontFilesEl.files;
+    const strong = fontFilesPrompt.querySelector('strong');
+    const subs = fontFilesPrompt.querySelectorAll('span');
+    const sub = subs[0];
+    if (files && files.length > 0) {
+      const totalKb = Array.from(files).reduce((sum, f) => sum + f.size, 0) / 1024;
+      const formats = new Set(
+        Array.from(files).map((f) => f.name.split('.').pop()?.toLowerCase() ?? ''),
+      );
+      if (strong) strong.textContent = `${files.length} file${files.length === 1 ? '' : 's'} selected`;
+      if (sub) {
+        sub.textContent = `${totalKb.toFixed(1)} KB · ${Array.from(formats).filter(Boolean).join(' · ')}`;
+      }
+    } else {
+      if (strong) strong.textContent = 'Choose font files';
+      if (sub) sub.textContent = 'woff2 required · woff and ttf optional · multi-select';
+    }
+  });
+
+  // Stepper indicator — clickable to jump backwards to a completed step.
+  // Forward jumps require Continue (validity gate).
+  indicators.forEach((ind) => {
+    ind.addEventListener('click', () => {
+      const target = Number(ind.dataset.applyStepIndicator);
+      if (target < currentStep) setStep(target);
+    });
+    ind.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      const target = Number(ind.dataset.applyStepIndicator);
+      if (target < currentStep) setStep(target);
+    });
+  });
+
+  next?.addEventListener('click', () => {
+    const panel = getActivePanel();
+    if (!panel) return;
+    if (!isPanelValid(panel)) {
+      flashInvalid(panel);
+      return;
+    }
+    setStep(currentStep + 1);
+  });
+
+  back?.addEventListener('click', () => {
+    setStep(Math.max(1, currentStep - 1));
+  });
+
+  // Builds the review summary on every entry into Step 6 so edits via
+  // Back are reflected without a re-render of the panel. The summary
+  // mirrors the AHRS metadata flow — tier + slug + identity + fonts +
+  // license declarations — and surfaces both the annual and monthly
+  // subscription numbers in the fee callout.
+  function populateReview() {
+    if (!form || !reviewEl) return;
+    const data = new FormData(form);
+    const tier = String(data.get('tier') ?? '');
+    const info = tier ? TIER_INFO[tier] : null;
+    if (feeAmountEl) feeAmountEl.textContent = info?.annual ?? 'Pick a tier';
+    if (feeMonthlyEl) {
+      if (info && info.monthly !== 'Contact sales') {
+        feeMonthlyEl.textContent = `or ${info.monthly}`;
+        feeMonthlyEl.hidden = false;
+      } else if (info) {
+        feeMonthlyEl.textContent = info.monthly;
+        feeMonthlyEl.hidden = false;
+      } else {
+        feeMonthlyEl.hidden = true;
+      }
+    }
+
+    const get = (k: string) => {
+      const raw = data.get(k);
+      if (raw == null) return '-';
+      const v = String(raw).trim();
+      return v.length > 0 ? v : '-';
+    };
+
+    const families = String(data.get('families') ?? '')
+      .split(/\n+/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    const titleCase = (v: string) =>
+      v && v !== '-' ? v.charAt(0).toUpperCase() + v.slice(1) : v;
+
+    const fontFilesCount = fontFilesEl?.files?.length ?? 0;
+    const customDomain = get('custom_domain');
+
+    const rows: Array<[string, string]> = [
+      ['Tier', info?.label ?? '-'],
+      ['Slug', `hosted.fonts.atto.tech/${get('slug')}/`],
+      ['Custom domain', customDomain],
+      ['Applicant type', titleCase(get('org_type'))],
+      ['Legal name', get('legal_name')],
+      ['Trade name', get('trade_name')],
+      ['Contact', `${get('contact_name')} · ${get('email')}`],
+      ['Website', get('website')],
+      ['Verification', titleCase(get('verification'))],
+      ['Families', families.length > 0 ? `${families.length} listed` : '-'],
+      ['Font files', fontFilesCount > 0 ? `${fontFilesCount} file${fontFilesCount === 1 ? '' : 's'}` : '-'],
+    ];
+
+    reviewEl.innerHTML = rows
+      .map(
+        ([k, v]) =>
+          `<div><dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd></div>`,
+      )
+      .join('');
+  }
+
+  function escapeHtml(v: string): string {
+    return v
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  // AHRS submit (no backend) — generate a tracking ID, compute the
+  // acknowledgement (2 business days per §7.3) and registry-live (5
+  // business days) dates, and reveal the success card.
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const panel = getActivePanel();
+    if (!panel) return;
+    if (!isPanelValid(panel)) {
+      flashInvalid(panel);
+      return;
+    }
+
+    const id = generateAppId();
+    const now = new Date();
+    const ack = addBusinessDays(now, 2);
+    const live = addBusinessDays(now, 5);
+
+    if (successId) successId.textContent = id;
+    if (successAck) successAck.textContent = formatDate(ack);
+    if (successDecision) successDecision.textContent = formatDate(live);
+
+    if (form) form.hidden = true;
+    if (stepper) stepper.hidden = true;
+    if (success) success.hidden = false;
+    success?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  function generateAppId(): string {
+    const year = new Date().getFullYear();
+    const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+    return `APP-${year}-${rand}`;
+  }
+
+  // Naive Mon-Fri count — no holiday calendar — matches how the spec's
+  // business-day promises are informally interpreted.
+  function addBusinessDays(d: Date, days: number): Date {
+    const out = new Date(d);
+    let added = 0;
+    while (added < days) {
+      out.setDate(out.getDate() + 1);
+      const day = out.getDay();
+      if (day !== 0 && day !== 6) added += 1;
+    }
+    return out;
+  }
+
+  function formatDate(d: Date): string {
+    return d.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  }
+
+  // ─── Tier 1 inquiry form ────────────────────────────────
+  // Composes a mailto: URL with the form contents pre-filled, opens the
+  // user's mail client, and reveals a success card. Same progressive-
+  // enhancement pattern as the waitlist page.
+  const tier1Form = document.querySelector<HTMLFormElement>('[data-apply-tier1-form]');
+  const tier1Success = document.querySelector<HTMLElement>('[data-apply-tier1-success]');
+
+  tier1Form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const required = tier1Form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+      '[data-apply-tier1-required]',
+    );
+    for (const el of required) {
+      if (!el.value || !el.value.trim() || !el.checkValidity()) {
+        el.focus();
+        return;
+      }
+    }
+
+    const data = new FormData(tier1Form);
+    const org = String(data.get('t1_org') ?? '').trim();
+    const scope = String(data.get('t1_scope') ?? '').trim();
+    const contact = String(data.get('t1_contact') ?? '').trim();
+    const email = String(data.get('t1_email') ?? '').trim();
+    const context = String(data.get('t1_context') ?? '').trim();
+
+    const subject = `AFRP Tier 1 Inquiry for @${scope}`;
+    const lines = [
+      `Organisation: ${org}`,
+      `Proposed scope: @${scope}/`,
+      `Contact: ${contact} <${email}>`,
+      '',
+      'Why this scope:',
+      context,
+    ];
+    const href = `mailto:registry@atto.tech?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
+
+    if (tier1Success) tier1Success.hidden = false;
+    tier1Form.hidden = true;
+    window.location.href = href;
+    tier1Success?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // Initial state — drive once on load so any pre-filled values render
+  // their derived UI (count, scope status, custom-domain visibility)
+  // without an interaction.
+  updateFamilyCount();
+  updateScopeStatus();
+</script>
+
+<style>
+  /* ─── Section frame ──────────────────────────────────── */
+  .apply {
+    padding-block: var(--space-16) var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+
+  .apply-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .apply-header h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-3xl);
+    letter-spacing: -0.02em;
+    margin-block: var(--space-2) 0;
+  }
+
+  .apply-h1-code {
+    font-family: var(--font-mono);
+    font-size: 0.7em;
+    font-weight: 700;
+    padding: 0.1em 0.35em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+    vertical-align: 0.15em;
+  }
+
+  .apply-header .lede {
+    font-size: var(--text-lg);
+    color: var(--color-text-muted);
+    max-width: 64ch;
+  }
+
+  /* ─── Stepper ───────────────────────────────────────── */
+  /* Six-cell horizontal grid with a connector line behind the dots.
+     Each step has three states (data-apply-state):
+       pending — number in muted bg, label muted
+       current — primary bg, label inks
+       done    — primary bg with reduced fill, label inks
+     Mobile (≤640px) drops the labels and keeps just the numbered dots
+     so the stepper still fits the viewport. */
+  .apply-stepper {
+    list-style: none;
+    margin: var(--space-8) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+    position: relative;
+  }
+
+  .apply-stepper::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: calc(100% / 12);
+    right: calc(100% / 12);
+    height: 1px;
+    background: var(--color-border);
+    z-index: 0;
+  }
+
+  .apply-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    position: relative;
+    z-index: 1;
+    cursor: default;
+    text-align: center;
+  }
+
+  .apply-step[data-apply-state="done"],
+  .apply-step[data-apply-state="current"] {
+    cursor: pointer;
+  }
+
+  .apply-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+  }
+
+  .apply-step[data-apply-state="current"] .apply-step-num {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .apply-step[data-apply-state="done"] .apply-step-num {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    opacity: 0.55;
+  }
+
+  .apply-step-label {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  .apply-step[data-apply-state="current"] .apply-step-label,
+  .apply-step[data-apply-state="done"] .apply-step-label {
+    color: var(--color-text);
+  }
+
+  /* ─── Form & panels ────────────────────────────────── */
+  .apply-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .apply-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--space-8);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-primary);
+    background: var(--color-surface);
+    /* `min-width: 0` keeps the panel honest about its parent column
+       width when long descendants (URLs, code) push the intrinsic min
+       past the available space. */
+    min-width: 0;
+  }
+
+  .apply-legend {
+    /* Lays out the step tag, heading, and intro paragraph as a tight
+       column. The panel's flex gap separates this header block from
+       the form fields below — no manual margin needed. */
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .apply-step-tag {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .apply-legend h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-xl);
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .apply-legend p {
+    font-size: var(--text-base);
+    color: var(--color-text-muted);
+    max-width: 60ch;
+    margin: 0;
+  }
+
+  /* ─── Generic field plumbing ──────────────────────── */
+  .apply-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .apply-label {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text);
+  }
+
+  .apply-required { color: var(--color-primary); }
+
+  .apply-optional {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--color-text-muted);
+  }
+
+  .apply-input {
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    appearance: none;
+    width: 100%;
+  }
+
+  .apply-input:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-color: var(--color-primary);
+  }
+
+  .apply-input::placeholder { color: var(--color-text-faint); }
+
+  .apply-textarea {
+    resize: vertical;
+    min-height: 84px;
+    line-height: 1.5;
+    font-family: var(--font-body);
+  }
+
+  .apply-textarea-tall { min-height: 140px; }
+
+  .apply-hint {
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    margin: 0;
+    max-width: none;
+  }
+
+  .apply-hint code,
+  .apply-legal code,
+  .apply-check-row code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    padding: 0.05em 0.3em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  /* Family-count hint goes amber when below the 5-family threshold to
+     telegraph the waiver path before the textarea below opens. */
+  .apply-hint[data-apply-short="true"] strong {
+    color: #B5651D;
+  }
+
+  .apply-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+
+  /* ─── Tier picker (radio cards) ───────────────────── */
+  .apply-tier-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .apply-tier-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: border-color 180ms ease, background 180ms ease;
+    height: 100%;
+    position: relative;
+  }
+
+  /* The radio is hidden visually but still focusable for keyboard /
+     screen-reader users. We only need the card surface as the visual
+     affordance; the radio's checked state drives the styled border. */
+  .apply-tier-card input[type="radio"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+
+  .apply-tier-card:hover {
+    border-color: var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 4%, var(--color-bg));
+  }
+
+  .apply-tier-card:has(input[type="radio"]:checked) {
+    border-color: var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 8%, var(--color-bg));
+    box-shadow: inset 3px 0 0 0 var(--color-primary);
+  }
+
+  .apply-tier-card:has(input[type="radio"]:focus-visible) {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .apply-tier-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .apply-tier-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-base);
+    color: var(--color-text);
+  }
+
+  .apply-tier-fee {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .apply-tier-fee strong {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--color-primary);
+  }
+
+  .apply-tier-def {
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+
+  /* ─── Scope name input (segmented @ / wrapper) ─────── */
+  .apply-scope-input {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: stretch;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .apply-scope-input:focus-within {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-color: var(--color-primary);
+  }
+
+  .apply-scope-prefix,
+  .apply-scope-suffix {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--color-primary);
+    background: var(--color-surface);
+  }
+
+  .apply-scope-prefix { border-right: 1px solid var(--color-border); }
+  .apply-scope-suffix { border-left: 1px solid var(--color-border); }
+
+  .apply-input-flush {
+    border: none;
+    width: 100%;
+  }
+
+  .apply-input-flush:focus {
+    outline: none;
+    border: none;
+  }
+
+  .apply-scope-status {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    border-left: 2px solid var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 6%, transparent);
+  }
+
+  .apply-scope-status[data-apply-scope-state="warn"] {
+    color: #B5651D;
+    border-left-color: #B5651D;
+    background: color-mix(in oklch, #B5651D 6%, transparent);
+  }
+
+  /* ─── Radio stack (verification methods) ──────────── */
+  .apply-radio-stack {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .apply-radio-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: border-color 180ms ease, background 180ms ease;
+  }
+
+  .apply-radio-row:hover {
+    border-color: var(--color-primary);
+  }
+
+  .apply-radio-row:has(input[type="radio"]:checked) {
+    border-color: var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 6%, var(--color-bg));
+  }
+
+  .apply-radio-row input[type="radio"] {
+    margin-top: 0.25em;
+    accent-color: var(--color-primary);
+  }
+
+  .apply-radio-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .apply-radio-name {
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .apply-radio-sub {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  /* ─── Checkbox row (attestations) ───────────────── */
+  .apply-check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    color: var(--color-text);
+  }
+
+  .apply-check-row:has(input[type="checkbox"]:checked) {
+    border-color: var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 6%, var(--color-bg));
+  }
+
+  .apply-check-row input[type="checkbox"] {
+    margin-top: 0.2em;
+    accent-color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  .apply-check-row strong {
+    color: var(--color-text);
+    font-weight: 700;
+  }
+
+  /* ─── Upload (ARCTS file) ───────────────────────── */
+  .apply-upload {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-bg);
+    border: 1px dashed var(--color-border);
+    cursor: pointer;
+    transition: border-color 180ms ease, background 180ms ease;
+    min-height: 56px;
+  }
+
+  .apply-upload:hover {
+    border-color: var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 4%, var(--color-bg));
+  }
+
+  .apply-upload input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .apply-upload-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--color-primary);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    flex-shrink: 0;
+  }
+
+  .apply-upload-prompt {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .apply-upload-prompt strong {
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .apply-upload-prompt span {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  /* ─── Code of Conduct preview ─────────────────────── */
+  .apply-conduct {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-6);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid #B5651D;
+  }
+
+  .apply-conduct-label {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #B5651D;
+    margin: 0;
+  }
+
+  .apply-conduct ul {
+    list-style: disc;
+    margin: 0;
+    padding-left: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .apply-conduct li {
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .apply-conduct-foot {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* ─── Review summary ────────────────────────────── */
+  .apply-review-list {
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .apply-review-list > div {
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) 2fr;
+    gap: var(--space-4);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .apply-review-list dt {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .apply-review-list dd {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    word-break: break-word;
+  }
+
+  /* ─── Fee summary card ──────────────────────────── */
+  .apply-fee-summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-5) var(--space-6);
+    background: color-mix(in oklch, var(--color-primary) 6%, var(--color-bg));
+    border: 1px solid var(--color-primary);
+    border-left: 3px solid var(--color-primary);
+  }
+
+  .apply-fee-label {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin: 0;
+  }
+
+  .apply-fee-amount {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-2xl);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .apply-fee-note {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: var(--space-1) 0 0;
+  }
+
+  .apply-legal {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin: 0;
+    max-width: none;
+  }
+
+  /* ─── Navigation ────────────────────────────────── */
+  .apply-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-top: var(--space-2);
+  }
+
+  .apply-nav-spacer { flex: 1; }
+
+  .apply-back,
+  .apply-next,
+  .apply-submit {
+    justify-content: space-between;
+  }
+
+  /* ─── Success state ─────────────────────────────── */
+  .apply-success {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-8);
+    border: 1px solid var(--color-primary);
+    border-left: 3px solid var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 6%, var(--color-surface));
+  }
+
+  .apply-success h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-xl);
+    margin: 0;
+  }
+
+  .apply-success p {
+    font-size: var(--text-base);
+    color: var(--color-text);
+    max-width: 64ch;
+    margin: 0;
+  }
+
+  .apply-success a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .apply-success-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+    padding: var(--space-4) 0;
+    border-block: 1px solid var(--color-border);
+    margin: 0;
+  }
+
+  .apply-success-meta > div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .apply-success-meta dt {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .apply-success-meta dd {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-base);
+    color: var(--color-text);
+  }
+
+  .apply-success-meta code {
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
+    padding: 0.1em 0.4em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+  }
+
+  /* ─── Sidebar info ──────────────────────────────── */
+  .apply-aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding: var(--space-8);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .apply-aside ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+  }
+
+  .apply-aside li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .apply-aside h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-base);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .apply-aside p {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+    max-width: none;
+  }
+
+  .apply-aside code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    padding: 0.05em 0.3em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  /* ─── Tab navigation ─────────────────────────────── */
+  /* Two-tab switcher: Hosted Registry | Tier 1 Shorthand. The active
+     state is driven by the data-apply-tab-active attribute the JS sets
+     on each button, with aria-selected mirrored for accessibility. */
+  .apply-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+  }
+
+  .apply-tab-btn {
+    appearance: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    padding: var(--space-4) var(--space-5);
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-bottom-width: 3px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 180ms ease, background 180ms ease;
+  }
+
+  .apply-tab-btn:hover {
+    border-color: var(--color-primary);
+  }
+
+  .apply-tab-btn[data-apply-tab-active="true"] {
+    background: color-mix(in oklch, var(--color-primary) 6%, var(--color-bg));
+    border-color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+  }
+
+  .apply-tab-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .apply-tab-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 800;
+    color: var(--color-text);
+  }
+
+  .apply-tab-sub {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  /* The two tab panels stack vertically inside the section frame; the
+     section's `gap: var(--space-12)` separates the panel contents from
+     anything that follows. Each panel is a self-contained vertical
+     stack. */
+  .apply-tab-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+
+  .apply-tab-panel[hidden] { display: none; }
+
+  /* ─── Tier card meta (5-row feature stats) ─────────── */
+  /* Lives below the tier-card audience description. Each row pairs a
+     muted label on the left with a strong value on the right. Used to
+     display the AHRS subscription matrix (families / storage / bandwidth
+     / SLA / custom-domain) inline on the tier picker. */
+  .apply-tier-meta {
+    list-style: none;
+    margin: var(--space-2) 0 0;
+    padding: var(--space-3) 0 0;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .apply-tier-meta li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  .apply-tier-meta li span {
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .apply-tier-meta li strong {
+    font-family: var(--font-body);
+    color: var(--color-text);
+    font-weight: 700;
+    text-align: right;
+  }
+
+  /* ─── Process aside (Step 4 — What Atto does) ────── */
+  /* Informational card explaining the AHRS server-side automation
+     pipeline. Same accent-left treatment as the conduct card but in the
+     primary colour to signal "we handle this for you". */
+  .apply-process {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-6);
+    background: color-mix(in oklch, var(--color-primary) 4%, var(--color-bg));
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-primary);
+  }
+
+  .apply-process-label {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin: 0;
+  }
+
+  .apply-process ol {
+    margin: 0;
+    padding-left: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .apply-process li {
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .apply-process strong {
+    color: var(--color-text);
+    font-weight: 700;
+  }
+
+  /* ─── Fee summary monthly line ─────────────────────── */
+  /* Sits between the annual fee amount and the fee note. Smaller and
+     mono-faced to read as supplemental info, never the headline price. */
+  .apply-fee-monthly {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  /* ─── Tier 1 panel ─────────────────────────────────── */
+  /* The Tier 1 inquiry tab is a single-column layout — explainer at top,
+     interest form below, success card after submit. No stepper. */
+  .apply-tier1 {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .apply-tier1-explainer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .apply-tier1-explainer h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-2xl);
+    letter-spacing: -0.02em;
+    margin: var(--space-2) 0 0;
+  }
+
+  .apply-tier1-explainer h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-base);
+    margin: var(--space-2) 0 0;
+  }
+
+  .apply-tier1-explainer p {
+    font-size: var(--text-base);
+    color: var(--color-text);
+    max-width: 64ch;
+    margin: 0;
+  }
+
+  .apply-tier1-explainer code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    padding: 0.05em 0.3em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  /* The five-criterion list inside the Tier 1 explainer. Re-uses the
+     primary numbered-list look from .apply-process but without the
+     bordered card. */
+  .apply-criteria {
+    list-style: decimal;
+    margin: 0;
+    padding-left: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .apply-criteria li {
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    color: var(--color-text);
+    padding-left: var(--space-1);
+  }
+
+  .apply-criteria strong {
+    color: var(--color-text);
+    font-weight: 700;
+  }
+
+  /* The Tier 1 form is a normal form panel — same accent-left border
+     and surface fill as the AHRS .apply-panel, just without the
+     fieldset reset since it's a flat form. */
+  .apply-tier1-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding: var(--space-8);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-primary);
+    background: var(--color-surface);
+  }
+
+  .apply-tier1-form h3 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-xl);
+    margin: 0;
+  }
+
+  .apply-tier1-submit {
+    align-self: flex-start;
+    justify-content: space-between;
+  }
+
+  /* Inline link-styled button used inside copy to switch tabs (e.g. the
+     "Hosted Registry" link in the Tier 1 explainer hint). Looks like a
+     normal anchor; no native button chrome. */
+  .apply-link-btn {
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .apply-link-btn:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  /* ─── Responsive ────────────────────────────────── */
+  @media (max-width: 768px) {
+    .apply-grid-2 {
+      grid-template-columns: 1fr;
+    }
+    .apply-tier-grid {
+      grid-template-columns: 1fr;
+    }
+    .apply-aside ul {
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+    .apply-success-meta {
+      grid-template-columns: 1fr;
+    }
+    /* Stack tabs vertically on narrow screens — two big buttons side
+       by side don't fit comfortably below 768px. */
+    .apply-tabs {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    /* Drop the labels on the stepper — just numbered dots fit. */
+    .apply-step-label { display: none; }
+    .apply-stepper::before { top: 16px; }
+
+    .apply-panel {
+      padding: var(--space-6);
+    }
+
+    .apply-tier1-form {
+      padding: var(--space-6);
+    }
+
+    .apply-review-list > div {
+      grid-template-columns: 1fr;
+      gap: var(--space-1);
+    }
+  }
+</style>

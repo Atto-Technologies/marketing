@@ -9,7 +9,7 @@
 
 ## Abstract
 
-This document defines the Atto Font Registry Protocol (AFRP), a normative sub-protocol of Atto Hybrid Syntax (AHS) governing the identification, resolution, versioning, and license transparency of font resources referenced within AHS documents. AFRP introduces a two-tier URI-like identifier scheme for font references: a governed shorthand tier requiring registration with the Atto Protocol Authority, and a permissionless full-URI tier for self-hosted resources. This specification defines the complete grammar for font identifiers, the registry manifest format, the resolution algorithm, the shorthand registration process, the fallback policy, and security considerations pertaining to font asset integrity.
+This document defines the Atto Font Registry Protocol (AFRP), a normative sub-protocol of Atto Hybrid Syntax (AHS) governing the identification, resolution, versioning, and license transparency of font resources referenced within AHS documents. AFRP introduces a two-tier URI-like identifier scheme for font references: a governed shorthand tier ratified for a small number of permanent infrastructure providers, and a permissionless full-URI tier for self-hosted or Atto-hosted resources. This specification defines the complete grammar for font identifiers, the registry manifest format, the resolution algorithm, the shorthand ratification process, the Atto-hosted registry service, the fallback policy, and security considerations pertaining to font asset integrity. The central property AFRP delivers is typographic reproducibility: the guarantee that any executed document can be rendered identically at any future time using exactly the font binaries present at signing, without dependency on the original signing environment.
 
 ---
 
@@ -21,7 +21,8 @@ This document defines the Atto Font Registry Protocol (AFRP), a normative sub-pr
 4. [Registry Manifest Format](#4-registry-manifest-format)
 5. [Resolution Algorithm](#5-resolution-algorithm)
 6. [Shorthand Registration Process](#6-shorthand-registration-process)
-7. [Fallback Policy](#7-fallback-policy)
+7. [Hosted Registry Service](#7-hosted-registry-service)
+8. [Fallback Policy](#8-fallback-policy)
 8. [AHS Document Syntax — Font Declaration Block](#8-ahs-document-syntax--font-declaration-block)
 9. [Security Considerations](#9-security-considerations)
 10. [IANA and Protocol Considerations](#10-iana-and-protocol-considerations)
@@ -48,11 +49,11 @@ AFRP addresses this by defining:
 
 Listed in priority order:
 
-**G1 — Cryptographic reproducibility.** An AHS document in `EXECUTED` state MUST be renderable identically at any future time using exactly the font binaries present at signing. This is the paramount goal.
+**G1 — Typographic reproducibility.** An AHS document in `EXECUTED` state MUST be renderable identically at any future time using exactly the font binaries present at signing. This is the paramount goal. The complete definition and the three mechanisms that deliver it are specified in §5.9.
 
 **G2 — License transparency.** Every font reference MUST be resolvable to a machine-readable license record. Renderers and compliance systems MUST determine without ambiguity whether a font permits the document's use case.
 
-**G3 — Decentralization.** No single organization — including Atto Technologies Inc. — should control the only resolution path. The permissionless Form C tier ensures any entity can self-host a compliant registry without Atto involvement.
+**G3 — Decentralization.** No single organization, including Atto Technologies Inc., should control the only resolution path. The permissionless Form C tier ensures any entity can self-host a compliant registry without Atto involvement, approval, or payment. Tier 1 governs namespace identity for a deliberately small set of permanent infrastructure providers; it does not gate font publication for anyone else.
 
 **G4 — Usability.** Short, readable identifiers (`@/Sligoil`, `@velvetyne/Bagnard`) MUST be usable in AHS source without requiring full URLs. The resolution layer must be deterministic and auditable.
 
@@ -60,11 +61,19 @@ Listed in priority order:
 
 ### 1.3 Two-Tier Architecture
 
-**Tier 1 — Governed shorthands** use `@scope/TypefaceName` syntax. The `scope` is registered by the Atto Protocol Authority, which requires demonstrated identity, originality, catalog depth, license transparency, and technical compliance.
+**Tier 1 — Governed shorthands** use `@scope/TypefaceName` syntax. Tier 1 scopes are not registered on a self-serve basis. They are ratified by the Atto Protocol Authority and granted exclusively to a small number of foundational font infrastructure providers: organizations whose registries are expected to be permanent, widely used, independently maintained, and whose presence in the shorthand registry is justified by the maintenance cost their listing imposes on every compliant implementation. The total number of registered Tier 1 scopes is intentionally kept small and grows only by deliberate ratification.
 
-**Tier 2 — Full URI** uses bare `domain.tld/TypefaceName` syntax with no `@` prefix. No registration required. Authors bear full responsibility for the reliability and integrity of the referenced registry.
+**Tier 2 — Full URI** uses bare `domain.tld/TypefaceName` syntax with no `@` prefix. No registration, approval, or contact with any authority is required. Any entity that controls a DNS hostname and serves a compliant AFRP manifest may publish fonts under that name. Authors bear full responsibility for the reliability and integrity of the referenced registry. Tier 2 provides identical resolution capability to Tier 1 — the only difference is identifier length.
 
 The bare `@/TypefaceName` form — no scope between `@` and `/` — is a special Form A case that resolves against the canonical Atto registry at `https://fonts.atto.tech/`.
+
+The architectural principle is that **Tier 1 exists to protect namespace identity for permanent infrastructure providers, not to gatekeep font publication.** Form C ensures the protocol authority can never act as a gatekeeper for the system as a whole.
+
+**Three paths to AFRP compliance.** A font publisher has three ways to make their fonts available in AFRP-compliant documents:
+
+1. **Self-host** a Form C registry at a domain they control. No registration or approval required. Full technical responsibility rests with the publisher.
+2. **Atto-hosted registry** (see §7). The publisher provides font files and metadata; Atto hosts a compliant AFRP registry on their behalf with high availability and full SRI/integrity guarantees. Resolves as a Form C identifier under the Atto-hosted domain or a custom domain the publisher brings.
+3. **Tier 1 ratified scope** (see §6). Reserved for foundational infrastructure providers meeting the permanence and identity criteria. Requires ratification by the Technical Review Panel. Resolves as a Form B `@scope/TypefaceName` identifier.
 
 ### 1.4 The Federated Registry Model
 
@@ -911,29 +920,40 @@ The execution metadata block (see AHS §4 — Execution Metadata Block) stores `
 | `MISSING_LICENSE_METADATA` | WARNING | A font entry is missing SPDX license metadata. |
 | `PINNED_IN_DRAFT` | WARNING | `@pinned` version specifier encountered in a `DRAFT` document. Treated as `@latest`. |
 
+### 5.9 Typographic Reproducibility
+
+**Typographic reproducibility** is the paramount property that AFRP exists to deliver. It is defined as follows:
+
+> A document in `EXECUTED` state is typographically reproducible if and only if any party in possession of (i) the executed document bytes and (ii) access to any compliant AFRP registry that can serve the pinned font binaries can reconstruct the exact rendered appearance of the document as it existed at the moment of execution — without dependency on the original signing environment, operating system, font cache, renderer version, or network state.
+
+This property is achieved by the combination of three mechanisms that AFRP mandates together and that no prior document execution system combines:
+
+1. **Font integrity pinning at execution time.** When a document transitions from `DRAFT` to `EXECUTED`, the lifecycle engine resolves every font reference, computes the SHA-256 hash of each binary asset, and records those hashes in the execution metadata block as font integrity pins. The pins are covered by the same cryptographic signatures that attest to the document's executed state. No subsequent registry change can alter which binary an executed document uses.
+
+2. **Hard-failure enforcement in `EXECUTED` mode.** If a pinned binary is unavailable or its hash does not match, the renderer halts rendering of the affected content region and emits a visible error. No font substitution is permitted under any circumstance in `EXECUTED` mode — not system fallback, not renderer-bundled fallback, not document-declared fallback. The only permissible outcomes are correct rendering or a visible error. This is a deliberately strict guarantee: a document that renders with a substituted font has not been rendered faithfully and must not appear to have been.
+
+3. **Federated, permissionless resolution.** The pinned binary can be served by any compliant AFRP registry — the canonical Atto registry, a governed `@scope` registry, a self-hosted Form C registry, or an Atto-hosted registry. Typographic reproducibility does not depend on any single registry remaining available. As long as the binary identified by the pin can be obtained from any conforming source, the document renders correctly. This federated structure ensures the guarantee is durable across the lifetime of long-lived executed documents.
+
+The combination of these three properties is, to the author's knowledge, novel. Conventional electronic signature platforms attest to a PDF rendering at signing but rely on opaque PDF font embedding and carry no audit of actual typefaces used. Blockchain notarization services attest to a document hash but say nothing about rendering. Federated package registries in the software ecosystem solve the analogous integrity problem for code but do not connect it to a document execution event. AFRP closes the loop: the typography is integrity-pinned, the pin is cryptographically bound to the execution event, and the resolution is federated such that no single point of failure can invalidate the guarantee.
+
+
 ---
 
 ## 6. Shorthand Registration Process
 
 ### 6.1 Eligibility Criteria
 
-An entity applying for a Tier 1 `@scope` registration MUST satisfy all six criteria before an application is considered complete.
+Tier 1 `@scope` grants are not available by self-serve application. They are initiated by the Atto Protocol Authority or by invitation, reviewed against the criteria below, and ratified by the Technical Review Panel. An entity may express interest by contacting `registry@atto.tech`, but interest does not constitute an application and does not guarantee review.
 
-**Criterion 1 — Identity verification.** The applicant MUST demonstrate control of a registered trademark or domain name corresponding to the requested scope name, OR provide evidence of a recognized creative identity:
-- A named type foundry or design collective with a public web presence predating the application by at least 12 calendar months.
-- A credited type designer with at least two commercially or openly licensed typefaces released under their name predating the application.
+A Tier 1 scope grant requires satisfaction of all five criteria.
 
-A domain used for identity verification MUST be registered to the applicant (verifiable via WHOIS) and registered for at least six months prior to the application date.
+**Criterion 1 — Infrastructure permanence.** The applicant MUST be a foundational font infrastructure provider: an organization whose registry is expected to remain operational, publicly accessible, and independently maintained indefinitely. The test is not catalog size alone but demonstrated permanence — the registry must represent a long-term commitment to the ecosystem, not a current publishing operation that may be wound down. Evidence of permanence includes: organizational age of at least five years; institutional backing or endowment; a public commitment to long-term stewardship of the font catalog.
 
-**Criterion 2 — Originality.** Typefaces offered under the shorthand MUST be original designs. Specifically excluded: resellers without substantive creative contribution; digitizations of historical typefaces where the applicant did not perform the drawing work; fonts cloned from other typefaces without meaningful modification.
+**Criterion 2 — Identity verification.** The scope name MUST correspond to the applicant's verified legal or organizational identity. The scope `@adobe` may only be granted to Adobe Inc. The scope `@velvetyne` may only be granted to Velvetyne Type Foundry. Identity is verified by trademark registration, WHOIS-verified domain control, or equivalent documentary evidence. The scope name MUST be the applicant's own name or a name they demonstrably control — invented or speculative scope names are not eligible.
 
-Open-source forks ARE eligible, provided: (a) attribution to the upstream source appears in the manifest `designer` field; (b) the fork includes substantive modification beyond cosmetic renaming. The Atto Protocol Authority determines substantiality at its sole discretion, subject to appeal per §6.5.
+**Criterion 3 — License transparency.** Every font served by the applicant's registry MUST include machine-readable SPDX license metadata in the manifest. Proprietary licenses MUST accurately declare the values of `commercial_use`, `embedding_allowed`, and `web_embedding_allowed`. False license declarations are grounds for revocation per §6.6.
 
-**Criterion 3 — Catalog depth.** The applicant MUST offer at least five distinct original typeface families at time of application. A "family" means a collection of related styles sharing a common design concept. A waiver reducing the minimum to two families is available to emerging designers who satisfy Criterion 2 with exceptional originality evidence; waiver requests must be submitted with the application.
-
-**Criterion 4 — License transparency.** Every font served by the applicant's registry MUST include machine-readable SPDX license metadata in the manifest. Proprietary licenses MUST accurately declare the values of `commercial_use`, `embedding_allowed`, and `web_embedding_allowed`. False license declarations are grounds for revocation per §6.6.
-
-**Criterion 5 — Protocol compliance.** The applicant's registry MUST pass the Atto Registry Compliance Test Suite (ARCTS) before approval. ARCTS verifies:
+**Criterion 4 — Protocol compliance.** The applicant's registry MUST pass the Atto Registry Compliance Test Suite (ARCTS) before approval. ARCTS verifies:
 - Registry manifest endpoint availability and response schema conformance.
 - Per-font manifest endpoint availability (if offered).
 - Integrity hash correctness: ARCTS independently fetches each declared asset and computes SHA-256 hashes.
@@ -944,38 +964,42 @@ Open-source forks ARE eligible, provided: (a) attribution to the upstream source
 
 A passing ARCTS report MUST be included with the application. ARCTS is publicly available at `https://github.com/atto-tech/arcts`.
 
-**Criterion 6 — Code of Conduct agreement.** The applicant MUST agree to the Atto Font Registry Code of Conduct. Prohibited conduct:
+**Criterion 5 — Code of Conduct agreement.** The applicant MUST agree to the Atto Font Registry Code of Conduct. Prohibited conduct:
 - Serving font binary files containing malware, exploits, or code execution payloads.
 - Serving obfuscated font binaries designed to evade inspection.
 - Serving fonts designed to impersonate other typefaces for phishing or social engineering.
 - Making false claims in license metadata.
-- Registering a scope with intent to prevent a legitimate entity from using that name (scope squatting).
+- Using a granted scope in a manner inconsistent with the applicant's verified identity.
 
 Agreement MUST be provided as a digitally signed declaration using a key associated with the applicant's identity.
 
-### 6.2 Application Procedure
+**Note on catalog depth and originality.** These criteria, present in earlier drafts, have been removed from the Tier 1 eligibility requirements. Catalog size and originality judgments are content determinations that the Protocol Authority is not positioned to make equitably across all cultural and organizational contexts. The criteria that remain govern identity, permanence, transparency, and technical compliance — none of which are content-restrictive. Tier 2 (Form C) remains available to all publishers without restriction regardless of catalog size, originality, or commercial status.
 
-Submit at `https://registry.atto.tech/apply`:
+### 6.2 Ratification Procedure
 
-1. **Identity documentation upload.** Trademark registration, WHOIS verification, or other identity evidence per Criterion 1.
-2. **Catalog declaration.** List all typeface families to be included, with URLs to existing public releases.
-3. **ARCTS report upload.** JSON output of a successful ARCTS run, dated within 30 days of submission.
-4. **License metadata declaration.** Confirmation that all fonts have conforming SPDX metadata.
+Tier 1 scope grants proceed by ratification, not self-serve application. The process:
+
+1. **Expression of interest.** The prospective scope holder contacts `registry@atto.tech`. The Authority reviews whether the organization meets the permanence and identity criteria before proceeding.
+2. **Identity documentation.** Trademark registration, WHOIS verification, or equivalent documentary evidence confirming that the requested scope name corresponds to the applicant's verified identity.
+3. **ARCTS compliance report.** JSON output of a successful ARCTS run, dated within 30 days of submission.
+4. **License metadata declaration.** Confirmation that all fonts served have conforming SPDX metadata.
 5. **Code of Conduct signature.** Digitally signed declaration of agreement.
-6. **Fee payment.** Per §6.3.
+6. **Technical Review Panel ratification.** The Panel reviews the complete submission and votes to approve or deny. A majority is required for approval.
+7. **Annual compliance fee payment.** Per §6.3.
 
-The Atto Protocol Authority MUST acknowledge receipt within five business days and complete review within 30 calendar days. Upon approval, the scope is added to the shorthand registry within two business days.
+The Atto Protocol Authority MUST acknowledge expressions of interest within ten business days. Full ratification review MUST be completed within 60 calendar days of a complete submission. Upon ratification, the scope is added to the shorthand registry within two business days.
 
 ### 6.3 Fee Structure
 
-| Tier | Definition | Annual Fee |
-|---|---|---|
-| Individual / Independent | Natural persons or informal collectives without commercial font licensing operations | $0 (waived) |
-| Small Foundry | Organizations offering fewer than 50 distinct typeface families | $250/year |
-| Commercial Foundry | Organizations offering 50+ families, or those licensing fonts commercially at any scale | $1,500/year |
-| Enterprise | Organizations integrating AFRP into an OEM product or platform serving more than 1M monthly active users | Negotiated |
+Tier 1 scope grants are not tiered by catalog size or commercial status. The fee reflects the ongoing operational cost of maintaining the scope holder's entry in the shorthand registry, running monthly ARCTS compliance checks, performing weekly integrity spot-checks, and conducting quarterly license audits. This cost is the same regardless of whether the scope holder is a two-person foundry or a global platform.
 
-Fees must be renewed within 30 days prior to the annual anniversary of approval. Failure to renew within a 15-day grace period results in suspension. Suspended shorthands may be reinstated within 180 days by paying the outstanding fee. After 180 days, the shorthand may be released for new registration.
+| Category | Annual Fee |
+|---|---|
+| All registered Tier 1 scope holders | $2,500/year |
+
+The fee is not a revenue instrument. It exists to ensure that scope holders have a continuing operational relationship with the registry and to fund the compliance monitoring infrastructure. An organization that cannot sustain a $2,500/year compliance fee is not demonstrating the infrastructure permanence required by Criterion 1.
+
+**Payment and renewal.** Fees must be paid within 30 days prior to the annual anniversary of ratification. Failure to renew within a 15-day grace period results in suspension. Suspended scopes may be reinstated within 180 days by paying the outstanding fee plus a $500 reinstatement charge. After 180 days, the scope enters permanent revocation and a 12-month quarantine period during which it cannot be granted to any party.
 
 ### 6.4 Compliance Testing
 
@@ -1040,9 +1064,67 @@ Governance constraints:
 
 ---
 
-## 7. Fallback Policy
+## 7. Hosted Registry Service
 
-### 7.1 Fallback Chain Evaluation
+### 7.1 Overview
+
+The Atto Hosted Registry Service (AHRS) provides a managed AFRP-compliant registry for font publishers who have high-quality original fonts but lack the infrastructure or technical resources to operate a self-hosted Form C registry at production availability. The publisher provides font binary files and manifest metadata; Atto Technologies Inc. operates the registry infrastructure, computes integrity hashes, serves compliant manifests, maintains SLA guarantees, and runs ongoing ARCTS compliance verification.
+
+Hosted registries resolve as Form C identifiers. A publisher registered under AHRS is assigned a permanent base URL of the form `hosted.fonts.atto.tech/{publisher-slug}/`. Publishers who bring a custom domain (Studio tier and above) may also configure a CNAME so that `fonts.theirfoundry.com/TypefaceName` resolves through Atto-hosted infrastructure.
+
+Hosted registry status does not confer Tier 1 `@scope` shorthand eligibility. Tier 1 ratification is a separate process governed by §6 and requires satisfaction of the infrastructure permanence and identity criteria independently of hosting arrangements. However, a publisher operating under AHRS who subsequently meets the Tier 1 criteria is eligible to apply for ratification under the upgrade path in §7.5.
+
+### 7.2 Service Tiers
+
+| Tier | Who | Families | Storage | Bandwidth | Availability SLA | Custom Domain | Annual Fee |
+|---|---|---|---|---|---|---|---|
+| Indie | Individual designers and informal collectives | Up to 3 families | 1 GB | 10 GB/mo | 99.9% | No | $99/yr ($12/mo) |
+| Studio | Small foundries and independent design studios | Up to 20 families | 10 GB | 100 GB/mo | 99.9% | Yes | $399/yr ($49/mo) |
+| Foundry | Established foundries with larger catalogs | Unlimited | 50 GB | 1 TB/mo | 99.95% | Yes, with priority DNS | $1,599/yr ($199/mo) |
+| Enterprise | OEM integrations, platform partners, high-volume use cases | Unlimited | Negotiated | Negotiated | Negotiated SLA | Yes | Negotiated |
+
+Bandwidth overages are billed at $0.08/GB. Storage overages are billed at $0.20/GB/mo. Overage rates apply to Studio and Foundry tiers only; Enterprise negotiates inclusive limits.
+
+### 7.3 Onboarding Process
+
+1. **Publisher registration.** Identity verification matching the intended publisher slug. The slug must correspond to the publisher's verified name or a name they demonstrably control. Squatting a slug to prevent a legitimate entity from using their own name is prohibited and grounds for termination.
+2. **Font file submission.** Publisher provides woff2 (required), woff (recommended), and ttf (optional) binaries for each typeface family and style.
+3. **Metadata declaration.** Publisher provides manifest metadata for each font: designer, foundry, license (SPDX identifier), commercial use flags, variable axis definitions where applicable.
+4. **Atto manifest generation.** Atto computes SHA-256 integrity hashes for all submitted binaries, generates the AFRP-compliant registry manifest, and provisions the hosted registry endpoint.
+5. **ARCTS verification.** Atto runs a full ARCTS suite against the newly provisioned registry before making it publicly resolvable.
+6. **Publisher review.** Publisher confirms manifest accuracy, particularly license metadata, before the registry goes live. False license declarations are grounds for termination per §7.4.
+
+Onboarding acknowledgement within two business days. Registry live within five business days of complete submission.
+
+### 7.4 Publisher Obligations and Termination
+
+Publishers using AHRS agree to the following:
+
+- Font binary files submitted must be original designs or open-source fonts for which the publisher holds appropriate rights to distribute.
+- License metadata must accurately reflect the actual distribution terms of each font. False declarations are grounds for immediate termination.
+- Font files must not contain malware, exploits, obfuscated code, or glyphs designed to impersonate other typefaces for phishing purposes.
+- Publisher slugs must correspond to the publisher's verified identity.
+
+Termination results in the hosted registry endpoint becoming unreachable. Document authors whose executed documents reference terminated hosted registries will encounter `REGISTRY_UNREACHABLE` errors in EXECUTED mode rendering. Publishers are advised to maintain local copies of all submitted font binaries to facilitate migration to self-hosted infrastructure if service is terminated.
+
+### 7.5 Upgrade Path to Tier 1 Ratification
+
+A publisher operating under AHRS may apply for Tier 1 `@scope` ratification if they subsequently meet the criteria in §6.1. AHRS history is not a prerequisite and does not accelerate ratification, but it is not a disqualifier either.
+
+The ratification criteria are evaluated identically regardless of whether the applicant currently uses AHRS, self-hosts, or has no prior AFRP presence. In particular:
+
+- **Infrastructure permanence** (Criterion 1) must be demonstrated independently of Atto-hosted infrastructure. An applicant who relies exclusively on AHRS does not satisfy the permanence criterion, because their registry's availability depends on a commercial relationship with Atto Technologies Inc. rather than their own independently operated infrastructure. An applicant who has transitioned to self-hosted infrastructure, or who operates dual infrastructure (self-hosted primary with AHRS as secondary), may satisfy the criterion subject to Technical Review Panel evaluation.
+- **Identity correspondence** (Criterion 2) is evaluated against the requested `@scope` name, not the AHRS publisher slug. The two may differ if the publisher's verified identity supports a different shorthand.
+- Usage volume, document reach, and ecosystem significance are relevant contextual evidence for the permanence assessment but are not independently sufficient. Ratification is negotiated directly with the Atto Protocol Authority and requires a justified use case — the same standard applied to any large infrastructure provider.
+
+Upon ratification, the publisher's existing AHRS-hosted or self-hosted Form C identifiers remain valid indefinitely. Atto will publish a forwarding manifest at the old Form C base URL that redirects resolvers to the new `@scope` endpoint, ensuring documents authored before ratification continue to resolve correctly.
+
+
+---
+
+## 8. Fallback Policy
+
+### 8.1 Fallback Chain Evaluation
 
 When primary resolution fails for any reason producing an ERROR-level code (§5.8), the resolver MUST evaluate the fallback chain in order:
 
@@ -1058,7 +1140,7 @@ When primary resolution fails for any reason producing an ERROR-level code (§5.
 - `DRAFT` mode: substitute the system default sans-serif and emit `FONT_UNRESOLVED` (visible to the document author).
 - `EXECUTED` mode: render a visible error indicator in the affected content region and halt rendering of that region. MUST NOT substitute any font.
 
-### 7.2 Draft Mode vs. Executed Mode
+### 8.2 Draft Mode vs. Executed Mode
 
 | Behavior | DRAFT mode | EXECUTED mode |
 |---|---|---|
@@ -1069,7 +1151,7 @@ When primary resolution fails for any reason producing an ERROR-level code (§5.
 | `@pinned` version specifier | Treated as `@latest` | MUST use pinned version |
 | `full_integrity` check | Optional | MUST be applied |
 
-### 7.3 System Font References
+### 8.3 System Font References
 
 System font references use the `system:` prefix and are valid only as fallback entries. MUST NOT appear as primary font identifiers. MUST NOT be the sole font entry for a document intended for `EXECUTED` state, as system fonts differ across platforms and cannot be integrity-pinned.
 
@@ -1080,7 +1162,7 @@ System font references use the `system:` prefix and are valid only as fallback e
 | `system:monospace` | System default monospace |
 | `system:ui` | System default UI font (San Francisco, Segoe UI, etc.) |
 
-### 7.4 Offline Fallback Sequence
+### 8.4 Offline Fallback Sequence
 
 When font resolution fails in `DRAFT` mode and the fallback chain is exhausted, the resolver MUST attempt the following offline fallbacks in order, stopping at the first success:
 

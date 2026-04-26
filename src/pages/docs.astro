@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import AttoDemo from '../components/AttoDemo.astro';
 import CreditCheckBlock from '../components/CreditCheckBlock.astro';
 import FieldTable from '../components/FieldTable.astro';
+import SignatureWidget from '../components/SignatureWidget.astro';
 
 const nav = [
   { id: 'overview', label: 'Overview' },
@@ -36,7 +37,8 @@ const nav = [
       { id: 'afrp-integrity', label: 'Integrity & execution pin' },
       { id: 'afrp-fallback', label: 'Fallback policy' },
       { id: 'afrp-commerce', label: 'Font Commerce Layer' },
-      { id: 'afrp-registration', label: 'Shorthand registration' },
+      { id: 'afrp-registration', label: 'Tier 1 ratification' },
+      { id: 'afrp-hosted', label: 'Hosted registry' },
       { id: 'afrp-errors', label: 'Error codes' },
     ],
   },
@@ -456,27 +458,22 @@ $$</span></code></pre>
         />
 
         <AttoDemo layout="split" filename="signature-block.atto">
-          <aside class="atto-sig-block" slot="rendered" aria-label="Signed signature block">
-            <div class="atto-sig-block-head">
-              <p class="atto-sig-label">Signature Block</p>
-              <span class="atto-sig-status" data-status="signed">Signed</span>
-            </div>
-            <div class="atto-sig-preview">
-              <span class="atto-sig-script">Curtis Baldwinson</span>
-            </div>
-            <div class="atto-sig-entry">
-              <p class="atto-sig-party">Baldwinson Corp.</p>
-              <p class="atto-sig-signer">
-                <span>Curtis Baldwinson</span>
-                <span class="atto-sig-title">· CEO</span>
-              </p>
-              <p class="atto-sig-attest">
-                <code>ed25519:AQ…dF</code>
-                <span aria-hidden="true">·</span>
-                <code>sha256:4c1f…a7</code>
-              </p>
-            </div>
-          </aside>
+          <div slot="rendered" style="display: flex; flex-direction: column; gap: var(--space-4);">
+            <SignatureWidget
+              party="Baldwinson Corp."
+              signer="Curtis Baldwinson"
+              title="CEO"
+              order={1}
+              totalSigners={2}
+            />
+            <SignatureWidget
+              party="Example Client LLC"
+              signer="Jane Hart"
+              title="Managing Partner"
+              order={2}
+              totalSigners={2}
+            />
+          </div>
 
           <pre class="code-block" slot="source"><code><span class="tok-directive">::signature-block</span>
 <span class="tok-key">- party:</span> <span class="tok-string">Baldwinson Corp.</span>
@@ -706,7 +703,7 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
           caption="AFRP tiers and identifier forms"
           fields={[
             { name: '@/Typeface', type: 'Form A · Tier 1', required: false, description: 'Canonical shorthand. No scope between @ and /. Resolves against the canonical Atto registry at https://fonts.atto.tech/. Portable across all compliant implementations without hardcoding a host.' },
-            { name: '@scope/Typeface', type: 'Form B · Tier 1', required: false, description: 'Registered scope shorthand. Scopes are issued by the Atto Protocol Authority after identity verification, catalog audit, license-transparency review, and ARCTS compliance testing. The Authority governs namespace identity only — not font content.' },
+            { name: '@scope/Typeface', type: 'Form B · Tier 1', required: false, description: 'Ratified scope shorthand. Tier 1 scopes are not self-serve — they are granted by invitation from the Atto Protocol Authority and ratified by the Technical Review Panel for foundational infrastructure providers. The criteria govern identity and permanence; they do not audit catalog size, originality, or creative merit.' },
             { name: 'host/Typeface', type: 'Form C · Tier 2', required: false, description: 'Permissionless full URI. Any DNS host serving a compliant AFRP manifest is a valid registry. No registration, approval, or contact with any authority required. Equivalent openness to the Web itself.' },
           ]}
         />
@@ -717,6 +714,49 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
           treat an unregistered Form B scope as a fallback to Form A — it
           emits <code>SCOPE_NOT_FOUND</code> and proceeds to the fallback
           chain.
+        </p>
+
+        <h4>Three paths to AFRP compliance</h4>
+        <p>
+          A font publisher has three ways to make their fonts available
+          inside AFRP-compliant documents. The architectural principle is
+          that <strong>Tier 1 exists to protect namespace identity for
+          permanent infrastructure providers, not to gatekeep font
+          publication</strong>.
+        </p>
+
+        <ol class="spec-steps">
+          <li>
+            <strong>Self-host a Form C registry.</strong> Serve a
+            compliant manifest at any DNS hostname you control. No
+            registration, approval, or contact with any authority. Full
+            technical responsibility rests with the publisher. See{' '}
+            <a href="#afrp-manifest">Registry manifest</a> for the
+            well-known endpoint and JSON Schema.
+          </li>
+          <li>
+            <strong>Atto Hosted Registry Service (AHRS).</strong>{' '}
+            Subscription-based managed hosting. The publisher provides
+            font files and metadata; Atto operates the registry, computes
+            integrity hashes, runs ARCTS, and serves a compliant
+            manifest under <code>hosted.fonts.atto.tech/{'{slug}'}/</code>{' '}
+            or a custom domain. Resolves as Form C. See{' '}
+            <a href="#afrp-hosted">Hosted registry</a>.
+          </li>
+          <li>
+            <strong>Tier 1 ratified scope.</strong> Reserved for
+            foundational infrastructure providers meeting the permanence
+            and identity criteria. Invitation-only ratification by the
+            Technical Review Panel. Resolves as Form B{' '}
+            <code>@scope/Typeface</code>. See{' '}
+            <a href="#afrp-registration">Tier 1 ratification</a>.
+          </li>
+        </ol>
+
+        <p>
+          The permissionless Form C tier guarantees that the Atto Protocol
+          Authority can never act as a gatekeeper for the system as a
+          whole — Tier 1 governs namespace identity only.
         </p>
 
         <h4>Sub-scope delegation</h4>
@@ -1336,66 +1376,216 @@ requires counter-signature.</code></pre>
   &#125;
 &#125;</code></pre>
 
-        {/* ─── Shorthand registration ────────────────────────── */}
-        <h3 id="afrp-registration">Shorthand registration</h3>
+        {/* ─── Tier 1 ratification ───────────────────────────── */}
+        <h3 id="afrp-registration">Tier 1 ratification</h3>
         <p>
-          Tier 1 <code>@scope</code> names are issued by the{' '}
-          <strong>Atto Protocol Authority</strong>. The registration
-          process establishes identity, originality, and technical
-          conformance — it does not audit taste or creative merit. The six
-          eligibility criteria:
+          <strong>Tier 1 <code>@scope</code> grants are not available by
+          self-serve application.</strong> They are initiated by the Atto
+          Protocol Authority or by invitation, reviewed against the
+          criteria below, and ratified by the Technical Review Panel. An
+          entity may express interest by emailing{' '}
+          <a href="mailto:registry@atto.tech"><code>registry@atto.tech</code></a>,
+          but interest does not constitute an application and does not
+          guarantee review. Tier 1 is reserved for foundational
+          infrastructure providers — for self-serve hosting, see the{' '}
+          <a href="#afrp-hosted">Hosted Registry Service</a>.
+        </p>
+
+        <p>
+          The criteria govern identity, permanence, transparency, and
+          technical compliance — none of them are content-restrictive.
+          Catalog depth and originality were criteria in earlier drafts;
+          they have been removed because they are content determinations
+          the Authority is not positioned to make equitably across all
+          cultural and organizational contexts. A Tier 1 grant requires
+          satisfaction of all five criteria below.
         </p>
 
         <ol class="spec-steps">
-          <li><strong>Identity verification.</strong> Trademark, WHOIS-verified domain, or recognized creative identity (named foundry or published type designer, 12-month minimum history).</li>
-          <li><strong>Originality.</strong> Original designs only. Open-source forks eligible with attribution and substantive modification.</li>
-          <li><strong>Catalog depth.</strong> At least five distinct original typeface families at time of application. Waiver to two families available to emerging designers with exceptional originality evidence.</li>
-          <li><strong>License transparency.</strong> Every font served MUST include machine-readable SPDX metadata. False declarations are grounds for revocation.</li>
-          <li><strong>Protocol compliance.</strong> Registry MUST pass the <strong>ARCTS</strong> test suite — schema conformance, per-asset integrity verification, TLS validity, version resolution behavior, cache headers, CORS.</li>
-          <li><strong>Code of Conduct.</strong> Digitally signed agreement. Prohibits malware payloads, obfuscated binaries, homoglyph phishing fonts, false metadata, and scope squatting.</li>
+          <li><strong>Infrastructure permanence.</strong> A foundational font infrastructure provider whose registry is expected to remain operational, publicly accessible, and independently maintained indefinitely. Evidence: organizational age of at least five years, institutional backing or endowment, a public commitment to long-term stewardship.</li>
+          <li><strong>Identity verification.</strong> The scope name MUST correspond to the applicant's verified legal or organizational identity (e.g. <code>@adobe</code> for Adobe Inc., <code>@velvetyne</code> for Velvetyne Type Foundry). Verified by trademark, WHOIS-verified domain, or equivalent documentary evidence. Invented or speculative scope names are not eligible.</li>
+          <li><strong>License transparency.</strong> Every font served MUST include machine-readable SPDX metadata. Proprietary licenses MUST accurately declare <code>commercial_use</code>, <code>embedding_allowed</code>, and <code>web_embedding_allowed</code>. False declarations are grounds for revocation.</li>
+          <li><strong>Protocol compliance.</strong> Registry MUST pass the <strong>ARCTS</strong> test suite — schema conformance, per-asset integrity verification, TLS validity, version resolution behavior, cache headers, CORS. A passing report dated within 30 days of submission is required.</li>
+          <li><strong>Code of Conduct.</strong> Digitally signed agreement. Prohibits malware payloads, obfuscated binaries, homoglyph phishing fonts, false metadata, and using a granted scope inconsistently with the applicant's verified identity.</li>
         </ol>
 
-        <h4>Fee tiers</h4>
+        <h4>Fee structure</h4>
+        <p>
+          Tier 1 grants are not tiered by catalog size or commercial
+          status. The fee reflects the ongoing operational cost of
+          maintaining the scope holder's entry in the shorthand registry,
+          running monthly ARCTS checks, weekly integrity spot-checks, and
+          quarterly license audits — the same cost regardless of whether
+          the holder is a two-person foundry or a global platform.
+        </p>
+
         <table class="spec-table">
           <thead>
             <tr>
-              <th>Tier</th>
-              <th>Definition</th>
+              <th>Category</th>
               <th>Annual fee</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Individual</td>
-              <td>Natural persons or informal collectives without commercial licensing operations</td>
-              <td>$0 (waived)</td>
+              <td>All registered Tier 1 scope holders</td>
+              <td>$2,500 / year</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          The fee is not a revenue instrument. It funds the compliance
+          monitoring infrastructure and ensures scope holders maintain a
+          continuing operational relationship with the registry.
+          Suspended scopes may be reinstated within 180 days for the
+          outstanding fee plus a $500 reinstatement charge; after 180
+          days, the scope enters a 12-month quarantine during which it
+          cannot be granted to any party.
+        </p>
+
+        <h4>Ratification procedure</h4>
+        <p>
+          Express interest at{' '}
+          <a href="mailto:registry@atto.tech"><code>registry@atto.tech</code></a>.
+          The Authority MUST acknowledge within ten business days; full
+          ratification review MUST be completed within sixty calendar days
+          of a complete submission. Approved scopes are added to the
+          shorthand registry within two business days of ratification.
+          Appeals are heard by the three-person Technical Review Panel
+          with balanced open-source and commercial representation; panel
+          decisions are final.
+        </p>
+
+        {/* ─── Hosted Registry Service ────────────────────────── */}
+        <h3 id="afrp-hosted">Hosted Registry Service</h3>
+        <p>
+          The <strong>Atto Hosted Registry Service (AHRS)</strong>{' '}
+          provides managed, AFRP-compliant registry hosting for font
+          publishers who have high-quality original fonts but lack the
+          infrastructure or technical resources to operate a self-hosted
+          Form C registry at production availability. The publisher
+          provides font binary files and manifest metadata; Atto operates
+          the registry infrastructure, computes integrity hashes, serves
+          compliant manifests, maintains SLA guarantees, and runs ongoing
+          ARCTS compliance verification.
+        </p>
+
+        <p>
+          Hosted registries resolve as <strong>Form C</strong> identifiers
+          under <code>hosted.fonts.atto.tech/{'{publisher-slug}'}/</code>.
+          Studio tier and above may configure a CNAME so that{' '}
+          <code>fonts.theirfoundry.com/TypefaceName</code> resolves
+          through Atto-hosted infrastructure. AHRS does not confer Tier 1{' '}
+          <code>@scope</code> shorthand eligibility — Tier 1 governance
+          is independent (see <a href="#afrp-registration">§6</a>).
+        </p>
+
+        <h4>Service tiers</h4>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th>Families</th>
+              <th>Storage</th>
+              <th>Bandwidth</th>
+              <th>SLA</th>
+              <th>Custom domain</th>
+              <th>Annual / Monthly</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Indie</strong></td>
+              <td>3</td>
+              <td>1 GB</td>
+              <td>10 GB / mo</td>
+              <td>99.9%</td>
+              <td>—</td>
+              <td>$99 / $12</td>
             </tr>
             <tr>
-              <td>Small Foundry</td>
-              <td>Fewer than 50 distinct typeface families</td>
-              <td>$250 / year</td>
+              <td><strong>Studio</strong></td>
+              <td>20</td>
+              <td>10 GB</td>
+              <td>100 GB / mo</td>
+              <td>99.9%</td>
+              <td>Yes</td>
+              <td>$399 / $49</td>
             </tr>
             <tr>
-              <td>Commercial Foundry</td>
-              <td>50+ families, or commercial licensing at any scale</td>
-              <td>$1,500 / year</td>
+              <td><strong>Foundry</strong></td>
+              <td>Unlimited</td>
+              <td>50 GB</td>
+              <td>1 TB / mo</td>
+              <td>99.95%</td>
+              <td>Yes — priority DNS</td>
+              <td>$1,599 / $199</td>
             </tr>
             <tr>
-              <td>Enterprise</td>
-              <td>OEM or platform integration serving 1M+ MAUs</td>
+              <td><strong>Enterprise</strong></td>
+              <td>Unlimited</td>
+              <td>Negotiated</td>
+              <td>Negotiated</td>
+              <td>Negotiated</td>
+              <td>Yes</td>
               <td>Negotiated</td>
             </tr>
           </tbody>
         </table>
 
         <p>
-          Applications go to <code>registry.atto.tech/apply</code>.
-          Acknowledgement within 5 business days; review within 30
-          calendar days. The Authority performs ongoing compliance
-          monitoring — monthly automated ARCTS runs, weekly integrity
-          spot-checks, quarterly license audits. Appeals are heard by a
-          three-person Technical Review Panel with balanced open-source
-          and commercial representation.
+          Bandwidth overages are billed at <code>$0.08/GB</code>; storage
+          overages at <code>$0.20/GB/mo</code>. Overage rates apply to
+          Studio and Foundry only — Enterprise negotiates inclusive
+          limits.
+        </p>
+
+        <h4>Onboarding</h4>
+        <ol class="spec-steps">
+          <li><strong>Publisher registration.</strong> Identity verification matching the intended publisher slug. The slug must correspond to the publisher's verified name or a name they demonstrably control. Squatting a slug to prevent a legitimate entity from using their own name is prohibited and grounds for termination.</li>
+          <li><strong>Font file submission.</strong> Publisher provides woff2 (required), woff (recommended), and ttf (optional) binaries for each typeface family and style.</li>
+          <li><strong>Metadata declaration.</strong> Per-font manifest metadata: designer, foundry, SPDX license, commercial-use flags, variable-axis definitions where applicable.</li>
+          <li><strong>Atto manifest generation.</strong> Atto computes SHA-256 integrity hashes for all submitted binaries, generates the AFRP-compliant manifest, and provisions the hosted endpoint.</li>
+          <li><strong>ARCTS verification.</strong> Atto runs a full ARCTS suite against the newly provisioned registry before making it publicly resolvable.</li>
+          <li><strong>Publisher review.</strong> Publisher confirms manifest accuracy — particularly license metadata — before the registry goes live.</li>
+        </ol>
+
+        <p>
+          Onboarding acknowledgement within <strong>two business days</strong>;
+          registry live within <strong>five business days</strong> of
+          complete submission. Apply at{' '}
+          <a href="/apply"><code>registry.atto.tech/apply</code></a>.
+        </p>
+
+        <h4>Publisher obligations</h4>
+        <p>
+          Publishers using AHRS agree that submitted font binaries are
+          original designs (or open-source fonts the publisher has rights
+          to distribute), that license metadata accurately reflects
+          actual distribution terms, that font files contain no malware
+          or homoglyph phishing payloads, and that publisher slugs
+          correspond to verified identity. False declarations are grounds
+          for immediate termination — terminated registries return{' '}
+          <code>REGISTRY_UNREACHABLE</code> in EXECUTED-mode rendering, so
+          publishers are advised to keep local copies of submitted
+          binaries to ease migration to self-hosted infrastructure.
+        </p>
+
+        <h4>Upgrade path to Tier 1</h4>
+        <p>
+          A publisher operating under AHRS may apply for Tier 1{' '}
+          <code>@scope</code> ratification if they subsequently meet the
+          criteria in <a href="#afrp-registration">§6</a>. AHRS history
+          is neither a prerequisite nor an accelerator. The infrastructure
+          permanence criterion is evaluated independently of Atto-hosted
+          infrastructure — an applicant relying exclusively on AHRS does
+          not satisfy permanence, since their registry's availability
+          depends on a commercial relationship with Atto rather than
+          their own independently operated infrastructure. Upon
+          ratification, existing AHRS-hosted Form C identifiers remain
+          valid indefinitely and a forwarding manifest redirects
+          resolvers to the new <code>@scope</code> endpoint.
         </p>
 
         {/* ─── Error codes ───────────────────────────────────── */}

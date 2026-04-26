@@ -548,14 +548,20 @@ a, button, [role="button"] {
   color: var(--color-text);
 }
 
-.atto-doc .atto-math {
+/* Math typography — unscoped from `.atto-doc` so any rendered surface
+   that embeds math (review anchors, callouts, future protocol blocks)
+   inherits the same italic serif treatment. The `atto-math` /
+   `atto-math-display` class names are domain-specific enough that a
+   naked selector won't collide with anything outside the design
+   system. */
+.atto-math {
   font-family: 'Cambria Math', 'STIX Two Math', Georgia, serif;
   font-style: italic;
   padding: 0 0.15em;
   color: var(--color-text);
 }
 
-.atto-doc .atto-math-display {
+.atto-math-display {
   display: block;
   margin-block: var(--space-4);
   padding: var(--space-3) var(--space-4);
