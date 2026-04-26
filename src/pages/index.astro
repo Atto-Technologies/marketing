@@ -105,10 +105,10 @@ const compareRows: CompareRow[] = [
 ];
 
 const compareNotes: CompareNote[] = [
-  { id: 'fn-blob', text: 'Files are stored as proprietary binary or XML — portable only through the application, not as plain text.' },
+  { id: 'fn-blob', text: 'Files are stored as proprietary binary or XML; portable only through the application, not as plain text.' },
   { id: 'fn-block', text: 'Notion uses a proprietary block model accessible only through its app or API.' },
   { id: 'fn-tracked', text: 'Track Changes is a UI-level marker (lost on export); Google Docs version history is server-side and not cryptographically verifiable. Neither produces a portable hash chain.' },
-  { id: 'fn-git', text: 'Git provides hash-chained history alongside LaTeX/Markdown, but as an external tool — not a native property of the format itself.' },
+  { id: 'fn-git', text: 'Git provides hash-chained history alongside LaTeX/Markdown, but as an external tool, not a native property of the format itself.' },
   { id: 'fn-audit', text: 'Server-side audit log, not a portable cryptographic chain embedded in the document.' },
   { id: 'fn-pdf', text: 'DocuSign signs a PDF snapshot. The signature is on rendered output, not on a structured content hash of the source.' },
   { id: 'fn-sigbind', text: 'Signature attaches at sign time but with no cryptographic binding to a deterministic content hash. The document can be re-exported or reformatted without invalidating the signature.' },
@@ -116,9 +116,9 @@ const compareNotes: CompareNote[] = [
 
 // Visual + a11y mapping for the three cell states.
 const compareSymbols = {
-  y: { glyph: '✓', label: 'Yes — native, built into the core product.' },
-  p: { glyph: '⚠', label: 'Partial — appended externally, lacks structural integrity, or requires another tool.' },
-  n: { glyph: '–', label: 'No — not supported.' },
+  y: { glyph: '✓', label: 'Yes: native, built into the core product.' },
+  p: { glyph: '⚠', label: 'Partial: appended externally, lacks structural integrity, or requires another tool.' },
+  n: { glyph: '–', label: 'No: not supported.' },
 } as const;
 
 // Stable footnote numbering by position in compareNotes[].
@@ -138,7 +138,7 @@ const noteNumber: Record<string, number> = Object.fromEntries(
       </h1>
       <p class="hero-sub">
         Atto replaces Word for contracts, term sheets, and technical
-        documents—bringing collaborative editing, mathematical notation, and
+        documents, bringing collaborative editing, mathematical notation, and
         binding execution into a single structured format.
       </p>
       <div class="hero-ctas">
@@ -209,7 +209,7 @@ The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
       <p>
         A signature line in Word is just styled text. A tracked change is a
         cosmetic marker. A due date is a string. There is no semantic model
-        under the surface — every meaning lives in the author&rsquo;s head and
+        under the surface; every meaning lives in the author&rsquo;s head and
         the reviewer&rsquo;s intuition.
       </p>
       <p>
@@ -222,8 +222,8 @@ The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
         LaTeX solved notation and nothing else. No collaboration, no review
         workflow, no verification, no path from draft to executed document.
         Teams that need mathematical precision and counterparty screening
-        end up assembling six tools by hand — and reconciling the gaps in a
-        seventh.
+        end up stitching together a whole toolchain by hand, and reconciling
+        every gap along the way.
       </p>
     </div>
   </section>
@@ -242,7 +242,7 @@ The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
         Atto is a hybrid: <DefineTerm
           term="Markdown"
           partOfSpeech="markup language"
-        >A plain-text writing format that uses simple symbols — like <code>**bold**</code> and <code># Heading</code> — to mark structure and emphasis while staying readable as raw text. Created in 2004; widely used for documentation, blogs, and notes.</DefineTerm> for prose, <DefineTerm
+        >A plain-text writing format that uses simple symbols (like <code>**bold**</code> and <code># Heading</code>) to mark structure and emphasis while staying readable as raw text. Created in 2004; widely used for documentation, blogs, and notes.</DefineTerm> for prose, <DefineTerm
           term="LaTeX"
           partOfSpeech="typesetting system"
           pronunciation="lā-tek"
@@ -261,7 +261,7 @@ The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
             term="prose"
             partOfSpeech="noun"
             pronunciation="prōz"
-          >written or spoken language in its ordinary form, without metrical structure — the everyday text of letters, contracts, and reports as opposed to poetry or markup syntax.</DefineTerm>, solved.
+          >written or spoken language in its ordinary form, without metrical structure: the everyday text of letters, contracts, and reports as opposed to poetry or markup syntax.</DefineTerm>, solved.
         </h3>
       </div>
       <LayerDemo label="Markdown" filename="letter.md">
@@ -298,7 +298,7 @@ Payment terms are <span class="tok-emph">*net thirty*</span>.</code></pre>
       <p class="layer-caption">
         Markdown carries prose. It&rsquo;s portable, diffable, and human-readable
         in any text editor. But it has no concept of notation, and no concept
-        of meaning — a heading is just a heading, a signature line is just a
+        of meaning: a heading is just a heading, a signature line is just a
         bold word.
       </p>
     </div>
@@ -349,24 +349,29 @@ is the discount rate.</code></pre>
     </div>
 
     {/* ─── Beat C — The reconciliation pain ──────────────────────
-         Each stage card now lists the actual tool alternatives that
-         teams pick from at that step (rather than a single
-         representative). This makes the "Six tools" claim in the
-         heading visible inside the diagram itself: count names
-         across the four stages and you reach 6 document tools (Word,
-         Google Docs, Notion, LaTeX, DocuSign, Ironclad) — plus the
-         three credit bureaus that show up when verification is
-         required. Friction breaks (manual paste / rekey details /
-         attach report) sit between stages because the friction is
-         structural — picking a different tool inside a stage doesn't
-         change it. */}
+         Five stages, each a silo of tool alternatives. Stages map
+         1-to-1 to the protocol-layer capabilities Atto unifies:
+            Drafting    — authoring (Word/Docs/Notion)
+            Versioning  — hash-chained history (Git/GitHub) — note
+                          this is the only stage where the displaced
+                          "tool" (Git) is *external* to the document
+                          format itself; in Atto, version integrity
+                          is native, not bolted on
+            Notation    — math (LaTeX/Overleaf)
+            Credit check— verification (TransUnion/Experian/Equifax)
+            Signing     — execution (DocuSign/Ironclad)
+         Friction breaks (rename the file / type it again / type
+         it again / attach and pray) sit between stages. Picking a
+         different tool inside a stage doesn't change them, because
+         the friction is structural. The labels are deliberately
+         consumer-voice, naming what the operator actually does. */}
     <div class="layer-pain wrap section">
       <div class="layer-beat-head">
         <p class="beat-num">03</p>
-        <h3>Six tools to do what one document should do.</h3>
+        <h3>Separate accounts, incompatible formats, one executed PDF that remembers none of it.</h3>
       </div>
 
-      <div class="pain-diagram" role="img" aria-label="Four-stage document workflow with multiple tool alternatives at each stage and broken connections between stages">
+      <div class="pain-diagram" role="img" aria-label="Five-stage document workflow with multiple tool alternatives at each stage and broken connections between stages">
         <div class="pain-app pain-app-write">
           <p class="pain-app-role">Drafting</p>
           <ul class="pain-app-tools">
@@ -380,7 +385,21 @@ is the discount rate.</code></pre>
           <span class="pain-break-mark">
             <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
           </span>
-          <span class="pain-break-label">manual paste</span>
+          <span class="pain-break-label">rename the file</span>
+        </div>
+        <div class="pain-app pain-app-version">
+          <p class="pain-app-role">Versioning</p>
+          <ul class="pain-app-tools">
+            <li>Git</li>
+            <li>GitHub</li>
+          </ul>
+          <p class="pain-app-file"><code>.git/</code></p>
+        </div>
+        <div class="pain-break" aria-hidden="true">
+          <span class="pain-break-mark">
+            <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
+          </span>
+          <span class="pain-break-label">type it again</span>
         </div>
         <div class="pain-app pain-app-math">
           <p class="pain-app-role">Notation</p>
@@ -394,7 +413,7 @@ is the discount rate.</code></pre>
           <span class="pain-break-mark">
             <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
           </span>
-          <span class="pain-break-label">rekey details</span>
+          <span class="pain-break-label">type it again</span>
         </div>
         <div class="pain-app pain-app-verify">
           <p class="pain-app-role">Credit check</p>
@@ -409,7 +428,7 @@ is the discount rate.</code></pre>
           <span class="pain-break-mark">
             <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
           </span>
-          <span class="pain-break-label">attach report</span>
+          <span class="pain-break-label">attach and pray</span>
         </div>
         <div class="pain-app pain-app-sign">
           <p class="pain-app-role">Signing</p>
@@ -422,12 +441,15 @@ is the discount rate.</code></pre>
       </div>
 
       <p class="layer-caption pain-caption">
-        For docs that need verification — leases, financing applications,
-        regulated agreements — every team picks from the same menu. The tools
-        change; the friction doesn&rsquo;t. Every step rekeys data the previous
-        step had, every artifact is a different file format, and the executed
-        PDF ends up with no semantic relationship to the draft that was
-        reviewed, the screening that approved it, or the math that priced it.
+        For leases, financing applications, and regulated agreements, every
+        team assembles the same sprawling combination of accounts, platforms,
+        and exports. The products change by industry and firm; the friction
+        doesn&rsquo;t. Every step rekeys data the last step already had. Every
+        handoff produces a new file in a new format. And the executed PDF at
+        the end (the one that gets filed, stored, and treated as the record of
+        truth) has no structural relationship to the draft that was reviewed,
+        the screening that approved it, or the math that priced it. It&rsquo;s
+        a photograph of a process that no longer exists anywhere.
       </p>
     </div>
 
@@ -492,10 +514,10 @@ $$</span>
       <p class="layer-caption">
         One source file: Markdown prose, LaTeX notation, and typed directives,
         all parsed to a single deterministic tree. The protocol layer makes
-        that tree do work — hash-chained revision history, signatures locked
+        that tree do work: hash-chained revision history, signatures locked
         to the content hash, executable math frozen at signing, and directives
         like <code>:::credit-check</code> that gate execution on real-world
-        preconditions. Six tools&rsquo; worth of capability — one file.
+        preconditions. All of it. In one file.
       </p>
     </div>
   </section>
@@ -503,17 +525,18 @@ $$</span>
   {/* ─── Section 4 — Live Collaboration ───────────────────────── */}
   <section class="collab wrap section">
     <div class="collab-copy">
-      <p class="eyebrow">Transport</p>
-      <h2 class="section-heading">Real-time. By design.</h2>
+      <p class="eyebrow">Collaboration: always in sync</p>
+      <h2 class="section-heading">Real-time. Without the chaos.</h2>
       <p>
-        Atto documents sync over MQTT with CRDT-based conflict resolution.
-        Every section, every directive, every LaTeX block is an independent
-        stream.
+        Every section of an Atto document syncs the moment you touch it.
+        Two authors can edit simultaneously with no locking, no
+        &ldquo;someone else is editing this,&rdquo; and no overwritten work.
+        A co-signer can execute their signature while a clause is still
+        being revised on the other side of the document.
       </p>
       <p>
-        A signing event never blocks an edit in progress. A dropped
-        connection resumes from its last acknowledged patch. The broker is
-        horizontally scalable — the protocol is not.
+        Drop your connection mid-edit. Come back. Everything is exactly
+        where you left it.
       </p>
     </div>
     <figure class="collab-diagram" aria-label="Atto transport architecture">
@@ -534,7 +557,7 @@ Baldwinson Protocol Layer</code></pre>
   <section class="lifecycle wrap section">
     <p class="eyebrow">Lifecycle</p>
     <h2 class="section-heading">
-      Draft, review, sign, freeze, execute — in one format.
+      Draft, review, sign, freeze, execute. All in one format.
     </h2>
     <p class="section-lede">
       Every stage is a typed transition, captured in the document and the
@@ -569,11 +592,11 @@ Baldwinson Protocol Layer</code></pre>
     <ul class="cmp-legend" aria-label="Symbol legend">
       <li>
         <span class="cmp-glyph cmp-y" aria-hidden="true">✓</span>
-        <span>Native — built into the core product.</span>
+        <span>Native: built into the core product.</span>
       </li>
       <li>
         <span class="cmp-glyph cmp-p" aria-hidden="true">⚠</span>
-        <span>Partial — appended externally, lacks structural integrity, or requires another tool.</span>
+        <span>Partial: appended externally, lacks structural integrity, or requires another tool.</span>
       </li>
       <li>
         <span class="cmp-glyph cmp-n" aria-hidden="true">–</span>
@@ -836,13 +859,19 @@ Baldwinson Protocol Layer</code></pre>
   }
 
   /* ─── Pain diagram (Beat C) ──────────────────────────────────
-     Four "app" cards with broken-link indicators between them,
-     visualizing the four-tool draft → typeset → screen → sign
-     workflow. Mobile (≤900px) collapses to a single column so each
-     app and break stacks vertically. */
+     Five "app" cards with broken-link indicators between them,
+     visualizing the draft → version → typeset → screen → sign
+     workflow. Mobile (≤900px) collapses to a single column
+     so each app and break stacks vertically.
+
+     Grid columns expand to 9 (5 cards + 4 break gutters) — at
+     content width the row gets dense; if cards feel cramped,
+     reduce .pain-app padding before changing the grid template
+     (the column count needs to stay at 9 to preserve the
+     card-break-card-break rhythm). */
   .pain-diagram {
     display: grid;
-    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
     align-items: stretch;
     gap: var(--space-3);
     padding: var(--space-6);
