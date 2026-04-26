@@ -234,21 +234,19 @@ The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
        preview before being shown what happens when they combine. */}
   <section class="section-surface" aria-labelledby="layers-heading">
     <div class="wrap section layers-intro">
-      <p class="eyebrow">Architecture</p>
+      <p class="eyebrow">Format: three layers, one file</p>
       <h2 id="layers-heading" class="section-heading">
-        What Atto is, in three layers.
+        Everything a document needs. Nothing it doesn&rsquo;t.
       </h2>
       <p class="section-lede">
-        Atto is a hybrid: <DefineTerm
+        Most formats solve one problem well and ignore the rest. <DefineTerm
           term="Markdown"
           partOfSpeech="markup language"
-        >A plain-text writing format that uses simple symbols (like <code>**bold**</code> and <code># Heading</code>) to mark structure and emphasis while staying readable as raw text. Created in 2004; widely used for documentation, blogs, and notes.</DefineTerm> for prose, <DefineTerm
+        >A plain-text writing format that uses simple symbols (like <code>**bold**</code> and <code># Heading</code>) to mark structure and emphasis while staying readable as raw text. Created in 2004; widely used for documentation, blogs, and notes.</DefineTerm> is readable but has no notation. <DefineTerm
           term="LaTeX"
           partOfSpeech="typesetting system"
           pronunciation="lā-tek"
-        >A typesetting system designed for mathematical and scientific documents. Authors write formulas as code (e.g. <code>\frac{`{a}{b}`}</code> for a fraction) and the system renders them as properly typeset notation. The standard for academic publishing since the 1980s.</DefineTerm> for notation, and a typed
-        directive layer for structure. To see why the hybrid matters, look at
-        what each piece does on its own.
+        >A typesetting system designed for mathematical and scientific documents. Authors write formulas as code (e.g. <code>\frac{`{a}{b}`}</code> for a fraction) and the system renders them as properly typeset notation. The standard for academic publishing since the 1980s.</DefineTerm> has notation but requires a specialist to write it. Neither one can execute. Atto combines all three in a single plain-text file: Markdown carries the prose, LaTeX carries the math, and Atto carries the structure that makes it executable. The result is a document that a human can read, a machine can verify, and a court can rely on.
       </p>
     </div>
 
@@ -348,95 +346,133 @@ is the discount rate.</code></pre>
       </p>
     </div>
 
-    {/* ─── Beat C — The reconciliation pain ──────────────────────
-         Five stages, each a silo of tool alternatives. Stages map
-         1-to-1 to the protocol-layer capabilities Atto unifies:
-            Drafting    — authoring (Word/Docs/Notion)
-            Versioning  — hash-chained history (Git/GitHub) — note
-                          this is the only stage where the displaced
-                          "tool" (Git) is *external* to the document
-                          format itself; in Atto, version integrity
-                          is native, not bolted on
-            Notation    — math (LaTeX/Overleaf)
-            Credit check— verification (TransUnion/Experian/Equifax)
-            Signing     — execution (DocuSign/Ironclad)
-         Friction breaks (rename the file / type it again / type
-         it again / attach and pray) sit between stages. Picking a
-         different tool inside a stage doesn't change them, because
-         the friction is structural. The labels are deliberately
-         consumer-voice, naming what the operator actually does. */}
+    {/* ─── Beat C — The reconciliation pain ────────────────────
+         Six numbered stages, each a silo of tool alternatives.
+         Stages map 1-to-1 to the protocol-layer capabilities Atto
+         unifies:
+            1. Drafting     — authoring (Word/Docs/Notion)
+            2. Versioning   — hash-chained history (Git/GitHub) —
+                              the only stage where the displaced
+                              "tool" (Git) is *external* to the
+                              document format itself; in Atto,
+                              version integrity is native, not
+                              bolted on
+            3. Notation     — math (LaTeX/Overleaf)
+            4. Credit check — verification (TransUnion/Experian/
+                              Equifax)
+            5. Signing      — execution (DocuSign/Ironclad)
+            6. Sharing      — distribution (Gmail/Outlook/Dropbox);
+                              Atto answers this with real-time sync
+                              + URL-based document access (Section
+                              4), so there is no "executed PDF" to
+                              email around — the document is the
+                              record
+         Six friction breaks sit between (and after) stages: rename
+         the file / type it again / type it again / attach and pray
+         / attach again / send or print. The trailing "send or print"
+         break after Sharing has no card following — it signals that
+         the workflow has no clean resolution; manual labor is
+         endless even after signing. Picking a different tool inside
+         a stage doesn't change them, because the friction is
+         structural. The labels are deliberately consumer-voice,
+         naming what the operator actually does. */}
     <div class="layer-pain wrap section">
       <div class="layer-beat-head">
         <p class="beat-num">03</p>
         <h3>Separate accounts, incompatible formats, one executed PDF that remembers none of it.</h3>
       </div>
 
-      <div class="pain-diagram" role="img" aria-label="Five-stage document workflow with multiple tool alternatives at each stage and broken connections between stages">
-        <div class="pain-app pain-app-write">
-          <p class="pain-app-role">Drafting</p>
-          <ul class="pain-app-tools">
-            <li>Microsoft Word</li>
-            <li>Google Docs</li>
-            <li>Notion</li>
-          </ul>
-          <p class="pain-app-file"><code>term-sheet.docx</code></p>
+      <div class="pain-diagram" role="img" aria-label="Six-stage document workflow with multiple tool alternatives at each stage and broken connections between stages">
+        <div class="pain-row">
+          <div class="pain-app pain-app-write">
+            <p class="pain-app-role">1. Drafting</p>
+            <ul class="pain-app-tools">
+              <li>Microsoft Word</li>
+              <li>Google Docs</li>
+              <li>Notion</li>
+            </ul>
+            <p class="pain-app-file"><code>term-sheet.docx</code></p>
+          </div>
+          <div class="pain-break" aria-hidden="true">
+            <span class="pain-break-mark">
+              <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
+            </span>
+            <span class="pain-break-label">rename the file</span>
+          </div>
+          <div class="pain-app pain-app-version">
+            <p class="pain-app-role">2. Versioning</p>
+            <ul class="pain-app-tools">
+              <li>Git</li>
+              <li>GitHub</li>
+            </ul>
+            <p class="pain-app-file"><code>.git/</code></p>
+          </div>
+          <div class="pain-break" aria-hidden="true">
+            <span class="pain-break-mark">
+              <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
+            </span>
+            <span class="pain-break-label">type it again</span>
+          </div>
+          <div class="pain-app pain-app-math">
+            <p class="pain-app-role">3. Notation</p>
+            <ul class="pain-app-tools">
+              <li>LaTeX</li>
+              <li>Overleaf</li>
+            </ul>
+            <p class="pain-app-file"><code>valuation.tex</code></p>
+          </div>
+          <div class="pain-break" aria-hidden="true">
+            <span class="pain-break-mark">
+              <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
+            </span>
+            <span class="pain-break-label">type it again</span>
+          </div>
         </div>
-        <div class="pain-break" aria-hidden="true">
-          <span class="pain-break-mark">
-            <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
-          </span>
-          <span class="pain-break-label">rename the file</span>
-        </div>
-        <div class="pain-app pain-app-version">
-          <p class="pain-app-role">Versioning</p>
-          <ul class="pain-app-tools">
-            <li>Git</li>
-            <li>GitHub</li>
-          </ul>
-          <p class="pain-app-file"><code>.git/</code></p>
-        </div>
-        <div class="pain-break" aria-hidden="true">
-          <span class="pain-break-mark">
-            <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
-          </span>
-          <span class="pain-break-label">type it again</span>
-        </div>
-        <div class="pain-app pain-app-math">
-          <p class="pain-app-role">Notation</p>
-          <ul class="pain-app-tools">
-            <li>LaTeX</li>
-            <li>Overleaf</li>
-          </ul>
-          <p class="pain-app-file"><code>valuation.tex</code></p>
-        </div>
-        <div class="pain-break" aria-hidden="true">
-          <span class="pain-break-mark">
-            <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
-          </span>
-          <span class="pain-break-label">type it again</span>
-        </div>
-        <div class="pain-app pain-app-verify">
-          <p class="pain-app-role">Credit check</p>
-          <ul class="pain-app-tools">
-            <li>TransUnion</li>
-            <li>Experian</li>
-            <li>Equifax</li>
-          </ul>
-          <p class="pain-app-file"><code>report.pdf</code></p>
-        </div>
-        <div class="pain-break" aria-hidden="true">
-          <span class="pain-break-mark">
-            <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
-          </span>
-          <span class="pain-break-label">attach and pray</span>
-        </div>
-        <div class="pain-app pain-app-sign">
-          <p class="pain-app-role">Signing</p>
-          <ul class="pain-app-tools">
-            <li>DocuSign</li>
-            <li>Ironclad</li>
-          </ul>
-          <p class="pain-app-file"><code>executed.pdf</code></p>
+        <div class="pain-row">
+          <div class="pain-app pain-app-verify">
+            <p class="pain-app-role">4. Credit check</p>
+            <ul class="pain-app-tools">
+              <li>TransUnion</li>
+              <li>Experian</li>
+              <li>Equifax</li>
+            </ul>
+            <p class="pain-app-file"><code>report.pdf</code></p>
+          </div>
+          <div class="pain-break" aria-hidden="true">
+            <span class="pain-break-mark">
+              <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
+            </span>
+            <span class="pain-break-label">attach and pray</span>
+          </div>
+          <div class="pain-app pain-app-sign">
+            <p class="pain-app-role">5. Signing</p>
+            <ul class="pain-app-tools">
+              <li>DocuSign</li>
+              <li>Ironclad</li>
+            </ul>
+            <p class="pain-app-file"><code>executed.pdf</code></p>
+          </div>
+          <div class="pain-break" aria-hidden="true">
+            <span class="pain-break-mark">
+              <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
+            </span>
+            <span class="pain-break-label">attach again</span>
+          </div>
+          <div class="pain-app pain-app-share">
+            <p class="pain-app-role">6. Sharing</p>
+            <ul class="pain-app-tools">
+              <li>Gmail</li>
+              <li>Outlook</li>
+              <li>Dropbox</li>
+            </ul>
+            <p class="pain-app-file"><code>executed_FINAL.pdf</code></p>
+          </div>
+          <div class="pain-break" aria-hidden="true">
+            <span class="pain-break-mark">
+              <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
+            </span>
+            <span class="pain-break-label">send or print</span>
+          </div>
         </div>
       </div>
 
@@ -539,23 +575,23 @@ $$</span>
         where you left it.
       </p>
     </div>
-    <figure class="collab-diagram" aria-label="Atto transport architecture">
-      <pre class="code-block"><code>Browser Editor
-    │
-    ▼  MQTT / QUIC
-Atto Relay Broker
+    <figure class="collab-diagram" aria-label="Atto runtime architecture">
+      <pre class="code-block"><code>Your browser
     │
     ▼
-Document State Service ──── Patch Log
+Atto sync layer
     │
     ▼
-Baldwinson Protocol Layer</code></pre>
+Document state    ──── Change history
+    │
+    ▼
+Execution layer</code></pre>
     </figure>
   </section>
 
   {/* ─── Section 5 — Document Lifecycle ───────────────────────── */}
   <section class="lifecycle wrap section">
-    <p class="eyebrow">Lifecycle</p>
+    <p class="eyebrow">Workflow: start to signature</p>
     <h2 class="section-heading">
       Draft, review, sign, freeze, execute. All in one format.
     </h2>
@@ -858,25 +894,56 @@ Baldwinson Protocol Layer</code></pre>
     }
   }
 
-  /* ─── Pain diagram (Beat C) ──────────────────────────────────
-     Five "app" cards with broken-link indicators between them,
-     visualizing the draft → version → typeset → screen → sign
-     workflow. Mobile (≤900px) collapses to a single column
-     so each app and break stacks vertically.
+  /* ─── Pain diagram (Beat C) ──────────────────────
+     Six numbered "app" cards (1–6) with broken-link indicators
+     between them, visualizing the
+     draft → version → typeset → screen → sign → share workflow.
+     Cards are arranged 3+3 across two rows because a flat 6-card
+     row was visibly squished even at the 1440px content width.
 
-     Grid columns expand to 9 (5 cards + 4 break gutters) — at
-     content width the row gets dense; if cards feel cramped,
-     reduce .pain-app padding before changing the grid template
-     (the column count needs to stay at 9 to preserve the
-     card-break-card-break rhythm). */
+     Structure: .pain-diagram is a vertical flex stack of two
+     .pain-row containers; each .pain-row is a horizontal flexbox
+     with `flex-wrap: nowrap` holding card + break + card + break
+     + card + break (6 items). Flexbox with nowrap is structurally
+     bulletproof — items physically cannot wrap to a new visual
+     row even if their intrinsic min-content exceeds the row's
+     available width (cards just shrink instead). CSS Grid with
+     explicit columns *should* behave the same, but exhibited
+     wrapping in this layout for reasons that weren't worth
+     debugging when flexbox is the correct primitive here anyway
+     (we always want row-direction, never column-wrap behavior).
+     Breaks #3 and #6 sit at the trailing edge of their rows with
+     no card following — the trailing #3 wraps the eye to the
+     next row mid-friction; the trailing #6 ("send or print")
+     leaves the workflow unresolved, signaling that manual labor
+     never cleanly ends. Mobile (≤900px) collapses each .pain-row
+     to a single-column vertical stack. */
   .pain-diagram {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
-    align-items: stretch;
+    display: flex;
+    flex-direction: column;
     gap: var(--space-3);
     padding: var(--space-6);
     border: 1px solid var(--color-border);
     background: var(--color-bg);
+  }
+
+  .pain-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  /* Cards distribute remaining space equally (`flex: 1 1 0`);
+     breaks sit at their natural content width and never grow/
+     shrink. .pain-app already has `min-width: 0` so cards can
+     shrink below their intrinsic min-content if the row is tight. */
+  .pain-row > .pain-app {
+    flex: 1 1 0;
+  }
+
+  .pain-row > .pain-break {
+    flex: 0 0 auto;
   }
 
   .pain-app {
@@ -980,8 +1047,16 @@ Baldwinson Protocol Layer</code></pre>
   }
 
   @media (max-width: 900px) {
-    .pain-diagram {
-      grid-template-columns: 1fr;
+    /* Single-column stack: each .pain-row becomes vertical and
+       its children take their natural height (override the desktop
+       `flex: 1 1 0` on cards, which only makes sense in a row). */
+    .pain-row {
+      flex-direction: column;
+    }
+
+    .pain-row > .pain-app,
+    .pain-row > .pain-break {
+      flex: 0 0 auto;
     }
 
     .pain-break {
