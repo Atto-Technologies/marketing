@@ -1,0 +1,309 @@
+---
+/**
+ * DefineTerm — inline word with a dictionary-style definition popover.
+ *
+ * Visual: the term is rendered with a dotted underline (the long-standing
+ * <abbr>/<dfn> convention for a defined term). Mouse hover, keyboard focus,
+ * and click/tap each reveal a small definition card positioned just below
+ * the word.
+ *
+ * Accessibility:
+ *   - The trigger is a real <button> so it's reachable by Tab and operable
+ *     with Enter/Space.
+ *   - aria-describedby ties the trigger to the popover so screen readers
+ *     announce the definition when the term receives focus.
+ *   - aria-expanded reflects open/closed state.
+ *   - Escape closes the popover and returns focus state to the trigger.
+ *   - The popover is hidden from AT until opened (visibility: hidden) so
+ *     it isn't read out twice when collapsed.
+ *
+ * Reusable: pass `term`, optional `partOfSpeech` (e.g. "noun"), and optional
+ * `pronunciation` (e.g. "prōz"). The definition body is the default slot,
+ * so callers can pass arbitrary inline markup.
+ */
+
+interface Props {
+  term: string;
+  partOfSpeech?: string;
+  pronunciation?: string;
+}
+
+const { term, partOfSpeech, pronunciation } = Astro.props;
+
+// Stable-ish id for aria-describedby. Math.random is fine since the id
+// only needs to be unique within a single render of the page.
+const popoverId = `def-${term.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<span class="define">
+  <button
+    type="button"
+    class="define-trigger"
+    aria-describedby={popoverId}
+    aria-expanded="false"
+    data-define-trigger
+  >
+    {term}
+  </button>
+  <span
+    class="define-card"
+    id={popoverId}
+    role="tooltip"
+    data-define-card
+  >
+    <span class="define-header">
+      <span class="define-term">{term}</span>
+      {pronunciation && (
+        <span class="define-pron" aria-label={`pronunciation: ${pronunciation}`}>
+          | {pronunciation} |
+        </span>
+      )}
+      {partOfSpeech && <span class="define-pos">{partOfSpeech}</span>}
+    </span>
+    <span class="define-body">
+      <slot />
+    </span>
+  </span>
+</span>
+
+<script>
+  // Wire up the open/close behavior. Hover and focus keep things simple
+  // (CSS could do this alone) but click/tap toggling is critical for
+  // touch devices that have no hover, so we drive everything from JS for
+  // a consistent state machine.
+  document.querySelectorAll<HTMLElement>(".define").forEach((wrap) => {
+    const trigger = wrap.querySelector<HTMLButtonElement>("[data-define-trigger]");
+    const card = wrap.querySelector<HTMLElement>("[data-define-card]");
+    if (!trigger || !card) return;
+
+    let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const setOpen = (open: boolean) => {
+      wrap.classList.toggle("is-open", open);
+      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+
+    const open = () => {
+      if (closeTimer) {
+        clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+      setOpen(true);
+    };
+
+    // Small delay so the user can move the cursor from the trigger onto
+    // the card without the card vanishing mid-traversal.
+    const scheduleClose = () => {
+      if (closeTimer) clearTimeout(closeTimer);
+      closeTimer = setTimeout(() => setOpen(false), 120);
+    };
+
+    const closeNow = () => {
+      if (closeTimer) {
+        clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+      setOpen(false);
+    };
+
+    // Hover: open on enter, schedule close on leave. The card itself
+    // also handles enter/leave so the user can move into it.
+    trigger.addEventListener("mouseenter", open);
+    trigger.addEventListener("mouseleave", scheduleClose);
+    card.addEventListener("mouseenter", open);
+    card.addEventListener("mouseleave", scheduleClose);
+
+    // Keyboard focus also opens. We don't auto-close on blur from the
+    // trigger if focus is moving into the card, so check relatedTarget.
+    trigger.addEventListener("focus", open);
+    trigger.addEventListener("blur", (e) => {
+      const next = e.relatedTarget as Node | null;
+      if (next && card.contains(next)) return;
+      scheduleClose();
+    });
+
+    // Click toggles — the only path that works on touch devices without
+    // hover. preventDefault stops accidental form submits if the
+    // component is ever placed inside a <form>.
+    trigger.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (wrap.classList.contains("is-open")) {
+        closeNow();
+      } else {
+        open();
+      }
+    });
+
+    // Escape closes from anywhere inside the wrapper.
+    wrap.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && wrap.classList.contains("is-open")) {
+        e.stopPropagation();
+        closeNow();
+        trigger.focus();
+      }
+    });
+
+    // Outside click closes the popover. Listen on the document but
+    // ignore clicks inside the wrap.
+    document.addEventListener("click", (e) => {
+      if (!wrap.classList.contains("is-open")) return;
+      if (wrap.contains(e.target as Node)) return;
+      closeNow();
+    });
+  });
+</script>
+
+<style>
+  /* The wrapper is the positioning context for the absolutely-positioned
+     card. Inline-block keeps it as part of the surrounding text flow so
+     it works inside headings and paragraphs alike. */
+  .define {
+    position: relative;
+    display: inline-block;
+  }
+
+  /* Reset all the chrome a <button> brings by default so it reads as a
+     normal inline word, then add the dotted-underline cue that indicates
+     "this is interactive". cursor: help is the conventional pointer for
+     a defined term. */
+  .define-trigger {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    cursor: help;
+    text-decoration: underline dotted;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: var(--color-primary);
+    transition: color 120ms ease, text-decoration-color 120ms ease;
+  }
+
+  .define-trigger:hover,
+  .define-trigger[aria-expanded="true"] {
+    color: var(--color-primary);
+  }
+
+  .define-trigger:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  /* The card sits in absolute flow under the trigger. z-index high enough
+     to clear sibling content but not the page nav. max-width keeps long
+     definitions from spreading across the whole viewport. */
+  .define-card {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    left: 0;
+    z-index: 50;
+    /* Inline-block so the card auto-sizes to its content up to max-width. */
+    display: block;
+    width: max-content;
+    max-width: min(320px, calc(100vw - var(--space-8)));
+
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+
+    /* Reset typography so a card opened from inside a large heading
+       still reads at body size. */
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0;
+    color: var(--color-text);
+    text-align: left;
+    white-space: normal;
+
+    /* Hidden until .is-open is applied. visibility: hidden also prevents
+       AT from announcing the contents while collapsed. */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-2px);
+    transition:
+      opacity 140ms ease,
+      transform 140ms ease,
+      visibility 140ms;
+  }
+
+  .define.is-open .define-card {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .define-header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-2);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .define-term {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-base);
+    color: var(--color-text);
+  }
+
+  .define-pron {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .define-pos {
+    font-style: italic;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .define-body {
+    display: block;
+    color: var(--color-text-muted);
+  }
+
+  /* Inline <code> inside the definition body — used to show example
+     syntax like **bold** or \frac{a}{b}. The codebase doesn't define
+     a global inline code style (only scoped variants such as
+     .atto-doc code), so we mirror the same recipe here so example
+     snippets read as code snippets and not as muted prose. */
+  .define-body :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    padding: 0.05em 0.3em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    /* Don't let a long token push the card past its max-width. */
+    word-break: break-word;
+  }
+
+  /* Right-edge clip avoidance: when the trigger is near the right edge
+     of its container, anchor the card to the right of the trigger
+     instead. Authors opt in via [data-align="right"]. */
+  .define[data-align="right"] .define-card {
+    left: auto;
+    right: 0;
+  }
+
+  /* Small viewports: pin the card to the trigger's left/right within the
+     section padding so it never clips off-screen. */
+  @media (max-width: 520px) {
+    .define-card {
+      max-width: calc(100vw - var(--space-6));
+    }
+  }
+</style>

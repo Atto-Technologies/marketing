@@ -4,6 +4,7 @@ import { X } from '@lucide/astro';
 import AttoDemo from '../components/AttoDemo.astro';
 import LayerDemo from '../components/LayerDemo.astro';
 import SignatureWidget from '../components/SignatureWidget.astro';
+import DefineTerm from '../components/DefineTerm.astro';
 
 const lifecycle = [
   { name: 'Draft', desc: 'Authors compose and revise.' },
@@ -158,7 +159,14 @@ The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
         What Atto is, in three layers.
       </h2>
       <p class="section-lede">
-        Atto is a hybrid: Markdown for prose, LaTeX for notation, and a typed
+        Atto is a hybrid: <DefineTerm
+          term="Markdown"
+          partOfSpeech="markup language"
+        >A plain-text writing format that uses simple symbols — like <code>**bold**</code> and <code># Heading</code> — to mark structure and emphasis while staying readable as raw text. Created in 2004; widely used for documentation, blogs, and notes.</DefineTerm> for prose, <DefineTerm
+          term="LaTeX"
+          partOfSpeech="typesetting system"
+          pronunciation="lā-tek"
+        >A typesetting system designed for mathematical and scientific documents. Authors write formulas as code (e.g. <code>\frac{`{a}{b}`}</code> for a fraction) and the system renders them as properly typeset notation. The standard for academic publishing since the 1980s.</DefineTerm> for notation, and a typed
         directive layer for structure. To see why the hybrid matters, look at
         what each piece does on its own.
       </p>
@@ -168,7 +176,13 @@ The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
     <div class="layer-beat wrap section">
       <div class="layer-beat-head">
         <p class="beat-num">01</p>
-        <h3>Markdown: prose, solved.</h3>
+        <h3>
+          Markdown: <DefineTerm
+            term="prose"
+            partOfSpeech="noun"
+            pronunciation="prōz"
+          >written or spoken language in its ordinary form, without metrical structure — the everyday text of letters, contracts, and reports as opposed to poetry or markup syntax.</DefineTerm>, solved.
+        </h3>
       </div>
       <LayerDemo label="Markdown" filename="letter.md">
         <pre slot="source"><code><span class="tok-heading"># Services Agreement</span>
