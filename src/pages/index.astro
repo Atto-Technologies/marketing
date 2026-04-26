@@ -141,9 +141,9 @@ The late fee is <span class="tok-math">$L = B \times 0.015$</span>.
       </p>
       <p>
         LaTeX solved notation and nothing else. No collaboration, no review
-        workflow, no path from draft to executed document. Teams that need
-        mathematical precision end up maintaining two systems — and a third
-        to reconcile them.
+        workflow, no verification, no path from draft to executed document.
+        Teams that need mathematical precision and counterparty screening
+        end up maintaining three systems — and a fourth to reconcile them.
       </p>
     </div>
   </section>
@@ -272,10 +272,10 @@ is the discount rate.</code></pre>
     <div class="layer-pain wrap section">
       <div class="layer-beat-head">
         <p class="beat-num">03</p>
-        <h3>Two systems. A third to reconcile them.</h3>
+        <h3>Three systems. A fourth to reconcile them.</h3>
       </div>
 
-      <div class="pain-diagram" role="img" aria-label="Three disconnected document workflows">
+      <div class="pain-diagram" role="img" aria-label="Four disconnected document workflows">
         <div class="pain-app pain-app-write">
           <p class="pain-app-role">Draft</p>
           <p class="pain-app-name">Microsoft Word</p>
@@ -296,7 +296,18 @@ is the discount rate.</code></pre>
           <span class="pain-break-mark">
             <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
           </span>
-          <span class="pain-break-label">export to PDF</span>
+          <span class="pain-break-label">rekey details</span>
+        </div>
+        <div class="pain-app pain-app-verify">
+          <p class="pain-app-role">Credit check</p>
+          <p class="pain-app-name">TransUnion · SmartMove</p>
+          <p class="pain-app-file"><code>report.pdf</code></p>
+        </div>
+        <div class="pain-break" aria-hidden="true">
+          <span class="pain-break-mark">
+            <X size={14} stroke-width={2.5} aria-hidden="true" focusable="false" />
+          </span>
+          <span class="pain-break-label">attach report</span>
         </div>
         <div class="pain-app pain-app-sign">
           <p class="pain-app-role">Signature</p>
@@ -306,9 +317,12 @@ is the discount rate.</code></pre>
       </div>
 
       <p class="layer-caption pain-caption">
-        Three workflows. No canonical document. The reconciliation is someone&rsquo;s
-        job — and the executed PDF has no semantic relationship to the draft
-        that was reviewed.
+        Four workflows when the doc requires verification — leases, financing
+        applications, regulated agreements. The bureau changes (TransUnion,
+        Experian, Equifax); the friction doesn&rsquo;t. No canonical document.
+        The reconciliation is someone&rsquo;s job — and the executed PDF has
+        no semantic relationship to the draft that was reviewed, the
+        screening that approved it, or the math that priced it.
       </p>
     </div>
 
@@ -651,11 +665,13 @@ Baldwinson Protocol Layer</code></pre>
   }
 
   /* ─── Pain diagram (Beat C) ──────────────────────────────────
-     Three "app" cards with broken-link indicators between them,
-     visualizing the three-tool draft → typeset → sign workflow. */
+     Four "app" cards with broken-link indicators between them,
+     visualizing the four-tool draft → typeset → screen → sign
+     workflow. Mobile (≤900px) collapses to a single column so each
+     app and break stacks vertically. */
   .pain-diagram {
     display: grid;
-    grid-template-columns: 1fr auto 1fr auto 1fr;
+    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
     align-items: stretch;
     gap: var(--space-3);
     padding: var(--space-6);
