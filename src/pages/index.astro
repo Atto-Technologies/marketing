@@ -14,38 +14,117 @@ const lifecycle = [
   { name: 'Execute', desc: 'Protocol events fire on effect.' },
 ];
 
-const rows = [
+// ─── Section 6 — Comparison matrix ────────────────────────────────
+//
+// 10 capability dimensions × 6 tools. Atto is the only tool with ✓
+// across every row. Two rows (Executable math frozen at signing,
+// Native :::credit-check directive) are unique to Atto — no other
+// tool has even a partial mark, so we visually highlight those rows.
+//
+// Data shape:
+//   compareTools  — column headers (Atto first; rest in displacement order)
+//   compareRows   — feature rows; cells[] is parallel to compareTools[]
+//                   each cell: { v: 'y'|'p'|'n', fn?: '<noteId>' }
+//   compareNotes  — footnotes for partial (⚠) cells, rendered below the
+//                   table. Numbered automatically by position.
+
+// Cell value: y = native, p = partial (with footnote), n = not supported.
+type CellValue = 'y' | 'p' | 'n';
+
+interface CompareCell {
+  v: CellValue;
+  // Only populated on 'p' cells; references compareNotes[].id.
+  fn?: string;
+}
+
+interface CompareRow {
+  feature: string;
+  // Length must equal compareTools.length, in the same column order.
+  cells: CompareCell[];
+  // True for rows where Atto is the only ✓ — used to tint the row.
+  uniqueAtto?: boolean;
+}
+
+interface CompareNote {
+  id: string;
+  text: string;
+}
+
+const compareTools: string[] = [
+  'Atto',
+  'Word / Google Docs',
+  'LaTeX / Markdown',
+  'Notion',
+  'DocuSign',
+  'Ironclad',
+];
+
+const compareRows: CompareRow[] = [
   {
-    dim: 'Document format',
-    trad: 'Proprietary binary / XML',
-    atto: 'Open hybrid syntax (Markdown + LaTeX + directives)',
+    feature: 'Human-readable source format',
+    cells: [{ v: 'y' }, { v: 'n' }, { v: 'y' }, { v: 'n' }, { v: 'n' }, { v: 'n' }],
   },
   {
-    dim: 'Collaboration',
-    trad: 'File sharing, tracked changes',
-    atto: 'Real-time CRDT sync over MQTT',
+    feature: 'Human-writable without special tools',
+    cells: [{ v: 'y' }, { v: 'p', fn: 'fn-blob' }, { v: 'y' }, { v: 'p', fn: 'fn-block' }, { v: 'n' }, { v: 'n' }],
   },
   {
-    dim: 'Version control',
-    trad: 'Manual saves, no canonical diff',
-    atto: 'Deterministic serialization, git-compatible',
+    feature: 'Dedicated authoring editor',
+    cells: [{ v: 'y' }, { v: 'y' }, { v: 'n' }, { v: 'y' }, { v: 'n' }, { v: 'y' }],
   },
   {
-    dim: 'Signatures',
-    trad: 'Styled text or external tool',
-    atto: 'Typed ::signature-block nodes, protocol-native',
+    feature: 'Hash-chained version history',
+    cells: [{ v: 'y' }, { v: 'p', fn: 'fn-tracked' }, { v: 'p', fn: 'fn-git' }, { v: 'n' }, { v: 'n' }, { v: 'p', fn: 'fn-audit' }],
   },
   {
-    dim: 'Math notation',
-    trad: 'Insert object / external',
-    atto: 'Native inline and display LaTeX',
+    feature: 'Cryptographic version integrity',
+    cells: [{ v: 'y' }, { v: 'n' }, { v: 'n' }, { v: 'n' }, { v: 'p', fn: 'fn-pdf' }, { v: 'p', fn: 'fn-audit' }],
   },
   {
-    dim: 'Lifecycle awareness',
-    trad: 'None',
-    atto: 'Draft → Review → Sign → Freeze → Execute',
+    feature: 'Signature execution',
+    cells: [{ v: 'y' }, { v: 'n' }, { v: 'n' }, { v: 'n' }, { v: 'y' }, { v: 'y' }],
+  },
+  {
+    feature: 'Signatures bound to content hash',
+    cells: [{ v: 'y' }, { v: 'n' }, { v: 'n' }, { v: 'n' }, { v: 'p', fn: 'fn-sigbind' }, { v: 'p', fn: 'fn-sigbind' }],
+  },
+  {
+    feature: 'Embedded math computation',
+    cells: [{ v: 'y' }, { v: 'n' }, { v: 'y' }, { v: 'n' }, { v: 'n' }, { v: 'n' }],
+  },
+  {
+    feature: 'Executable math (frozen at signing)',
+    cells: [{ v: 'y' }, { v: 'n' }, { v: 'n' }, { v: 'n' }, { v: 'n' }, { v: 'n' }],
+    uniqueAtto: true,
+  },
+  {
+    feature: 'Native :::credit-check directive',
+    cells: [{ v: 'y' }, { v: 'n' }, { v: 'n' }, { v: 'n' }, { v: 'n' }, { v: 'n' }],
+    uniqueAtto: true,
   },
 ];
+
+const compareNotes: CompareNote[] = [
+  { id: 'fn-blob', text: 'Files are stored as proprietary binary or XML — portable only through the application, not as plain text.' },
+  { id: 'fn-block', text: 'Notion uses a proprietary block model accessible only through its app or API.' },
+  { id: 'fn-tracked', text: 'Track Changes is a UI-level marker (lost on export); Google Docs version history is server-side and not cryptographically verifiable. Neither produces a portable hash chain.' },
+  { id: 'fn-git', text: 'Git provides hash-chained history alongside LaTeX/Markdown, but as an external tool — not a native property of the format itself.' },
+  { id: 'fn-audit', text: 'Server-side audit log, not a portable cryptographic chain embedded in the document.' },
+  { id: 'fn-pdf', text: 'DocuSign signs a PDF snapshot. The signature is on rendered output, not on a structured content hash of the source.' },
+  { id: 'fn-sigbind', text: 'Signature attaches at sign time but with no cryptographic binding to a deterministic content hash. The document can be re-exported or reformatted without invalidating the signature.' },
+];
+
+// Visual + a11y mapping for the three cell states.
+const compareSymbols = {
+  y: { glyph: '✓', label: 'Yes — native, built into the core product.' },
+  p: { glyph: '⚠', label: 'Partial — appended externally, lacks structural integrity, or requires another tool.' },
+  n: { glyph: '–', label: 'No — not supported.' },
+} as const;
+
+// Stable footnote numbering by position in compareNotes[].
+const noteNumber: Record<string, number> = Object.fromEntries(
+  compareNotes.map((n, i) => [n.id, i + 1]),
+);
 ---
 <Base title="Structured documents for high-stakes work">
   {/* ─── Section 1 — Hero ─────────────────────────────────────── */}
@@ -330,7 +409,7 @@ is the discount rate.</code></pre>
     <div class="layer-beat wrap section layer-beat-hybrid">
       <div class="layer-beat-head">
         <p class="beat-num">04</p>
-        <h3>Atto: one source, all three layers.</h3>
+        <h3>Atto: one source, three layers, one protocol.</h3>
       </div>
       <LayerDemo label="Atto" filename="services-agreement.atto">
         <pre slot="source"><code><span class="tok-heading"># Services Agreement</span>
@@ -385,9 +464,12 @@ $$</span>
         </article>
       </LayerDemo>
       <p class="layer-caption">
-        One source file. Markdown prose, LaTeX notation, and typed directives —
-        all parsed to a single deterministic tree. Diffable in git, reviewable
-        line-by-line, executable end-to-end.
+        One source file: Markdown prose, LaTeX notation, and typed directives,
+        all parsed to a single deterministic tree. The protocol layer makes
+        that tree do work — hash-chained revision history, signatures locked
+        to the content hash, executable math frozen at signing, and directives
+        like <code>:::credit-check</code> that gate execution on real-world
+        preconditions. Six tools&rsquo; worth of capability — one file.
       </p>
     </div>
   </section>
@@ -443,32 +525,83 @@ Baldwinson Protocol Layer</code></pre>
     </ol>
   </section>
 
-  {/* ─── Section 6 — Comparison ───────────────────────────────── */}
+  {/* ─── Section 6 — Comparison Matrix ─────────────────────────
+       10 capability rows × 6 tools. Atto is the only ✓-across-all
+       column. Two rows (executable math frozen at signing, native
+       :::credit-check) are unique to Atto and visually highlighted.
+       ⚠ cells link down to footnotes that explain the partial. */}
   <section class="compare wrap section" aria-labelledby="compare-heading">
     <p class="eyebrow">Comparison</p>
     <h2 id="compare-heading" class="section-heading">
-      Why teams switch.
+      What no other tool does.
     </h2>
-    <div class="compare-wrap">
-      <table>
+    <p class="section-lede">
+      Atto is the only tool that does all of this. Here&rsquo;s how the six
+      it displaces compare across ten capabilities.
+    </p>
+
+    <ul class="cmp-legend" aria-label="Symbol legend">
+      <li>
+        <span class="cmp-glyph cmp-y" aria-hidden="true">✓</span>
+        <span>Native — built into the core product.</span>
+      </li>
+      <li>
+        <span class="cmp-glyph cmp-p" aria-hidden="true">⚠</span>
+        <span>Partial — appended externally, lacks structural integrity, or requires another tool.</span>
+      </li>
+      <li>
+        <span class="cmp-glyph cmp-n" aria-hidden="true">–</span>
+        <span>Not supported.</span>
+      </li>
+    </ul>
+
+    <div class="compare-wrap" role="region" aria-label="Capability matrix" tabindex="0">
+      <table class="cmp-table">
         <thead>
           <tr>
-            <th scope="col">Dimension</th>
-            <th scope="col">Traditional</th>
-            <th scope="col">Atto</th>
+            <th scope="col" class="cmp-feature-head">Capability</th>
+            {compareTools.map((tool, i) => (
+              <th scope="col" class={`cmp-tool-head${i === 0 ? ' cmp-tool-atto' : ''}`}>
+                {tool}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ dim, trad, atto }) => (
-            <tr>
-              <th scope="row">{dim}</th>
-              <td class="trad">{trad}</td>
-              <td class="atto">{atto}</td>
+          {compareRows.map((row) => (
+            <tr class={row.uniqueAtto ? 'cmp-row-unique' : ''}>
+              <th scope="row" class="cmp-feature">{row.feature}</th>
+              {row.cells.map((cell, i) => {
+                const sym = compareSymbols[cell.v];
+                const fnNum = cell.fn ? noteNumber[cell.fn] : undefined;
+                return (
+                  <td class={`cmp-cell cmp-${cell.v}${i === 0 ? ' cmp-cell-atto' : ''}`}>
+                    <span class="cmp-glyph" aria-hidden="true">{sym.glyph}</span>
+                    <span class="cmp-sr">{sym.label}</span>
+                    {cell.fn && fnNum !== undefined && (
+                      <sup class="cmp-fn-mark">
+                        <a href={`#${cell.fn}`} aria-label={`See footnote ${fnNum}`}>
+                          {fnNum}
+                        </a>
+                      </sup>
+                    )}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+
+    <ol class="cmp-notes" aria-label="Footnotes for partial-support ratings">
+      {compareNotes.map((note) => (
+        <li id={note.id} class="cmp-note">
+          <span class="cmp-note-num" aria-hidden="true">{noteNumber[note.id]}</span>
+          <span class="cmp-note-text">{note.text}</span>
+        </li>
+      ))}
+    </ol>
   </section>
 
   {/* ─── Section 7 — CTA Banner ───────────────────────────────── */}
@@ -641,6 +774,18 @@ Baldwinson Protocol Layer</code></pre>
     font-size: var(--text-base);
     color: var(--color-text-muted);
     max-width: 64ch;
+  }
+
+  /* Inline <code> inside layer captions — Beat D mentions
+     :::credit-check by name and that should read as code, not as
+     a muted word. Matches the .atto-doc code recipe. */
+  .layer-caption code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    padding: 0.05em 0.3em;
+    background: var(--color-code-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
   }
 
   /* The hybrid beat gets a subtle left-edge accent so it reads as the
@@ -892,71 +1037,269 @@ Baldwinson Protocol Layer</code></pre>
     }
   }
 
-  /* ─── Comparison ────────────────────────────────────────────── */
+  /* ─── Comparison Matrix ─────────────────────────────────────
+     10 capability rows × 6 tool columns. Visual hierarchy:
+       - Legend at the top (✓ ⚠ – key)
+       - Atto column tinted with primary so the eye lands on the
+         "always ✓" stripe.
+       - Two unique-to-Atto rows tinted across all cells so the
+         reader can find the no-other-tool-does-this rows at a
+         glance.
+       - First column (Capability label) is position: sticky
+         during horizontal scroll on narrow viewports — without
+         it the row headers disappear off-screen as you scroll.
+       - Footnotes are an <ol> below the table; each ⚠ cell links
+         down via its sup numeral, and the targeted note flashes
+         a primary tint so the reader knows where they landed. */
+
+  /* Lede paragraph between heading and legend */
+  .compare .section-lede {
+    margin-top: var(--space-4);
+    margin-bottom: 0;
+  }
+
+  /* Legend — the ✓ ⚠ – key. Inline, wraps on narrow widths. */
+  .cmp-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-6);
+    margin: var(--space-8) 0 var(--space-6);
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .cmp-legend li {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  /* Shared glyph (✓ ⚠ –) shape — used in both legend and cells.
+     min-width keeps cells aligned vertically even with the narrow
+     '–' versus the wider '✓' / '⚠'. */
+  .cmp-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2em;
+    font-family: var(--font-body);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .cmp-y { color: var(--color-primary); }
+  /* Amber for partial — same hue as the pain-break X icons so the
+     two "broken / patchy" signals on the page share a visual code. */
+  .cmp-p { color: #B5651D; }
+  .cmp-n { color: var(--color-text-faint); }
+
+  /* Wrapper carries the border + horizontal scroll. tabindex=0 (set
+     in the JSX) makes the region keyboard-focusable so users on
+     keyboard-only navigation can scroll the matrix horizontally. */
   .compare-wrap {
     border: 1px solid var(--color-border);
     overflow-x: auto;
-    margin-top: var(--space-10);
+    margin-top: 0;
   }
 
-  .compare table {
+  .compare-wrap:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .cmp-table {
     border-collapse: collapse;
     width: 100%;
     font-size: var(--text-sm);
+    background: var(--color-bg);
   }
 
-  .compare thead th {
+  /* Column headers (top row) */
+  .cmp-table thead th {
+    padding: var(--space-4) var(--space-5);
     background: var(--color-surface);
-    text-align: left;
-    padding: var(--space-4) var(--space-6);
-    font-family: var(--font-body);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-text);
     border-bottom: 1px solid var(--color-border);
-  }
-
-  .compare tbody th {
-    text-align: left;
-    padding: var(--space-5) var(--space-6);
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: var(--text-base);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     color: var(--color-text);
-    width: 26%;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  .cmp-feature-head {
+    text-align: left;
+    /* Sticky during horizontal scroll — keep "Capability" anchored
+       at the left edge so the column meaning stays visible. */
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--color-surface);
     border-right: 1px solid var(--color-border);
-    border-bottom: 1px solid var(--color-border);
-    vertical-align: top;
+    min-width: 220px;
   }
 
-  .compare tbody td {
-    padding: var(--space-5) var(--space-6);
-    vertical-align: top;
-    border-bottom: 1px solid var(--color-border);
-    width: 37%;
+  .cmp-tool-head {
+    text-align: center;
+    min-width: 110px;
   }
 
-  .compare tbody tr:last-child th,
-  .compare tbody tr:last-child td {
-    border-bottom: none;
+  /* The Atto column gets a primary-tinted header to anchor the
+     "this is the one that does it all" stripe. */
+  .cmp-tool-atto {
+    color: var(--color-primary);
+    background: color-mix(in oklch, var(--color-primary) 10%, var(--color-surface));
   }
 
-  .compare td.trad {
-    color: var(--color-text-muted);
-    border-right: 1px solid var(--color-border);
-  }
-
-  .compare td.atto {
+  /* Body row labels (left column) */
+  .cmp-feature {
+    padding: var(--space-4) var(--space-5);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-sm);
     color: var(--color-text);
-    font-weight: 500;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    /* Stick at the left edge during horizontal scroll. Lower z than
+       the thead so the column-header sticky still wins at the
+       intersection. */
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--color-bg);
+    min-width: 220px;
+  }
+
+  /* Body cells (the ✓/⚠/– grid) */
+  .cmp-cell {
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    position: relative;
+  }
+
+  /* Atto column body — same primary tint as the header, lighter. */
+  .cmp-cell-atto {
     background: color-mix(in oklch, var(--color-primary) 6%, transparent);
   }
 
+  /* Unique-to-Atto rows: tint the whole row to flag "no other tool
+     does this". Atto's cell within the row gets a stronger tint so
+     it still reads as the standout. */
+  .cmp-row-unique .cmp-feature,
+  .cmp-row-unique .cmp-cell {
+    background: color-mix(in oklch, var(--color-primary) 4%, transparent);
+  }
+  .cmp-row-unique .cmp-cell-atto {
+    background: color-mix(in oklch, var(--color-primary) 14%, transparent);
+  }
+
+  /* Last-row border cleanup */
+  .cmp-table tbody tr:last-child .cmp-feature,
+  .cmp-table tbody tr:last-child .cmp-cell {
+    border-bottom: none;
+  }
+
+  /* Footnote sup numerals inside ⚠ cells. Mono font + dotted under
+     to read as "click for explanation". */
+  .cmp-fn-mark {
+    margin-left: 0.2em;
+    font-family: var(--font-mono);
+    font-size: 0.7em;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .cmp-fn-mark a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    border-bottom: 1px dotted currentColor;
+  }
+
+  .cmp-fn-mark a:hover,
+  .cmp-fn-mark a:focus-visible {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+  }
+
+  /* Screen-reader-only — used to expose "Yes / Partial / No" text
+     to AT alongside the visual ✓/⚠/– glyph (which is aria-hidden). */
+  .cmp-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Footnotes list under the table. The numbering comes from the
+     `noteNumber` map computed in the frontmatter (stable index based
+     on compareNotes[] order); no CSS counter needed. */
+  .cmp-notes {
+    margin: var(--space-8) 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-3);
+    max-width: 70ch;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .cmp-note {
+    display: grid;
+    grid-template-columns: 1.6em 1fr;
+    gap: var(--space-2);
+    line-height: 1.5;
+    padding: var(--space-2) var(--space-2);
+    /* Account for fixed nav when scrolling to a footnote target. */
+    scroll-margin-top: var(--space-12);
+    text-wrap: pretty;
+  }
+
+  /* Brief highlight when the user follows a sup link to a footnote
+     so they can find their landing spot. :target is supported in
+     every modern browser and resets when the user clicks elsewhere. */
+  .cmp-note:target {
+    background: color-mix(in oklch, var(--color-primary) 8%, transparent);
+    border-radius: 2px;
+  }
+
+  .cmp-note-num {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--color-primary);
+    text-align: right;
+  }
+
+  /* Mobile tightening — smaller padding, narrower minimums. The
+     horizontal scroll still kicks in below ~700px; sticky first
+     column means readers can scroll the value cells without
+     losing the row label. */
   @media (max-width: 768px) {
-    .compare tbody th {
-      width: 40%;
+    .cmp-feature-head,
+    .cmp-feature {
+      min-width: 180px;
+      padding: var(--space-3) var(--space-4);
+    }
+    .cmp-cell,
+    .cmp-tool-head {
+      padding: var(--space-3) var(--space-4);
+    }
+    .cmp-tool-head {
+      min-width: 90px;
     }
   }
 
