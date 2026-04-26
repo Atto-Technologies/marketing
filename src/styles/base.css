@@ -50,10 +50,18 @@
   --space-24: 6rem;
   --space-32: 8rem;
 
-  /* Content widths */
+  /* Content widths.
+     - narrow (640px): forms, focused prose, single-column reading.
+     - default (960px): mixed content + body prose at ~70-80ch.
+     - wide (1440px): marketing chrome, multi-column heros, nav frame.
+       1440 is the modern industry standard for marketing-page max
+       width (Linear, Vercel, OpenAI, Anthropic, Figma all sit in
+       1280–1440); 1200 was a Bootstrap-era holdover that left the
+       hero's two-column layout cramped. Body prose still caps at
+       --content-default so line lengths remain comfortable. */
   --content-narrow: 640px;
   --content-default: 960px;
-  --content-wide: 1200px;
+  --content-wide: 1440px;
 }
 
 [data-theme="dark"] {

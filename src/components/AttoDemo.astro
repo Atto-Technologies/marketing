@@ -167,6 +167,15 @@ const isSplit = layout === 'split';
     flex-direction: column;
     border: 1px solid var(--color-border);
     background: var(--color-bg);
+    /* Without an explicit width, the card sizes to max-content of its
+       children. The source <pre> is typically wider than the rendered
+       <article>, so the card visibly grows when Source is selected and
+       shrinks back when Rendered is selected — and the right-anchored
+       filename in the head appears to slide left/right with it. Pin to
+       the container width so head and filename stay put across tabs;
+       wide source lines stay contained by .code-block's overflow-x. */
+    width: 100%;
+    min-width: 0;
   }
 
   .atto-demo-head {
@@ -221,6 +230,14 @@ const isSplit = layout === 'split';
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     color: var(--color-text-muted);
+    /* On narrow viewports the head row (tabs + filename) can run out
+       of space. Allow the filename to shrink and truncate with an
+       ellipsis instead of overflowing or hiding it entirely — the
+       filename is useful context on mobile too. */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .atto-demo-body {
@@ -298,12 +315,6 @@ const isSplit = layout === 'split';
      The per-column labels in the body provide the orientation. */
   .atto-demo[data-layout="split"] .atto-demo-tabs {
     display: none;
-  }
-
-  @media (max-width: 520px) {
-    .atto-demo-filename {
-      display: none;
-    }
   }
 
   @media (max-width: 720px) {

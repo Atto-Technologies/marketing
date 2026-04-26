@@ -458,8 +458,24 @@ Baldwinson Protocol Layer</code></pre>
   /* ─── Hero ──────────────────────────────────────────────────── */
   .hero {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-16);
+    /* `1fr 1fr` is implicitly `minmax(auto, 1fr) minmax(auto, 1fr)` —
+       the auto min-size lets a column grow past 50% if its content's
+       intrinsic min-size demands it. The hero AttoDemo's source <pre>
+       has white-space: pre (no line breaks) so its min-content equals
+       its longest line, which pushes the right column wider when the
+       Source tab is active. That visibly shifts the right-anchored
+       filename in the demo head between tabs. `minmax(0, 1fr)` pins
+       both columns to exactly 50%; the pre stays contained by its
+       own overflow-x: auto. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    /* 64px gap (var(--space-16)) felt oversized on the now-wider
+       1440px frame and stole horizontal room from the AttoDemo
+       column. 40px (var(--space-10)) keeps the two columns visually
+       distinct while giving the demo card meaningful extra width to
+       breathe — net gain ~12px per column on large desktops. The
+       single-column mobile layout below uses --space-12 (48px) for
+       its vertical stack, where gap cost is cheaper. */
+    gap: var(--space-10);
     align-items: start;
     min-height: 90vh;
     padding: var(--space-24) var(--space-8);
@@ -470,10 +486,27 @@ Baldwinson Protocol Layer</code></pre>
   .hero-copy h1 {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: var(--text-hero);
+    /* The shared --text-hero scale (clamp(3rem, 0.5rem + 7vw, 8rem))
+       assumes near-full-width content and reaches 128px on large
+       desktops, which overflowed the two-column hero. Going the
+       other way (≤80px to fit "Structured documents" on one line in
+       a ~660px column) traded too much hero impact. Compromise:
+       cap at 96px and embrace the wrap — at large desktops the
+       heading reads as three lines:
+         Structured
+         documents
+         for work that matters.
+       which is a deliberate stacked-typography pattern, not an
+       overflow. `overflow-wrap: break-word` below stays as the
+       safety net for any truly oversized word. */
+    font-size: clamp(2.75rem, 1rem + 5vw, 6rem);
     letter-spacing: -0.02em;
     line-height: 0.95;
     margin-block: var(--space-6);
+    /* Safety net: if a viewport/column ratio still leaves a single
+       word too wide to fit, break it at the column edge instead of
+       letting it bleed into the demo column. */
+    overflow-wrap: break-word;
   }
 
   .primary-ink { color: var(--color-primary); }
@@ -487,6 +520,23 @@ Baldwinson Protocol Layer</code></pre>
 
   .hero-demo {
     position: relative;
+    /* Same containment pattern as `.docs-content` on the docs page:
+       `min-width: 0` lets this grid item shrink below the intrinsic
+       min-size of its children. Without it, on narrow mobile viewports
+       (e.g. 390px iPhone 12 Pro) the AttoDemo's source <pre> longest
+       line forces this column wider than the viewport, pushing the
+       whole card past the page's left/right padding. With `min-width:
+       0`, the column collapses to the available width and the pre
+       scrolls internally via its own overflow-x: auto. */
+    min-width: 0;
+  }
+
+  /* Symmetric containment for the copy column so a single ultra-long
+     word (URL, code token) can't blow out the layout either. Text in
+     this column wraps normally so the min-content is small in
+     practice — this is a defensive belt-and-suspenders rule. */
+  .hero-copy {
+    min-width: 0;
   }
 
   @media (max-width: 1024px) {
