@@ -119,6 +119,17 @@ html {
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
   scroll-padding-top: var(--space-16);
+  /* Mobile safety net — prevents the page from scrolling horizontally
+     if a descendant overflows its container. `clip` is preferred over
+     `hidden` because it does NOT create a scroll container, so
+     `position: sticky` (used in the docs sidebar and the comparison
+     table's first column) keeps working as expected. The pattern
+     should match: build sections with proper internal containment
+     (`min-width: 0` on flex/grid items that hold long content,
+     `overflow-x: auto` on code blocks and tables); this rule is the
+     final backstop so a single missed containment doesn't bleed into
+     a page-wide horizontal scroll on a 320px iPhone SE. */
+  overflow-x: clip;
 }
 
 body {
@@ -128,6 +139,13 @@ body {
   font-size: var(--text-base);
   color: var(--color-text);
   background-color: var(--color-bg);
+  /* Long unbreakable strings (URLs, file paths, dense technical
+     tokens, single words at large display sizes) break at any
+     point on narrow viewports rather than forcing horizontal
+     overflow. Pairs with the html-level `overflow-x: clip` above:
+     clip is the hard backstop, this keeps the backstop from
+     having to clip content in the common cases. */
+  overflow-wrap: break-word;
 }
 
 img, picture, video, canvas, svg {
