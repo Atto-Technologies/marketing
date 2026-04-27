@@ -1939,29 +1939,68 @@ requires counter-signature.</code></pre>
      cap. This gives split-layout AttoDemos enough horizontal room to
      show source and rendered side-by-side at comfortable reading
      widths. The standard centered .wrap container is intentionally
-     not applied to this page. */
+     not applied to this page.
+
+     IMPORTANT — top padding intentionally lives on `.docs-content`,
+     NOT here: a 32px padding on this container would push the
+     sidebar's natural top down to ~109px (nav 77px + padding 32px),
+     which is below the sidebar's sticky `top: 78px` threshold, so
+     sticky would NOT engage at the top of the page and the user
+     would see a 32px gap between the nav's bottom border and the
+     start of the sidebar's scrollbar. Keeping this container's top
+     padding at 0 lets the sidebar's natural top be flush with the
+     nav (77px), which IS above the 78px threshold, so sticky engages
+     immediately and the sidebar pins exactly 1px below the nav.
+     The article column receives its 32px breathing room via its own
+     `padding-top` instead. */
   .docs-layout {
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
     gap: var(--space-12);
     max-width: 1800px;
     margin-inline: 0;
-    padding: var(--space-16) var(--space-8);
+    padding: 0 var(--space-8) var(--space-16);
     align-items: start;
   }
 
+  /* Sticky sidebar — the `top` and `max-height` values are coupled:
+     when the sidebar pins, its bottom edge ends at `top + max-height`,
+     which we want to equal exactly `100vh` so the sidebar fills the
+     viewport from just under the nav down to the very bottom. To keep
+     the math obviously self-consistent, both expressions reference the
+     same `--docs-sidebar-top-offset` quantity (the desired offset below
+     the viewport top).
+
+     The offset is `--nav-height + 1px` so the sidebar's top edge sits
+     exactly one pixel below the nav's bottom hairline — the visible
+     scrollbar starts right under that divider line and reads as a
+     direct continuation of the nav's bottom edge instead of leaving
+     an arbitrary gap. Earlier this used `var(--space-16) + var(--space-4)`
+     (80px), which was a 3px gap below the actual 77px-tall nav — small
+     but visible at desktop sizes, which is what the user reported. */
   .docs-sidebar {
+    --docs-sidebar-top-offset: calc(var(--nav-height) + 1px);
     position: sticky;
-    top: calc(var(--space-16) + var(--space-4));
+    top: var(--docs-sidebar-top-offset);
     align-self: start;
     border-right: 1px solid var(--color-border);
+    /* padding-top mirrors `.docs-content`'s padding-top so the eyebrow
+       row in the sidebar sits at the same vertical position as the
+       eyebrow row in the article column — equal internal breathing
+       room above first content in both grid cells. Because box-sizing
+       is border-box (global default), this padding lives INSIDE the
+       max-height envelope, so the sidebar's outer top edge — and
+       therefore the start of its visible scrollbar — stays at exactly
+       --docs-sidebar-top-offset (1px below the nav). Only the inner
+       content moves down. */
+    padding-top: var(--space-8);
     padding-right: var(--space-8);
     /* Without a max-height + overflow, sticky only constrains the top
        edge. On short viewports (or long nav lists), the bottom nav items
        render below the fold and can't be reached. Constraining the
        sidebar to the available viewport height below its sticky top lets
        it scroll internally while the page scrolls normally around it. */
-    max-height: calc(100vh - var(--space-16) - var(--space-8));
+    max-height: calc(100vh - var(--docs-sidebar-top-offset));
     overflow-y: auto;
     /* Keep inner scroll from chaining back to the main page scroll when
        the sidebar reaches its top/bottom. */
@@ -2008,8 +2047,16 @@ requires counter-signature.</code></pre>
     color: var(--color-primary);
   }
 
+  /* Article column. padding-top is the column-local replacement for the
+     `.docs-layout` top padding that used to sit on the parent — that
+     padding had to move here so the sidebar (the OTHER grid child) can
+     start flush against the nav and engage sticky immediately. The
+     32px (`--space-8`) value is the gap the user wants to see between
+     the nav's bottom hairline and the start of the article's eyebrow
+     row, and only applies to this column. */
   .docs-content {
     min-width: 0;
+    padding-top: var(--space-8);
     display: flex;
     flex-direction: column;
     gap: var(--space-12);

@@ -62,6 +62,22 @@
   --content-narrow: 640px;
   --content-default: 960px;
   --content-wide: 1440px;
+
+  /* Nav height — the total rendered height of <Nav.astro> including its
+     bottom hairline. Used by sticky sidebars and any other element that
+     must align flush below the nav (e.g. the docs sidebar's sticky top
+     offset). Composed of:
+        16px   .nav-inner padding-top    (var(--space-4))
+      + 44px   .nav-cta / .theme-toggle / .nav-hamburger control height
+      + 16px   .nav-inner padding-bottom (var(--space-4))
+      +  1px   .site-nav border-bottom
+      = 77px
+     Any change to the nav's vertical metrics in Nav.astro must be
+     reflected here so dependent elements stay aligned. The dependency
+     direction is one-way: Nav.astro never reads --nav-height, but
+     consumers (docs.astro, future sticky-below-nav layouts) read it
+     so they don't drift independently when the nav is retuned. */
+  --nav-height: 77px;
 }
 
 [data-theme="dark"] {
