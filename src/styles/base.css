@@ -128,8 +128,17 @@ html {
      (`min-width: 0` on flex/grid items that hold long content,
      `overflow-x: auto` on code blocks and tables); this rule is the
      final backstop so a single missed containment doesn't bleed into
-     a page-wide horizontal scroll on a 320px iPhone SE. */
+     a page-wide horizontal scroll on a 320px iPhone SE.
+
+     `overscroll-behavior-x: none` disables the iOS Safari horizontal
+     rubber-band. Without it, mobile users can pull the page sideways
+     and reveal the bg colour past the layout viewport even when no
+     content is actually overflowing — that's the "tiny bit of
+     horizontal scroll on a real device that doesn't reproduce on a
+     resized desktop window" symptom. Desktop browsers don't have
+     rubber-band overscroll, which is why the issue is mobile-only. */
   overflow-x: clip;
+  overscroll-behavior-x: none;
 }
 
 body {
@@ -146,6 +155,17 @@ body {
      clip is the hard backstop, this keeps the backstop from
      having to clip content in the common cases. */
   overflow-wrap: break-word;
+  /* iOS Safari treats <body> as its own touch-scroll surface, separate
+     from <html>. The html-level `overflow-x: clip` alone does not
+     prevent the body from being touch-pannable horizontally if any
+     descendant box (including abspos boxes that haven't been removed
+     from layout via `display: none`) extends past the visual viewport.
+     Repeating the clip on body closes that gap. `overscroll-behavior-x:
+     none` mirrors the html-level rule to stop rubber-band overscroll
+     at this level too, matching the no-horizontal-scroll contract on
+     every mobile WebKit version. */
+  overflow-x: clip;
+  overscroll-behavior-x: none;
 }
 
 img, picture, video, canvas, svg {

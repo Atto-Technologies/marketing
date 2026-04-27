@@ -222,23 +222,47 @@ const popoverId = `def-${term.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Math.
     text-align: left;
     white-space: normal;
 
-    /* Hidden until .is-open is applied. visibility: hidden also prevents
-       AT from announcing the contents while collapsed. */
+    /* Hidden until .is-open is applied. `display: none` (not just
+       `visibility: hidden`) is critical: when a definition trigger
+       wraps near the right edge of a narrow viewport, the card's
+       absolutely-positioned box extends past the viewport. With
+       `visibility: hidden` the box still contributes to the page's
+       scrolling area, which on iOS Safari produces a phantom gap
+       to the right of the layout viewport (the html-level
+       `overflow-x: clip` backstop in base.css doesn't fully contain
+       abspos descendants on iOS). `display: none` removes the
+       layout box entirely so the popover can never widen the page
+       when closed. The fade-in/out animation is preserved via
+       `transition-behavior: allow-discrete` + `@starting-style` for
+       browsers that support them; older browsers degrade to an
+       instant show/hide. */
+    display: none;
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
     transform: translateY(-2px);
     transition:
       opacity 140ms ease,
       transform 140ms ease,
-      visibility 140ms;
+      display 140ms allow-discrete;
   }
 
   .define.is-open .define-card {
+    display: block;
     opacity: 1;
-    visibility: visible;
     pointer-events: auto;
     transform: translateY(0);
+  }
+
+  /* @starting-style sets the from-state for the open transition so
+     the fade-in actually animates from opacity: 0 / translateY(-2px)
+     instead of jumping straight to fully visible the first time the
+     card appears. Browsers without support skip this rule and the
+     card simply appears instantly — still no overflow regression. */
+  @starting-style {
+    .define.is-open .define-card {
+      opacity: 0;
+      transform: translateY(-2px);
+    }
   }
 
   .define-header {
