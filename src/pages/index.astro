@@ -687,6 +687,25 @@ Execution layer</code></pre>
         </li>
       ))}
     </ol>
+
+    {/* Snapshot disclaimer — sits at the end of the section as a full-
+        width legal panel below the per-cell footnotes. Covers the
+        standard defenses for a competitive comparison: dated snapshot,
+        good-faith sourcing from public materials, change caveat,
+        no-warranty, trademark acknowledgment, and a correction channel.
+        Update the date inline whenever the matrix is materially
+        refreshed. */}
+    <p class="cmp-disclaimer" role="note">
+      <strong>Snapshot as of April&nbsp;27,&nbsp;2026.</strong> Compiled in
+      good faith from publicly available documentation, product pages, and
+      marketing materials at the date above. Third-party features and pricing
+      change frequently and may have been added, removed, or repositioned
+      since then; Atto Technologies Inc. makes no representation or warranty
+      as to the accuracy or completeness of competitor information. All
+      product names and trademarks are the property of their respective
+      owners. Corrections welcome at{' '}
+      <a href="mailto:hello@atto.tech?subject=Comparison%20matrix%20correction">hello@atto.tech</a>.
+    </p>
   </section>
 
   {/* ─── Section 7 — CTA Banner ───────────────────────────────── */}
@@ -1394,6 +1413,39 @@ Execution layer</code></pre>
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+  }
+
+  /* Snapshot disclaimer — sits at the end of the section as a full-
+     width legal panel below the per-cell footnotes. Visually subdued
+     (surface tint, muted text, smaller size) so it reads as fine print
+     rather than competing with the matrix or the footnote explanations,
+     but still distinct enough that a reader scanning the bottom of the
+     section can locate the snapshot date and good-faith caveat at a
+     glance.
+
+     `max-width: none` is REQUIRED here — base.css applies a 68ch cap to
+     every <p> globally for prose readability, and without an explicit
+     reset the disclaimer panel renders as a ~half-width column on
+     desktop instead of spanning the full section width like the matrix
+     above it. The smaller font-size makes 68ch even narrower in CSS
+     pixels, which made the discrepancy especially visible. text-wrap:
+     pretty handles the line-length readability that the global cap was
+     previously buying us. */
+  .cmp-disclaimer {
+    margin: var(--space-8) 0 0;
+    padding: var(--space-4) var(--space-5);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    max-width: none;
+    font-size: var(--text-xs);
+    line-height: 1.6;
+    color: var(--color-text-muted);
+    text-wrap: pretty;
+  }
+
+  .cmp-disclaimer strong {
+    color: var(--color-text);
+    font-weight: 600;
   }
 
   /* Footnotes list under the table. The numbering comes from the
