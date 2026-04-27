@@ -67,88 +67,153 @@ const popoverId = `def-${term.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Math.
 </span>
 
 <script>
-  // Wire up the open/close behavior. Hover and focus keep things simple
-  // (CSS could do this alone) but click/tap toggling is critical for
-  // touch devices that have no hover, so we drive everything from JS for
-  // a consistent state machine.
+  // Two-state machine: { closed, open }. All transitions go through
+  // setOpen so the DOM class, the aria attribute, and the local boolean
+  // can never disagree. Inputs:
+  //   - mouseenter / mouseleave on trigger or card → open / scheduled close
+  //   - click on trigger                            → toggle
+  //   - Escape inside wrap                          → close + refocus trigger
+  //   - focusout from wrap                          → close (keyboard tab-away)
+  //   - document click outside wrap                 → close
+  //
+  // We deliberately do NOT open on `focus`. On a touch tap the browser
+  // fires `focus` before `click`; opening on focus and then toggling on
+  // click closes the popover in the same gesture, so the user sees
+  // nothing. Keyboard users open the popover the same way mouse users do
+  // — they activate the button with Enter or Space, which dispatches a
+  // click event.
+  // Narrow-viewport breakpoint must stay in lockstep with the
+  // `@media (max-width: 520px)` rule in the stylesheet below — the JS
+  // only attaches viewport-change listeners when this matches so
+  // scroll/resize don't close hover-opened cards on desktop.
+  const mobileMQ = window.matchMedia("(max-width: 520px)");
+
   document.querySelectorAll<HTMLElement>(".define").forEach((wrap) => {
     const trigger = wrap.querySelector<HTMLButtonElement>("[data-define-trigger]");
     const card = wrap.querySelector<HTMLElement>("[data-define-card]");
     if (!trigger || !card) return;
 
+    let isOpen = false;
+    let pointerInside = false;
     let closeTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const setOpen = (open: boolean) => {
-      wrap.classList.toggle("is-open", open);
-      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    // Writes the trigger's current bottom edge (viewport-relative) to a
+    // custom property the mobile CSS rule reads as its `top`. The card
+    // is `position: fixed` on mobile so getBoundingClientRect's
+    // viewport-relative coords are exactly what we need — no scroll
+    // offset arithmetic. A small gap (8px) mirrors the desktop
+    // `--space-2` spacing beneath the trigger. Called unconditionally
+    // on open: on desktop the variable is unused (the desktop CSS uses
+    // a static top), so it's free to always write.
+    const applyMobileAnchor = () => {
+      const rect = trigger.getBoundingClientRect();
+      card.style.setProperty("--define-card-top", `${rect.bottom + 8}px`);
     };
 
-    const open = () => {
-      if (closeTimer) {
+    // Any viewport change while the card is open → close. The fixed
+    // card can't reposition itself intelligently (it'd need to re-run
+    // the anchor math on every scroll tick), and a stranded card above
+    // or below its trigger reads as broken. Closing is the cleaner
+    // mobile tooltip convention anyway.
+    const handleViewportChange = () => setOpen(false);
+
+    const setOpen = (next: boolean) => {
+      if (isOpen === next) return;
+      isOpen = next;
+      if (next) {
+        applyMobileAnchor();
+        if (mobileMQ.matches) {
+          window.addEventListener("scroll", handleViewportChange, { passive: true });
+          window.addEventListener("resize", handleViewportChange);
+        }
+      } else {
+        // Safe to call unconditionally — removeEventListener is a no-op
+        // when the listener was never registered (desktop path).
+        window.removeEventListener("scroll", handleViewportChange);
+        window.removeEventListener("resize", handleViewportChange);
+      }
+      wrap.classList.toggle("is-open", next);
+      trigger.setAttribute("aria-expanded", next ? "true" : "false");
+    };
+
+    const cancelClose = () => {
+      if (closeTimer !== null) {
         clearTimeout(closeTimer);
         closeTimer = null;
       }
+    };
+
+    // 120ms grace lets the cursor travel trigger→card without the card
+    // vanishing mid-hop. Re-entering during the grace cancels via
+    // pointerInside, so the timer never fires a stale close.
+    const scheduleClose = () => {
+      cancelClose();
+      closeTimer = setTimeout(() => {
+        closeTimer = null;
+        if (!pointerInside) setOpen(false);
+      }, 120);
+    };
+
+    // Hover for mouse pointers only. We use pointerenter/pointerleave
+    // (not mouseenter/mouseleave) so we can filter on pointerType: touch
+    // and pen taps will fire synthesized mouseenter on most mobile
+    // browsers, which would otherwise call setOpen(true) and then have
+    // the immediately-following click toggle it back to closed — the
+    // same race we already eliminated for `focus`. By gating on
+    // pointerType === "mouse", touch taps go through the click path
+    // exclusively, and hybrid devices (touchscreen laptops) still get
+    // mouse-hover behavior when the user uses a trackpad.
+    const onPointerEnter = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      pointerInside = true;
+      cancelClose();
       setOpen(true);
     };
-
-    // Small delay so the user can move the cursor from the trigger onto
-    // the card without the card vanishing mid-traversal.
-    const scheduleClose = () => {
-      if (closeTimer) clearTimeout(closeTimer);
-      closeTimer = setTimeout(() => setOpen(false), 120);
-    };
-
-    const closeNow = () => {
-      if (closeTimer) {
-        clearTimeout(closeTimer);
-        closeTimer = null;
-      }
-      setOpen(false);
-    };
-
-    // Hover: open on enter, schedule close on leave. The card itself
-    // also handles enter/leave so the user can move into it.
-    trigger.addEventListener("mouseenter", open);
-    trigger.addEventListener("mouseleave", scheduleClose);
-    card.addEventListener("mouseenter", open);
-    card.addEventListener("mouseleave", scheduleClose);
-
-    // Keyboard focus also opens. We don't auto-close on blur from the
-    // trigger if focus is moving into the card, so check relatedTarget.
-    trigger.addEventListener("focus", open);
-    trigger.addEventListener("blur", (e) => {
-      const next = e.relatedTarget as Node | null;
-      if (next && card.contains(next)) return;
+    const onPointerLeave = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      pointerInside = false;
       scheduleClose();
-    });
+    };
+    trigger.addEventListener("pointerenter", onPointerEnter);
+    trigger.addEventListener("pointerleave", onPointerLeave);
+    card.addEventListener("pointerenter", onPointerEnter);
+    card.addEventListener("pointerleave", onPointerLeave);
 
-    // Click toggles — the only path that works on touch devices without
-    // hover. preventDefault stops accidental form submits if the
-    // component is ever placed inside a <form>.
+    // Click toggles — covers touch (the only available path) and
+    // keyboard (Enter/Space activates a focused button as a click).
+    // preventDefault stops accidental form submits if the component is
+    // ever placed inside a <form>.
     trigger.addEventListener("click", (e) => {
       e.preventDefault();
-      if (wrap.classList.contains("is-open")) {
-        closeNow();
-      } else {
-        open();
-      }
+      cancelClose();
+      setOpen(!isOpen);
     });
 
-    // Escape closes from anywhere inside the wrapper.
+    // Escape closes and restores focus to the trigger.
     wrap.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && wrap.classList.contains("is-open")) {
+      if (e.key === "Escape" && isOpen) {
         e.stopPropagation();
-        closeNow();
+        setOpen(false);
         trigger.focus();
       }
     });
 
-    // Outside click closes the popover. Listen on the document but
-    // ignore clicks inside the wrap.
+    // Keyboard tab-away closes. pointerInside is the escape hatch so
+    // mouse users hovering the card don't see it close out from under
+    // their cursor when the trigger blurs.
+    wrap.addEventListener("focusout", (e) => {
+      const next = e.relatedTarget;
+      if (next instanceof Node && wrap.contains(next)) return;
+      if (pointerInside) return;
+      setOpen(false);
+    });
+
+    // Outside click closes. Early-returns when this instance is already
+    // closed so the per-instance listener is effectively free to register.
     document.addEventListener("click", (e) => {
-      if (!wrap.classList.contains("is-open")) return;
-      if (wrap.contains(e.target as Node)) return;
-      closeNow();
+      if (!isOpen) return;
+      if (e.target instanceof Node && wrap.contains(e.target)) return;
+      setOpen(false);
     });
   });
 </script>
@@ -181,9 +246,22 @@ const popoverId = `def-${term.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Math.
     transition: color 120ms ease, text-decoration-color 120ms ease;
   }
 
-  .define-trigger:hover,
+  /* The aria-expanded rule is unconditional — when the card is open we
+     always want the trigger to indicate that state. The hover rule is
+     gated on (hover: hover) so it only applies on devices that actually
+     support hover; without the gate, a touch tap on mobile applies the
+     darker teal "hover" state until the next tap elsewhere, which made
+     the first tap on a definition look like it had succeeded (text
+     darkened) even though the popover never opened. Pairs with the JS
+     pointerType === "mouse" filter on the hover handlers. */
   .define-trigger[aria-expanded="true"] {
     color: var(--color-primary);
+  }
+
+  @media (hover: hover) {
+    .define-trigger:hover {
+      color: var(--color-primary);
+    }
   }
 
   .define-trigger:focus-visible {
@@ -315,19 +393,37 @@ const popoverId = `def-${term.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Math.
     word-break: break-word;
   }
 
-  /* Right-edge clip avoidance: when the trigger is near the right edge
-     of its container, anchor the card to the right of the trigger
-     instead. Authors opt in via [data-align="right"]. */
+  /* Right-edge clip avoidance for desktop: when the trigger is near the
+     right edge of its container, anchor the card to the right of the
+     trigger instead. Authors opt in via [data-align="right"]. The mobile
+     rule below overrides this because it's equally specific and comes
+     later in source order. */
   .define[data-align="right"] .define-card {
     left: auto;
     right: 0;
   }
 
-  /* Small viewports: pin the card to the trigger's left/right within the
-     section padding so it never clips off-screen. */
+  /* Narrow viewports: detach the card from the trigger's x-position and
+     float it centered within the viewport's inline padding, still pinned
+     to the trigger's bottom on the y-axis. Rationale: anchoring the card
+     to the trigger's left edge consistently pushed it off the right side
+     of the viewport whenever a defined word wrapped to the right half of
+     a line — a problem that no amount of max-width clamping can fix
+     because `left: 0` of a right-edge trigger + any non-zero width
+     already overflows. Using position: fixed with inline insets gives
+     the card a stable viewport-relative box regardless of where the
+     trigger sits in the flow, and a CSS custom property set from JS
+     (`--define-card-top`) keeps the card visually tethered to the
+     defined word's baseline. Viewport changes (scroll, resize) close
+     the card so it never gets stranded mid-page. */
   @media (max-width: 520px) {
-    .define-card {
-      max-width: calc(100vw - var(--space-6));
+    .define .define-card {
+      position: fixed;
+      top: var(--define-card-top, auto);
+      left: var(--space-4);
+      right: var(--space-4);
+      width: auto;
+      max-width: none;
     }
   }
 </style>
