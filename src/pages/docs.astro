@@ -56,7 +56,7 @@ const nav = [
 ---
 <Base
   title="Docs"
-  description="The Atto Hybrid Syntax specification — frontmatter, directives, serialization, and syntax-tree mapping."
+  description="The Atto document format: frontmatter, directives, serialization, and syntax-tree mapping."
 >
   {/* Demo-only typefaces. EB Garamond stands in for @adobe/Garamond
       (same Garamond revival lineage) and Playfair Display stands in
@@ -72,7 +72,7 @@ const nav = [
 
   <div class="docs-layout">
     <aside class="docs-sidebar" aria-label="Docs navigation">
-      <p class="eyebrow">Syntax Spec v0</p>
+      <p class="eyebrow">Atto Docs v0</p>
       <nav>
         <ol role="list">
           {nav.map((item) => (
@@ -96,19 +96,19 @@ const nav = [
       <section id="overview">
         <p class="eyebrow">01 — Overview</p>
         <div class="docs-title-row">
-          <h1>The Atto Hybrid Syntax.</h1>
+          <h1>Atto Documents.</h1>
           <span class="docs-version" aria-label="Specification version">v0</span>
         </div>
         <p class="lede">
-          Atto documents combine three layers into a single plain-text format.
-          Markdown carries prose, LaTeX carries notation, and Atto directives
-          carry structure. The parser walks them in order and produces a single
-          deterministic Abstract Syntax Tree (AST).
+          Atto Documents combine three layers into a single plain-text format,
+          the Atto Format (AF). Markdown carries prose, LaTeX carries notation,
+          and Atto directives carry structure. The parser walks them in order
+          and produces a single deterministic Abstract Syntax Tree (AST).
         </p>
         <p>
-          Every <code>.atto</code> file is human-readable, git-diffable, and
-          stable under round-trip serialization. Equal ASTs produce equal byte
-          streams.
+          Every Atto Document (AD) is a <code>.atto</code> file: human-readable,
+          git-diffable, and stable under round-trip serialization. Equal ASTs
+          produce equal byte streams.
         </p>
       </section>
 
@@ -907,7 +907,7 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
         {/* ─── Declaration block ──────────────────────────────── */}
         <h3 id="afrp-declaration">Font declaration block</h3>
         <p>
-          Every AHS document declares its font requirements in a dedicated{' '}
+          Every AD declares its font requirements in a dedicated{' '}
           <code>---atto-meta</code> header block. The <code>fonts</code>{' '}
           array binds document-local names (<code>id</code>) to font
           references. Inline markup then refers to fonts by that id.
@@ -979,7 +979,7 @@ Current formula: <span class="tok-math">$L = B \times 0.015$</span> per day.
         {/* ─── Inline references ──────────────────────────────── */}
         <h3 id="afrp-inline">Inline font references</h3>
         <p>
-          Font identifiers may appear inline via the AHS span annotation
+          Font identifiers may appear inline via the AF span annotation
           notation <code>{'{font=...}'}</code>. An annotation accepts
           either a declared id or a direct font reference (identifier +
           optional axis qualifiers). Both forms resolve identically
@@ -1220,7 +1220,7 @@ requires counter-signature.</code></pre>
         </p>
 
         <p>
-          When an AHS document is sealed to EXECUTED state, the signer
+          When an AD is sealed to EXECUTED state, the signer
           freezes a complete execution pin for each declared font. The
           pin is covered by the document signature — tampering invalidates
           the whole document.
@@ -1687,7 +1687,7 @@ requires counter-signature.</code></pre>
            The triple-colon form is distinct from :: directives —
            it is an authoring surface that compiles to one or more
            :: directives at build time AND renders a UI component.
-           Hosted in the syntax spec so authors can find it, but
+           Hosted in the AF spec so authors can find it, but
            the compilation target lives in the Atto Leasing
            Protocol (ALP) spec. */}
       <section id="protocol-blocks">

@@ -1217,7 +1217,7 @@ a, button, [role="button"] {
    Credit Check Block (:::credit-check rendered component)
 
    Vertical stack of labeled disclosure sections matching the
-   AHS renderer's tenant-facing form. Spec-compliant structure:
+   AF renderer's tenant-facing form. Spec-compliant structure:
    heading, purpose, what will be checked, who sees the result,
    outcome, consent actions. Every section has a small uppercase
    eyebrow followed by body text — the same editorial rhythm

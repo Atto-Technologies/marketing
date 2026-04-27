@@ -23,7 +23,7 @@ src/
   pages/
     index.astro        # homepage — 7 sections
     product.astro      # product deep-dive
-    docs.astro         # hybrid syntax spec, sticky sidebar
+    docs.astro         # Atto Format spec, sticky sidebar
     pricing.astro      # 3 tiers + FAQ
   layouts/
     Base.astro         # <head>, nav, footer, theme init
