@@ -7,11 +7,25 @@ headingLevel: 1
 versionBadge: v0
 ---
 
+import DefineTerm from '../../components/DefineTerm.astro';
+
 {/* The first paragraph carries the .lede class for typographic
     emphasis. Markdown <p> tags can't take a className, so the lede
     is authored as raw HTML — every other paragraph below uses
-    plain Markdown and inherits the default body styling. */}
-<p class="lede">Atto Documents combine three layers into a single plain-text format, the Atto Format (AF). Markdown carries prose, LaTeX carries notation, and Atto directives carry structure. The parser walks them in order and produces a single deterministic Abstract Syntax Tree (AST).</p>
+    plain Markdown and inherits the default body styling.
+
+    "Markdown" and "LaTeX" wrap their first mention in <DefineTerm>
+    so a reader landing here without context can see what each layer
+    is before they're asked to think about how the layers combine.
+    Definition copy mirrors the front-page lede exactly so the two
+    surfaces stay in sync.
+
+    The whole paragraph stays on one source line on purpose — multi-
+    line JSX content inside a <p> trips MDX's Markdown pipeline into
+    wrapping the inner content in another <p>, producing invalid
+    `<p><p>...</p></p>` nesting in the output. See §04 for the same
+    workaround. */}
+<p class="lede">Every Atto document is a single plain-text file. Writing is handled by <DefineTerm term="Markdown" partOfSpeech="markup language">A plain-text writing format that uses simple symbols (like <code>**bold**</code> and <code># Heading</code>) to mark structure and emphasis while staying readable as raw text. Created in 2004; widely used for documentation, blogs, and notes.</DefineTerm>, math is handled by <DefineTerm term="LaTeX" partOfSpeech="typesetting system" pronunciation="lā-tek">A typesetting system designed for mathematical and scientific documents. Authors write formulas as code (e.g. <code>\frac{`{a}{b}`}</code> for a fraction) and the system renders them as properly typeset notation. The standard for academic publishing since the 1980s.</DefineTerm>, and structure (signatures, credit checks, parties) is handled by Atto directives. The three live together in one file, parsed once, producing one document.</p>
 
 Every Atto Document (AD) is a `.atto` file: human-readable,
 git-diffable, and stable under round-trip serialization. Equal ASTs
