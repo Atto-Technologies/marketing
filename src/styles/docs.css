@@ -1,0 +1,364 @@
+/* Docs page layout & typography.
+ *
+ * Single source of truth for the `/docs` page visual system.
+ * Selectors are deliberately `.docs-`-prefixed so importing this
+ * sheet globally has no risk of bleeding into other pages.
+ *
+ * IMPORTANT — the `--docs-sidebar-top-offset` math, the `.docs-content`
+ * top-padding rationale, and the mobile-collapse breakpoint are all
+ * load-bearing; touch them only if you understand what each comment
+ * block protects.
+ */
+
+/* The docs page uses a left-anchored layout — sidebar pinned to
+   the left edge of the viewport (with consistent inline padding),
+   content column free to extend rightward up to a generous 1800px
+   cap. This gives split-layout AttoDemos enough horizontal room to
+   show source and rendered side-by-side at comfortable reading
+   widths. The standard centered .wrap container is intentionally
+   not applied to this page.
+
+   IMPORTANT — top padding intentionally lives on `.docs-content`,
+   NOT here: a 32px padding on this container would push the
+   sidebar's natural top down to ~109px (nav 77px + padding 32px),
+   which is below the sidebar's sticky `top: 78px` threshold, so
+   sticky would NOT engage at the top of the page and the user
+   would see a 32px gap between the nav's bottom border and the
+   start of the sidebar's scrollbar. Keeping this container's top
+   padding at 0 lets the sidebar's natural top be flush with the
+   nav (77px), which IS above the 78px threshold, so sticky engages
+   immediately and the sidebar pins exactly 1px below the nav.
+   The article column receives its 32px breathing room via its own
+   `padding-top` instead. */
+.docs-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: var(--space-12);
+  max-width: 1800px;
+  margin-inline: 0;
+  padding: 0 var(--space-8) var(--space-16);
+  align-items: start;
+}
+
+/* Sticky sidebar — the `top` and `max-height` values are coupled:
+   when the sidebar pins, its bottom edge ends at `top + max-height`,
+   which we want to equal exactly `100vh` so the sidebar fills the
+   viewport from just under the nav down to the very bottom. To keep
+   the math obviously self-consistent, both expressions reference the
+   same `--docs-sidebar-top-offset` quantity (the desired offset below
+   the viewport top).
+
+   The offset is `--nav-height + 1px` so the sidebar's top edge sits
+   exactly one pixel below the nav's bottom hairline — the visible
+   scrollbar starts right under that divider line and reads as a
+   direct continuation of the nav's bottom edge instead of leaving
+   an arbitrary gap. Earlier this used `var(--space-16) + var(--space-4)`
+   (80px), which was a 3px gap below the actual 77px-tall nav — small
+   but visible at desktop sizes, which is what the user reported. */
+.docs-sidebar {
+  --docs-sidebar-top-offset: calc(var(--nav-height) + 1px);
+  position: sticky;
+  top: var(--docs-sidebar-top-offset);
+  align-self: start;
+  border-right: 1px solid var(--color-border);
+  /* padding-top mirrors `.docs-content`'s padding-top so the eyebrow
+     row in the sidebar sits at the same vertical position as the
+     eyebrow row in the article column — equal internal breathing
+     room above first content in both grid cells. Because box-sizing
+     is border-box (global default), this padding lives INSIDE the
+     max-height envelope, so the sidebar's outer top edge — and
+     therefore the start of its visible scrollbar — stays at exactly
+     --docs-sidebar-top-offset (1px below the nav). Only the inner
+     content moves down. */
+  padding-top: var(--space-8);
+  padding-right: var(--space-8);
+  /* Without a max-height + overflow, sticky only constrains the top
+     edge. On short viewports (or long nav lists), the bottom nav items
+     render below the fold and can't be reached. Constraining the
+     sidebar to the available viewport height below its sticky top lets
+     it scroll internally while the page scrolls normally around it. */
+  max-height: calc(100vh - var(--docs-sidebar-top-offset));
+  overflow-y: auto;
+  /* Keep inner scroll from chaining back to the main page scroll when
+     the sidebar reaches its top/bottom. */
+  overscroll-behavior: contain;
+}
+
+.docs-sidebar .eyebrow {
+  margin-bottom: var(--space-5);
+}
+
+.docs-sidebar ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.docs-sidebar .sub {
+  margin-top: var(--space-2);
+  margin-left: var(--space-4);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--color-border);
+  gap: var(--space-1);
+}
+
+.docs-sidebar a {
+  display: block;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  padding-block: var(--space-1);
+}
+
+.docs-sidebar a:hover {
+  color: var(--color-text);
+}
+
+.docs-sidebar code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  color: var(--color-primary);
+}
+
+/* Article column. padding-top is the column-local replacement for the
+   `.docs-layout` top padding that used to sit on the parent — that
+   padding had to move here so the sidebar (the OTHER grid child) can
+   start flush against the nav and engage sticky immediately. The
+   32px (`--space-8`) value is the gap the user wants to see between
+   the nav's bottom hairline and the start of the article's eyebrow
+   row, and only applies to this column. */
+.docs-content {
+  min-width: 0;
+  padding-top: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.docs-content h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-3xl);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.docs-title-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-block: var(--space-4) var(--space-6);
+}
+
+.docs-version {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2em 0.6em;
+  color: var(--color-primary);
+  background: color-mix(in oklch, var(--color-primary) 10%, transparent);
+  border: 1px solid var(--color-primary);
+}
+
+/* Heading rules are scoped to direct section descendants so they
+   never cascade into AttoDemo rendered slots, where `.atto-doc h2`
+   et al. own the typography. Specificity here is (0,1,3) which
+   beats `.atto-doc h2` (0,1,1) at the section level but doesn't
+   touch nested h2/h3 inside `.atto-doc-section`. */
+.docs-content > section > h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-2xl);
+  margin-block: var(--space-4) var(--space-5);
+  scroll-margin-top: var(--space-16);
+}
+
+.docs-content > section > h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  margin-block: var(--space-8) var(--space-3);
+  scroll-margin-top: var(--space-16);
+}
+
+.docs-content > section > h3 code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--color-primary);
+}
+
+.docs-content > section > h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-base);
+  letter-spacing: 0;
+  margin-block: var(--space-6) var(--space-2);
+  scroll-margin-top: var(--space-16);
+}
+
+.docs-content h4 code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--color-primary);
+}
+
+.docs-content ol {
+  padding-left: var(--space-6);
+  max-width: 68ch;
+  margin-bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.docs-content ol li {
+  max-width: none;
+}
+
+/* spec-steps: the numbered resolution-algorithm / fallback-chain
+   lists inside §08. Uses default ol counter but adds extra gap and
+   resets the max-width constraint for longer steps. */
+.docs-content ol.spec-steps {
+  padding-left: var(--space-6);
+  gap: var(--space-3);
+}
+
+.docs-content ol.spec-steps li {
+  padding-left: var(--space-1);
+}
+
+.docs-content .lede {
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+  max-width: 60ch;
+  margin-bottom: var(--space-4);
+}
+
+.docs-content p {
+  max-width: 68ch;
+  margin-bottom: var(--space-4);
+}
+
+.docs-content ul {
+  padding-left: var(--space-5);
+  max-width: 68ch;
+  margin-bottom: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.docs-content ul li {
+  max-width: none;
+}
+
+.docs-content code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.docs-content section {
+  scroll-margin-top: var(--space-16);
+}
+
+.docs-content section > .eyebrow {
+  margin-bottom: var(--space-2);
+}
+
+/* ─── §08.5 Inline font-reference demo ─────────────────────
+   The rendered column of the inline-font-refs AttoDemo uses
+   open-source typefaces as visual stand-ins for the identifiers
+   quoted in the source panel. The goal is to make the typographic
+   switch literally visible, not just described. */
+
+.atto-doc.atto-doc-split-demo {
+  padding: var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.atto-doc.atto-doc-split-demo p {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+/* Span classes used inside the rendered preview. Each applies the
+   stand-in typeface and adopts a slightly larger size than the
+   surrounding body so the switch reads clearly at reading distance. */
+.font-demo-garamond {
+  font-family: 'EB Garamond', 'Iowan Old Style', Georgia, serif;
+  font-weight: 400;
+  font-size: 1.12em;
+  letter-spacing: 0.01em;
+}
+
+.font-demo-bagnard {
+  font-family: 'Playfair Display', 'EB Garamond', 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.12em;
+}
+
+.font-demo-mono {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  padding: 0.1em 0.4em;
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  letter-spacing: 0.01em;
+}
+
+/* Small clarifying note sitting under the demo, explaining that
+   the rendered fonts are open-source stand-ins for illustrative
+   purposes. Sized down and muted so it doesn't compete with
+   primary content. */
+.afrp-inline-note {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  border-left: 2px solid var(--color-border);
+  padding: var(--space-1) 0 var(--space-1) var(--space-4);
+  margin-block: var(--space-3) var(--space-6);
+}
+
+@media (max-width: 900px) {
+  .docs-layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  .docs-sidebar {
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding-right: 0;
+    padding-bottom: var(--space-6);
+    /* Undo the desktop scroll-container treatment — on mobile the
+       sidebar flows horizontally with the rest of the page. */
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .docs-sidebar ol {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-5);
+  }
+
+  .docs-sidebar .sub {
+    display: none;
+  }
+}

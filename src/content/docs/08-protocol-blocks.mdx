@@ -1,0 +1,313 @@
+---
+order: 8
+id: protocol-blocks
+label: Protocol Blocks
+title: Protocol blocks.
+sub:
+  - { id: protocol-signature, label: '::signature-block' }
+  - { id: protocol-attachment, label: '::attachment' }
+  - { id: block-credit-check, label: ':::credit-check' }
+---
+
+import AttoDemo from '../../components/AttoDemo.astro';
+import FieldTable from '../../components/FieldTable.astro';
+import SignatureWidget from '../../components/SignatureWidget.astro';
+import CreditCheckBlock from '../../components/CreditCheckBlock.astro';
+
+{/* ─── Protocol Blocks ─────────────────────
+    First-class trust primitives. Each one produces a dedicated
+    event kind on the document's audit chain — that is what
+    separates them from content blocks (§07) and the document
+    header (§02 ::atto-doc, which declares parties and metadata
+    but emits no chain events of its own). Two syntactic forms
+    coexist: most protocol blocks are primitive `::` directives
+    (signature-block, attachment). The `:::` form is reserved
+    for higher-level authoring surfaces that compile to one or
+    more `::` directives at build time AND render a tenant-
+    facing UI component (credit-check). Compile targets for
+    `:::` blocks live in the Atto Leasing Protocol (ALP) spec. */}
+
+{/* Source-code HTML strings are stashed as top-level constants so
+    leading-whitespace on continuation lines (YAML list items, multi-
+    line strings inside `:::credit-check { … }`) survives the MDX
+    compile pipeline. See §06 alignedSource for the same workaround. */}
+export const signatureSource = `<code><span class="tok-directive">::signature-block</span>
+  <span class="tok-key">- party:</span> <span class="tok-string">tenant</span>
+    <span class="tok-key">sign_order:</span> <span class="tok-string">1</span>
+    <span class="tok-key">date-required:</span> <span class="tok-string">true</span>
+  <span class="tok-key">- party:</span> <span class="tok-string">landlord</span>
+    <span class="tok-key">signer:</span> <span class="tok-string">Alex Reynolds</span>
+    <span class="tok-key">title:</span> <span class="tok-string">Director of Leasing</span>
+    <span class="tok-key">sign_order:</span> <span class="tok-string">2</span>
+    <span class="tok-key">date-required:</span> <span class="tok-string">true</span>
+<span class="tok-directive">::</span></code>`;
+
+export const attachmentSource = `<code><span class="tok-directive">::attachment</span>
+<span class="tok-key">label:</span> <span class="tok-string">Schedule A</span>
+<span class="tok-key">uri:</span> <span class="tok-string">atto://attach/schedule-a.pdf</span>
+<span class="tok-key">sha256:</span> <span class="tok-string">4c1f...a7</span>
+<span class="tok-key">media_type:</span> <span class="tok-string">application/pdf</span>
+<span class="tok-key">bytes:</span> <span class="tok-string">131072</span>
+<span class="tok-directive">::</span></code>`;
+
+export const creditCheckSource = `<code><span class="tok-directive">:::credit-check</span> &#123;
+  <span class="tok-key">id</span>               = <span class="tok-string">"cc-residential-001"</span>
+  <span class="tok-key">party</span>            = <span class="tok-string">"party-tenant-jane-doe"</span>
+
+  <span class="tok-key">purpose</span>          = <span class="tok-string">"Residential tenancy application for 42 Elm Street,</span>
+<span class="tok-string">                      Unit 3B, Los Angeles, CA 90024. Requested by</span>
+<span class="tok-string">                      Westbrook Property Management LLC on behalf of</span>
+<span class="tok-string">                      property owner."</span>
+
+  <span class="tok-key">requesting_party</span> = <span class="tok-string">"Westbrook Property Management LLC"</span>
+  <span class="tok-key">pull_type</span>        = <span class="tok-string">hard_pull</span>
+  <span class="tok-key">bureau</span>           = <span class="tok-string">transunion</span>
+  <span class="tok-key">score_model</span>      = <span class="tok-string">FICO8</span>
+
+  <span class="tok-key">disclosed_to</span>     = [<span class="tok-string">requesting_party</span>]
+  <span class="tok-key">extent</span>           = <span class="tok-string">score_only</span>
+  <span class="tok-key">min_score</span>        = <span class="tok-string">680</span>
+
+  <span class="tok-key">on_pass</span>          = <span class="tok-string">proceed</span>
+  <span class="tok-key">on_fail</span>          = <span class="tok-string">human_review</span>
+  <span class="tok-key">review_window_hours</span> = <span class="tok-string">72</span>
+
+  <span class="tok-key">immediate_feedback</span> = <span class="tok-string">false</span>
+  <span class="tok-key">timeout_hours</span>    = <span class="tok-string">24</span>
+&#125;
+<span class="tok-directive">:::</span></code>`;
+
+Protocol blocks are the first-class trust primitives of the Atto
+Format. Each one produces a dedicated event kind on the document's
+audit chain: a `::signature-block` emits `signature.executed` when
+fulfilled, an `::attachment` emits `attachment.added` at publish,
+and a `:::credit-check` emits `directive.credit_check` when its
+precondition resolves. The cryptographic verification model of an
+AD is incomplete without them.
+
+The two syntactic forms are orthogonal to the tier. Most protocol
+blocks are primitive `::` directives. The triple-colon form
+<code>{':::name { … } :::'}</code> is reserved for higher-level
+*authoring surfaces* that compile to one or more `::` directives at
+document build time AND render a tenant-facing UI component the
+subject sees when they open the document.
+
+Every `:::` block is disclosure-first. Fields the author might
+otherwise omit — purpose, requesting party, privacy scope — are
+REQUIRED. The document is invalid if any required disclosure field
+is missing. The subject reads the rendered form; an auditor can
+read the block source and verify exactly what consent was granted.
+
+{/* ─── ::signature-block ───────────────────────────────── */}
+
+<h3 id="protocol-signature"><code>::signature-block</code></h3>
+
+Declares one or more signatures. Each entry binds a `party` —
+referenced by id from `::atto-doc.parties` (§02) — to a
+`sign_order`. The Baldwinson Protocol layer enforces the order:
+signer 2 cannot countersign until signer 1 has. When a signer
+fulfills their entry, the block emits `signature.executed` on the
+audit chain.
+
+Label and legal name resolve through `::atto-doc.parties`
+automatically (see [Reference & inheritance](#document-header-inheritance)).
+A signature block doesn't restate the party's name; it only adds
+the fields the party itself can't provide — the human
+representative for a corporation, the signing order, the date
+requirement.
+
+<FieldTable
+  caption="::signature-block entry fields"
+  fields={[
+    { name: 'party', type: 'string (party id)', required: true, description: 'References an id declared in ::atto-doc.parties. The signature line inherits the party\'s name and role label automatically.' },
+    { name: 'sign_order', type: 'integer', required: true, description: 'Queue position for signing, 1-indexed.' },
+    { name: 'signer', type: 'string', required: false, description: 'Override the legal name pulled from ::atto-doc.parties. Use when the signing individual is distinct from the party itself — e.g., the natural-person representative of a corporation.' },
+    { name: 'title', type: 'string', required: false, description: "Signing individual's title at the party, e.g. CEO, Managing Partner. Only meaningful when `signer` is set." },
+    { name: 'label', type: 'string', required: false, description: 'Local supplemental label for this signing context. The canonical role from ::atto-doc.parties cannot be overridden — it stays visible alongside the supplement. See §02 Reference & inheritance for the rendered example.' },
+    { name: 'date-required', type: 'boolean', required: false, description: 'Require a dated signature. Defaults to false.' },
+  ]}
+/>
+
+<AttoDemo layout="split" filename="signature-block.atto">
+  <div slot="rendered" style="display: flex; flex-direction: column; gap: var(--space-4);">
+    <SignatureWidget
+      party="Tenant"
+      signer="Jordan Ellis"
+      order={1}
+      totalSigners={2}
+    />
+    <SignatureWidget
+      party="Landlord"
+      signer="Alex Reynolds"
+      title="Director of Leasing"
+      order={2}
+      totalSigners={2}
+    />
+  </div>
+
+  <pre class="code-block" slot="source" set:html={signatureSource} />
+</AttoDemo>
+
+The first entry resolves cleanly: a natural-person tenant signs
+as themselves — *Tenant — Jordan Ellis*. The second adds `signer`
+and `title` because the landlord party is a corporation; the
+rendered line reads *Landlord — Alex Reynolds, Director of
+Leasing*, with *Meridian Property Group LLC* attributed as the
+signing entity in the audit chain event.
+
+{/* ─── ::attachment ────────────────────────────────────── */}
+
+<h3 id="protocol-attachment"><code>::attachment</code></h3>
+
+References an external file by content hash. The document treats
+the attachment as part of its canonical content; the freeze event
+verifies every hash before emitting `doc.freeze`, and a successful
+publish emits `attachment.added` on the audit chain.
+
+<FieldTable
+  caption="::attachment fields"
+  fields={[
+    { name: 'label', type: 'string', required: true, description: 'Human-readable label, e.g. Schedule A, Exhibit 1.' },
+    { name: 'uri', type: 'uri', required: true, description: 'Location of the file. Accepts atto://, https://, or ipfs://.' },
+    { name: 'sha256', type: 'hex', required: true, description: '64-character SHA-256 digest of the file contents.' },
+    { name: 'media_type', type: 'string', required: false, description: 'IANA media type, e.g. application/pdf.' },
+    { name: 'bytes', type: 'integer', required: false, description: 'File size in bytes. Used for UI display and integrity checks.' },
+  ]}
+/>
+
+<AttoDemo layout="split" filename="attachment.atto">
+  <aside class="atto-attachment" slot="rendered" aria-label="Attachment">
+    <span class="atto-attachment-icon" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+      </svg>
+    </span>
+    <div class="atto-attachment-body">
+      <p class="atto-attachment-label">Schedule A</p>
+      <p class="atto-attachment-meta"><code>atto://attach/schedule-a.pdf</code><span>sha256:4c1f…a7</span><span>·</span><span>PDF · 128 KB</span></p>
+    </div>
+    <a class="atto-attachment-action" href="#">Open ↗</a>
+  </aside>
+
+  <pre class="code-block" slot="source" set:html={attachmentSource} />
+</AttoDemo>
+
+{/* ─── :::credit-check ───────────────────────────────── */}
+
+<h3 id="block-credit-check"><code>:::credit-check</code></h3>
+
+Declares a credit-check precondition for document execution. The
+block compiles to an `::alp:precondition:credit-check` directive
+evaluated by the Precondition Directive Evaluation Engine (PDEE),
+and simultaneously renders a tenant-facing consent form. The
+subject cannot sign the document until the precondition is
+satisfied.
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-5) var(--space-2);">Required disclosure fields</h4>
+
+<FieldTable
+  caption=":::credit-check required fields"
+  fields={[
+    { name: 'id', type: 'string', required: true, description: 'Unique identifier within the document. Referenced by the compiled ::alp:precondition:credit-check directive as precondition_id.' },
+    { name: 'party', type: 'string', required: true, description: 'party_id of the subject whose credit is being checked. MUST resolve to a party declared in the execution preamble.' },
+    { name: 'purpose', type: 'string', required: true, description: "Plain-language reason for the check. Shown verbatim in the tenant's consent disclosure and reported to the bureau adapter as permissible-purpose context. Template placeholders are rejected." },
+    { name: 'requesting_party', type: 'string', required: true, description: "Legal name of the entity requesting the check. Shown verbatim in the consent disclosure. MUST match the landlord party's legal_name." },
+    { name: 'pull_type', type: "'hard_pull' | 'soft_pull'", required: true, description: "Hard pulls appear on the consumer's credit file; soft pulls do not. A mismatch with the bureau adapter's actual pull type is a fatal validation error." },
+    { name: 'bureau', type: "'experian' | 'transunion' | 'equifax' | 'any'", required: true, description: "'any' permits the PDEE to select the bureau. The bureau actually used is recorded in execution metadata." },
+    { name: 'score_model', type: "'FICO8' | 'FICO9' | 'VantageScore3' | 'VantageScore4'", required: true, description: 'Scoring model used for the pass/fail determination.' },
+    { name: 'disclosed_to', type: 'array of enum | party_id', required: true, description: 'Who receives the pass/fail outcome. Values: requesting_party, named_parties, all_signatories, or specific party_ids. The raw score is NEVER shared through this field — only the pass/fail result.' },
+    { name: 'extent', type: "'score_only' | 'full_report' | 'income_verified'", required: true, description: 'Breadth of the inquiry. See the extent reference below.' },
+    { name: 'min_score', type: 'integer 300–850', required: true, description: 'Required when extent is score_only or income_verified. Minimum score for a pass outcome.' },
+    { name: 'on_pass', type: "'proceed' | 'notify_requesting_party'", required: true, description: 'PDEE action on pass. proceed advances the execution queue.' },
+    { name: 'on_fail', type: "'withdraw' | 'notify_requesting_party' | 'human_review'", required: true, description: 'PDEE action on fail. human_review pauses execution for review_window_hours before auto-withdrawing.' },
+  ]}
+/>
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Optional fields</h4>
+
+<FieldTable
+  caption=":::credit-check optional fields"
+  fields={[
+    { name: 'immediate_feedback', type: 'boolean', required: false, description: 'Default false. When true, the rendered form shows the tenant a pass/fail result as soon as the bureau responds. When false, the tenant sees only a "submitted — awaiting review" state.' },
+    { name: 'review_window_hours', type: 'integer', required: false, description: 'Only valid when on_fail = human_review. Default 48. Hours the requesting party has to decide before auto-withdrawal.' },
+    { name: 'timeout_hours', type: 'integer', required: false, description: 'Default 48. Hours the PDEE waits for a bureau response before treating the check as failed.' },
+  ]}
+/>
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Extent levels</h4>
+
+<FieldTable
+  caption="extent field values"
+  fields={[
+    { name: 'score_only', type: 'Score only', required: false, description: 'Credit score only. No tradeline detail, no account history. Lowest privacy impact. min_score is required.' },
+    { name: 'full_report', type: 'Full report', required: false, description: 'Full consumer credit report including tradelines, inquiries, public records, and collections. Retained in execution metadata (encrypted, accessible only to requesting party). min_score optional.' },
+    { name: 'income_verified', type: 'Score + income', required: false, description: 'Credit score plus income verification via payroll connector (Argyle, Pinwheel). Requires chained ::alp:precondition:income-verify. min_score is required and applies to the score component only.' },
+  ]}
+/>
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Example — residential lease</h4>
+
+<AttoDemo layout="split" filename="credit-check.atto" label=":::credit-check">
+  <div slot="rendered">
+    <CreditCheckBlock
+      requestingParty="Westbrook Property Management LLC"
+      purpose="Residential tenancy application for 42 Elm Street, Unit 3B, Los Angeles, CA 90024. Requested by Westbrook Property Management LLC on behalf of property owner."
+      scoreModel="FICO8"
+      bureau="transunion"
+      pullType="hard_pull"
+      disclosedTo={["Westbrook Property Management LLC"]}
+      immediateFeedback={false}
+      onFail="human_review"
+      reviewWindowHours={72}
+    />
+  </div>
+
+  <pre class="code-block" slot="source" set:html={creditCheckSource} />
+</AttoDemo>
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Compilation to ALP</h4>
+
+The `:::credit-check` block compiles mechanically to an
+`::alp:precondition:credit-check` directive at build time. The
+field mapping is exact:
+
+<FieldTable
+  caption="Compilation mapping"
+  fields={[
+    { name: 'id', type: '→ precondition_id', required: false, description: 'Direct mapping.' },
+    { name: 'party', type: '→ subject_party_id', required: false, description: 'Direct mapping.' },
+    { name: 'min_score / bureau / score_model / pull_type / timeout_hours', type: '→ same', required: false, description: 'Direct mapping of PDEE-relevant fields.' },
+    { name: 'on_fail = withdraw', type: '→ failure_action = "withdraw"', required: false, description: 'Document enters WITHDRAWN on fail.' },
+    { name: 'on_fail = notify_requesting_party', type: '→ failure_action = "notify_only"', required: false, description: 'Record failure; notify landlord; await their decision.' },
+    { name: 'on_fail = human_review', type: '→ failure_action = "notify_only" + review_window annotation', required: false, description: 'Pauses at PRECONDITION_PENDING for review_window_hours.' },
+    { name: 'purpose / requesting_party / disclosed_to / extent', type: '→ consent_scope.* fields', required: false, description: 'Embedded in the consent-scope object sent to the bureau adapter as permissible-purpose context.' },
+    { name: 'immediate_feedback', type: '→ renderer directive only', required: false, description: 'Not forwarded to the PDEE. Purely controls what the rendered form shows the subject.' },
+  ]}
+/>
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-6) var(--space-2);">Validation rules</h4>
+
+A document containing a `:::credit-check` block is INVALID if any
+of the following are true:
+
+<ul>
+  <li><code>purpose</code> is absent, empty, or contains only template placeholder text (e.g. <code>[property address]</code>).</li>
+  <li><code>requesting_party</code> does not match the <code>legal_name</code> of any declared party.</li>
+  <li><code>party</code> does not resolve to a <code>party_id</code> in the execution preamble.</li>
+  <li><code>pull_type = hard_pull</code> and <code>consent_scope</code> has not been completed before PDEE dispatch.</li>
+  <li><code>extent</code> is <code>score_only</code> or <code>income_verified</code> and <code>min_score</code> is absent.</li>
+  <li><code>on_fail = human_review</code> and <code>review_window_hours</code> is absent.</li>
+  <li><code>disclosed_to</code> contains a party id not declared in the execution preamble.</li>
+  <li>Two <code>:::credit-check</code> blocks in the same document share an <code>id</code>.</li>
+  <li><code>immediate_feedback = true</code> and <code>on_fail = human_review</code> simultaneously — these are contradictory.</li>
+</ul>
+
+Raw-score disclosure is non-negotiable: regardless of
+`disclosed_to`, the numeric score is NEVER exposed in the rendered
+document or any interface accessible to disclosed parties. Scores
+are stored encrypted in execution metadata, accessible only to the
+PDEE and, after execution, to the requesting party via a
+credentialed API call.

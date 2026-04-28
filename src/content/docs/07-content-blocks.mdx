@@ -1,0 +1,150 @@
+---
+order: 7
+id: content-blocks
+label: Content Blocks
+title: Content blocks.
+sub:
+  - { id: content-callout, label: '::callout' }
+  - { id: content-review, label: '::review-anchor' }
+---
+
+import AttoDemo from '../../components/AttoDemo.astro';
+import FieldTable from '../../components/FieldTable.astro';
+
+{/* ─── Content Blocks ──────────────────────────────────────
+    Presentational compounds. They participate in content_hash
+    (every byte matters for document integrity) but produce no
+    entries in the audit chain. The discriminator is the chain:
+    a content block makes the document read more clearly to a
+    human; a protocol block (§09) makes the protocol enforce
+    something. Use a content block when the goal is the former. */}
+
+Content blocks are typed presentational compounds. They open with
+`::name` on a line by itself, close with a bare `::`, and accept
+YAML-shaped content between. They render as styled UI but produce no
+audit-chain entries. Their source still participates in
+`content_hash`, so a callout cannot be silently retitled and a
+review anchor cannot be moved without invalidating the document.
+
+{/* ─── ::callout ───────────────────────────────────────── */}
+
+<h3 id="content-callout"><code>::callout</code></h3>
+
+A typed admonition. The `tone` attribute selects the visual and
+semantic treatment; an optional `title` gives the callout a one-line
+header. The body is parsed as Markdown.
+
+<FieldTable
+  caption="::callout fields"
+  fields={[
+    { name: 'tone', type: "'note' | 'info' | 'warning' | 'danger'", required: true, description: 'Visual treatment and semantic severity.' },
+    { name: 'title', type: 'string', required: false, description: 'One-line heading shown next to the tone label.' },
+  ]}
+/>
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-5) var(--space-2);">All tones</h4>
+
+<AttoDemo layout="split" filename="callout-tones.atto">
+  <div slot="rendered" style="display: flex; flex-direction: column; gap: var(--space-3);">
+    <aside class="atto-callout" aria-label="Note callout">
+      <div class="atto-callout-head">
+        <span class="atto-callout-tone">Note</span>
+        <span class="atto-callout-title">Definitions</span>
+      </div>
+      <p>Capitalized terms take the meanings given in §1.</p>
+    </aside>
+
+    <aside class="atto-callout" aria-label="Info callout">
+      <div class="atto-callout-head">
+        <span class="atto-callout-tone">Info</span>
+        <span class="atto-callout-title">Reference</span>
+      </div>
+      <p>See the master agreement for fallback provisions.</p>
+    </aside>
+
+    <aside class="atto-callout" data-tone="warning" aria-label="Warning callout">
+      <div class="atto-callout-head">
+        <span class="atto-callout-tone">Warning</span>
+        <span class="atto-callout-title">Review Required</span>
+      </div>
+      <p>This clause applies only on quarterly distributions.</p>
+    </aside>
+
+    <aside class="atto-callout" data-tone="danger" aria-label="Danger callout">
+      <div class="atto-callout-head">
+        <span class="atto-callout-tone">Danger</span>
+        <span class="atto-callout-title">Irrevocable</span>
+      </div>
+      <p>Once executed, this waiver cannot be revoked without both parties' written consent.</p>
+    </aside>
+  </div>
+
+  <pre class="code-block" slot="source" set:html={`<code><span class="tok-directive">::callout</span>
+<span class="tok-key">tone:</span> <span class="tok-string">note</span>
+<span class="tok-key">title:</span> <span class="tok-string">Definitions</span>
+Capitalized terms take the meanings given in §1.
+<span class="tok-directive">::</span>
+
+<span class="tok-directive">::callout</span>
+<span class="tok-key">tone:</span> <span class="tok-string">info</span>
+<span class="tok-key">title:</span> <span class="tok-string">Reference</span>
+See the master agreement for fallback provisions.
+<span class="tok-directive">::</span>
+
+<span class="tok-directive">::callout</span>
+<span class="tok-key">tone:</span> <span class="tok-string">warning</span>
+<span class="tok-key">title:</span> <span class="tok-string">Review Required</span>
+This clause applies only on quarterly distributions.
+<span class="tok-directive">::</span>
+
+<span class="tok-directive">::callout</span>
+<span class="tok-key">tone:</span> <span class="tok-string">danger</span>
+<span class="tok-key">title:</span> <span class="tok-string">Irrevocable</span>
+Once executed, this waiver cannot be revoked without both parties&rsquo; written consent.
+<span class="tok-directive">::</span></code>`} />
+</AttoDemo>
+
+{/* ─── ::review-anchor ─────────────────────────────────── */}
+
+<h3 id="content-review"><code>::review-anchor</code></h3>
+
+Anchors a review thread to a specific AST node. Comments attach to
+the anchor by `id`, not to line numbers — edits around the anchor
+do not orphan the thread. The body is the content under review.
+
+The anchor itself participates in `content_hash` like every other
+byte of the document. A reviewer's anchor cannot shift silently:
+any edit that relocates the anchor or alters its body invalidates
+the document and forces a re-sign.
+
+<FieldTable
+  caption="::review-anchor fields"
+  fields={[
+    { name: 'id', type: 'slug', required: true, description: 'Stable identifier for the review thread. Must be unique per document.' },
+    { name: 'status', type: "'open' | 'pending' | 'resolved'", required: false, description: "Review state. Defaults to 'open'." },
+    { name: 'assignee', type: 'string', required: false, description: 'Email of the reviewer responsible for resolving the thread.' },
+    { name: 'tags', type: 'string[]', required: false, description: 'Free-form tags for filtering, e.g. [legal, pricing].' },
+  ]}
+/>
+
+<AttoDemo layout="split" filename="review-anchor.atto">
+  <aside class="atto-review" slot="rendered" data-status="pending" aria-label="Review anchor">
+    <div class="atto-review-head">
+      <span class="atto-review-status">Review pending</span>
+      <span class="atto-review-meta">late-fee-review · counsel@example.com</span>
+    </div>
+    <div class="atto-review-body">
+      <p>The late fee calculation in §3.2 is pending counsel approval. Current formula: <span class="atto-math">L = B × 0.015</span> per day.</p>
+      <p class="atto-review-footer">2 comments · opened 3 days ago</p>
+    </div>
+  </aside>
+
+  <pre class="code-block" slot="source" set:html={`<code><span class="tok-directive">::review-anchor</span>
+<span class="tok-key">id:</span> <span class="tok-string">late-fee-review</span>
+<span class="tok-key">status:</span> <span class="tok-string">pending</span>
+<span class="tok-key">assignee:</span> <span class="tok-string">counsel@example.com</span>
+<span class="tok-key">tags:</span> <span class="tok-string">[legal, pricing]</span>
+The late fee calculation in §3.2 is pending counsel approval.
+Current formula: <span class="tok-math">$L = B \\times 0.015$</span> per day.
+<span class="tok-directive">::</span></code>`} />
+</AttoDemo>

@@ -1,0 +1,960 @@
+---
+order: 9
+id: font-references
+label: Font References
+title: Font references.
+sub:
+  - { id: afrp-architecture, label: 'Two tiers, three forms' }
+  - { id: afrp-grammar, label: 'Identifier grammar' }
+  - { id: afrp-axes, label: 'Axis qualifiers' }
+  - { id: afrp-declaration, label: 'Declaration block' }
+  - { id: afrp-inline, label: 'Inline references' }
+  - { id: afrp-manifest, label: 'Registry manifest' }
+  - { id: afrp-resolution, label: 'Resolution algorithm' }
+  - { id: afrp-integrity, label: 'Integrity & execution pin' }
+  - { id: afrp-fallback, label: 'Fallback policy' }
+  - { id: afrp-commerce, label: 'Font Commerce Layer' }
+  - { id: afrp-registration, label: 'Tier 1 ratification' }
+  - { id: afrp-hosted, label: 'Hosted registry' }
+  - { id: afrp-errors, label: 'Error codes' }
+---
+
+import AttoDemo from '../../components/AttoDemo.astro';
+import FieldTable from '../../components/FieldTable.astro';
+
+{/* ─── Font References (AFRP) ──────────────────────────────
+    The Atto Font Registry Protocol defines a portable identifier
+    grammar, a registry manifest schema, and a resolution
+    algorithm that binds every executed document to the exact
+    font binaries present at signing. This section is a
+    normative summary of AFRP v1.0 — see spec.atto.tech/afrp
+    for the full specification. */}
+
+{/* Source-code HTML strings are stashed as top-level constants —
+    JSX template-literal expressions strip leading whitespace on
+    continuation lines (see §06 alignedSource for the precedent). */}
+export const delegationsSource = `<code><span class="tok-comment">; Parent scope with two delegations</span>
+<span class="tok-string">"adobe"</span>: &#123;
+  <span class="tok-key">"base_url"</span>:    <span class="tok-string">"https://afrp.adobe.com/"</span>,
+  <span class="tok-key">"delegations"</span>: &#123;
+    <span class="tok-key">"monotype"</span>: <span class="tok-string">"https://fonts.monotype.com/afrp/"</span>,
+    <span class="tok-key">"linotype"</span>: <span class="tok-string">"https://afrp.linotype.com/"</span>
+  &#125;
+&#125;
+
+<span class="tok-comment">; Resolution</span>
+@adobe/HelveticaNeue            <span class="tok-comment">→ https://afrp.adobe.com/</span>
+@adobe/monotype/HelveticaNeue   <span class="tok-comment">→ https://fonts.monotype.com/afrp/</span>
+@adobe/linotype/Optima          <span class="tok-comment">→ https://afrp.linotype.com/</span></code>`;
+
+export const abnfSource = `<code><span class="tok-key">font-reference</span>    = font-identifier *( WSP qualifier )
+<span class="tok-key">font-identifier</span>   = form-a / form-b / form-c
+
+<span class="tok-comment">; Form A — Canonical Atto registry</span>
+<span class="tok-key">form-a</span>            = <span class="tok-string">"@/"</span> typeface-name [ version-specifier ]
+
+<span class="tok-comment">; Form B — Registered scope (one-level sub-scope permitted)</span>
+<span class="tok-key">form-b</span>            = <span class="tok-string">"@"</span> scope <span class="tok-string">"/"</span> [ sub-scope <span class="tok-string">"/"</span> ] typeface-name [ version-specifier ]
+
+<span class="tok-comment">; Form C — Full URI (permissionless)</span>
+<span class="tok-key">form-c</span>            = host-authority <span class="tok-string">"/"</span> typeface-name [ version-specifier ]
+
+<span class="tok-key">scope</span>             = lc-alpha *( lc-alpha / DIGIT / <span class="tok-string">"-"</span> )
+<span class="tok-key">typeface-name</span>     = tc-alpha *( tc-alpha / DIGIT / <span class="tok-string">"-"</span> / <span class="tok-string">"_"</span> )
+<span class="tok-key">lc-alpha</span>          = %x61-7A                  <span class="tok-comment">; lowercase a-z</span>
+<span class="tok-key">tc-alpha</span>          = %x41-5A / %x61-7A        <span class="tok-comment">; A-Z or a-z</span>
+
+<span class="tok-key">version-specifier</span> = <span class="tok-string">"@"</span> version-value
+<span class="tok-key">version-value</span>     = exact-version / range-caret / range-tilde / <span class="tok-string">"latest"</span> / <span class="tok-string">"pinned"</span>
+<span class="tok-key">exact-version</span>     = major <span class="tok-string">"."</span> minor <span class="tok-string">"."</span> patch [ <span class="tok-string">"-"</span> pre-release ] [ <span class="tok-string">"+"</span> build-meta ]
+<span class="tok-key">range-caret</span>       = <span class="tok-string">"^"</span> major [ <span class="tok-string">"."</span> minor [ <span class="tok-string">"."</span> patch ] ]
+<span class="tok-key">range-tilde</span>       = <span class="tok-string">"~"</span> major <span class="tok-string">"."</span> minor [ <span class="tok-string">"."</span> patch ]
+
+<span class="tok-key">qualifier</span>         = axis-tag <span class="tok-string">"="</span> axis-value
+<span class="tok-key">axis-tag</span>          = 4( ALPHA / DIGIT )       <span class="tok-comment">; OpenType 4-char tag</span>
+<span class="tok-key">axis-value</span>        = 1*DIGIT [ <span class="tok-string">"."</span> 1*DIGIT ]</code>`;
+
+export const fontsDeclSource = `<code><span class="tok-comment">---atto-meta</span>
+<span class="tok-key">protocol_version:</span> <span class="tok-string">"1.0"</span>
+<span class="tok-key">fonts:</span>
+  <span class="tok-key">- id:</span>       <span class="tok-string">body</span>
+    <span class="tok-key">ref:</span>      <span class="tok-string">"@/Lineal"</span>
+    <span class="tok-key">weight:</span>   <span class="tok-string">400</span>
+    <span class="tok-key">style:</span>    <span class="tok-string">normal</span>
+    <span class="tok-key">axes:</span>
+      <span class="tok-key">wght:</span>   <span class="tok-string">400</span>
+      <span class="tok-key">opsz:</span>   <span class="tok-string">14</span>
+    <span class="tok-key">fallback:</span> [<span class="tok-string">"@velvetyne/Lineal"</span>, <span class="tok-string">"system:sans-serif"</span>]
+
+  <span class="tok-key">- id:</span>       <span class="tok-string">display</span>
+    <span class="tok-key">ref:</span>      <span class="tok-string">"@velvetyne/Bagnard@2.1.0"</span>
+    <span class="tok-key">weight:</span>   <span class="tok-string">[400, 700]</span>
+    <span class="tok-key">style:</span>    <span class="tok-string">[normal, italic]</span>
+
+  <span class="tok-key">- id:</span>       <span class="tok-string">mono</span>
+    <span class="tok-key">ref:</span>      <span class="tok-string">"fonts.mycorp.com/Sligoil@^2"</span>
+    <span class="tok-key">weight:</span>   <span class="tok-string">400</span>
+    <span class="tok-key">fallback:</span> [<span class="tok-string">"system:monospace"</span>]
+<span class="tok-comment">---</span></code>`;
+
+export const inlineRefsSource = `<code>Primary clause — this [Services Agreement]&#123;<span class="tok-key">font</span>=<span class="tok-string">@adobe/Garamond wght=400</span>&#125;
+governs the relationship between the parties.
+
+Defined term — the phrase [Corporate Steed]&#123;<span class="tok-key">font</span>=<span class="tok-string">@velvetyne/Bagnard wght=400 ital=1</span>&#125;
+refers to the vehicle described in Exhibit A.
+
+Record ID — transaction [SEC-2025-0412]&#123;<span class="tok-key">font</span>=<span class="tok-string">mono</span>&#125;
+requires counter-signature.</code>`;
+
+export const manifestSource = `<code><span class="tok-comment">// /.well-known/atto-font-registry.json</span>
+&#123;
+  <span class="tok-key">"registry"</span>: &#123;
+    <span class="tok-key">"name"</span>:             <span class="tok-string">"Velvetyne Type Foundry Registry"</span>,
+    <span class="tok-key">"homepage"</span>:         <span class="tok-string">"https://velvetyne.fr"</span>,
+    <span class="tok-key">"contact"</span>:          <span class="tok-string">"registry@velvetyne.fr"</span>,
+    <span class="tok-key">"protocol_version"</span>: <span class="tok-string">"1.0"</span>,
+    <span class="tok-key">"shorthand"</span>:        <span class="tok-string">"velvetyne"</span>,
+    <span class="tok-key">"base_url"</span>:         <span class="tok-string">"https://registry.velvetyne.fr/"</span>
+  &#125;,
+  <span class="tok-key">"fonts"</span>: [&#123;
+    <span class="tok-key">"id"</span>:       <span class="tok-string">"Bagnard"</span>,
+    <span class="tok-key">"designer"</span>: <span class="tok-string">"Sébastien Sanfilippo"</span>,
+    <span class="tok-key">"foundry"</span>:  <span class="tok-string">"Velvetyne Type Foundry"</span>,
+    <span class="tok-key">"license"</span>: &#123;
+      <span class="tok-key">"spdx"</span>:              <span class="tok-string">"OFL-1.1"</span>,
+      <span class="tok-key">"url"</span>:               <span class="tok-string">"https://scripts.sil.org/OFL"</span>,
+      <span class="tok-key">"commercial_use"</span>:    <span class="tok-string">true</span>,
+      <span class="tok-key">"embedding_allowed"</span>: <span class="tok-string">true</span>
+    &#125;,
+    <span class="tok-key">"versions"</span>: [&#123;
+      <span class="tok-key">"version"</span>: <span class="tok-string">"2.1.0"</span>,
+      <span class="tok-key">"styles"</span>: [&#123;
+        <span class="tok-key">"weight"</span>: <span class="tok-string">400</span>,
+        <span class="tok-key">"style"</span>:  <span class="tok-string">"normal"</span>,
+        <span class="tok-key">"is_variable"</span>: <span class="tok-string">false</span>,
+        <span class="tok-key">"formats"</span>: [&#123;
+          <span class="tok-key">"type"</span>:      <span class="tok-string">"woff2"</span>,
+          <span class="tok-key">"url"</span>:       <span class="tok-string">"https://registry.velvetyne.fr/Bagnard/2.1.0/Bagnard-Regular.woff2"</span>,
+          <span class="tok-key">"integrity"</span>: <span class="tok-string">"sha256-abc123DEFghi456JKLmno789PQRstu012VWXyz3456A="</span>
+        &#125;]
+      &#125;]
+    &#125;]
+  &#125;]
+&#125;</code>`;
+
+export const pinSource = `<code><span class="tok-comment">---atto-meta</span>
+<span class="tok-key">protocol_version:</span> <span class="tok-string">"1.0"</span>
+<span class="tok-key">execution_state:</span>  <span class="tok-string">"EXECUTED"</span>
+<span class="tok-key">execution_timestamp:</span> <span class="tok-string">"2026-04-24T03:00:00Z"</span>
+<span class="tok-key">fonts:</span>
+  <span class="tok-key">- id:</span>                <span class="tok-string">body</span>
+    <span class="tok-key">ref:</span>               <span class="tok-string">"@/Lineal"</span>
+    <span class="tok-key">weight:</span>            <span class="tok-string">400</span>
+    <span class="tok-key">style:</span>             <span class="tok-string">normal</span>
+    <span class="tok-key">axes:</span>
+      <span class="tok-key">wght:</span>            <span class="tok-string">400</span>
+      <span class="tok-key">opsz:</span>            <span class="tok-string">14</span>
+    <span class="tok-key">_resolved_version:</span> <span class="tok-string">"2.1.0"</span>
+    <span class="tok-key">pinned_format:</span>     <span class="tok-string">"woff2"</span>
+    <span class="tok-key">full_integrity:</span>    <span class="tok-string">"sha256-ZXh4mNAbCd12efGH34ijKL56mnOP78qrST90uvWX12Y="</span>
+    <span class="tok-key">subset_integrity:</span>  <span class="tok-string">"sha256-Sb5eTz3nOpQr21StUv45WxYz67AbCd89EfGh01IjKl="</span>
+    <span class="tok-key">subset_glyph_ids:</span>  <span class="tok-string">[32, 65, 66, 67, 68, 69, 70, 97, 98, 99]</span>
+<span class="tok-comment">---</span></code>`;
+
+export const commerceSource = `<code><span class="tok-comment">// license_info block with commerce</span>
+&#123;
+  <span class="tok-key">"spdx"</span>:                  <span class="tok-string">"LicenseRef-Proprietary"</span>,
+  <span class="tok-key">"url"</span>:                   <span class="tok-string">"https://hydra.type/license"</span>,
+  <span class="tok-key">"commercial_use"</span>:        <span class="tok-string">true</span>,
+  <span class="tok-key">"embedding_allowed"</span>:     <span class="tok-string">true</span>,
+  <span class="tok-key">"commerce"</span>: &#123;
+    <span class="tok-key">"model"</span>:                <span class="tok-string">"per_execution"</span>,
+    <span class="tok-key">"price_usd_cents"</span>:      <span class="tok-string">500</span>,
+    <span class="tok-key">"payment_endpoint"</span>:     <span class="tok-string">"https://commerce.hydra.type/v1/receipts"</span>,
+    <span class="tok-key">"license_authority_key"</span>: <span class="tok-string">"MCowBQYDK2VwAyEA..."</span>
+  &#125;
+&#125;</code>`;
+
+A document that can be signed must be renderable identically at any
+future time. The **Atto Font Registry Protocol** (AFRP) defines a
+portable identifier grammar, a registry manifest format, and a
+resolution algorithm that binds every executed document to the
+exact font binaries present at signing.
+
+This section is a normative summary of AFRP v1.0. The full
+specification — including the JSON Schema, error code definitions,
+governance procedures, and security analysis — lives at
+`spec.atto.tech/afrp`.
+
+{/* ─── Two tiers, three forms ─────────────────────────── */}
+
+<h3 id="afrp-architecture">Two tiers, three forms</h3>
+
+AFRP defines two namespace tiers operating under one resolution
+protocol. The permissionless tier guarantees the governed tier
+can never act as a gatekeeper for the system.
+
+<FieldTable
+  caption="AFRP tiers and identifier forms"
+  fields={[
+    { name: '@/Typeface', type: 'Form A · Tier 1', required: false, description: 'Canonical shorthand. No scope between @ and /. Resolves against the canonical Atto registry at https://fonts.atto.tech/. Portable across all compliant implementations without hardcoding a host.' },
+    { name: '@scope/Typeface', type: 'Form B · Tier 1', required: false, description: 'Ratified scope shorthand. Tier 1 scopes are not self-serve — they are granted by invitation from the Atto Protocol Authority and ratified by the Technical Review Panel for foundational infrastructure providers. The criteria govern identity and permanence; they do not audit catalog size, originality, or creative merit.' },
+    { name: 'host/Typeface', type: 'Form C · Tier 2', required: false, description: 'Permissionless full URI. Any DNS host serving a compliant AFRP manifest is a valid registry. No registration, approval, or contact with any authority required. Equivalent openness to the Web itself.' },
+  ]}
+/>
+
+Form A is distinguished from Form B by the absence of characters
+between `@` and `/`. A resolver MUST NOT treat an unregistered
+Form B scope as a fallback to Form A — it emits `SCOPE_NOT_FOUND`
+and proceeds to the fallback chain.
+
+#### Three paths to AFRP compliance
+
+A font publisher has three ways to make their fonts available
+inside AFRP-compliant documents. The architectural principle is
+that **Tier 1 exists to protect namespace identity for permanent
+infrastructure providers, not to gatekeep font publication**.
+
+<ol class="spec-steps">
+  <li>
+    <strong>Self-host a Form C registry.</strong> Serve a compliant
+    manifest at any DNS hostname you control. No registration,
+    approval, or contact with any authority. Full technical
+    responsibility rests with the publisher. See{' '}
+    <a href="#afrp-manifest">Registry manifest</a> for the
+    well-known endpoint and JSON Schema.
+  </li>
+  <li>
+    <strong>Atto Hosted Registry Service (AHRS).</strong>{' '}
+    Subscription-based managed hosting. The publisher provides
+    font files and metadata; Atto operates the registry, computes
+    integrity hashes, runs ARCTS, and serves a compliant manifest
+    under <code>{'hosted.fonts.atto.tech/{slug}/'}</code> or a
+    custom domain. Resolves as Form C. See{' '}
+    <a href="#afrp-hosted">Hosted registry</a>.
+  </li>
+  <li>
+    <strong>Tier 1 ratified scope.</strong> Reserved for
+    foundational infrastructure providers meeting the permanence
+    and identity criteria. Invitation-only ratification by the
+    Technical Review Panel. Resolves as Form B{' '}
+    <code>@scope/Typeface</code>. See{' '}
+    <a href="#afrp-registration">Tier 1 ratification</a>.
+  </li>
+</ol>
+
+The permissionless Form C tier guarantees that the Atto Protocol
+Authority can never act as a gatekeeper for the system as a
+whole — Tier 1 governs namespace identity only.
+
+#### Sub-scope delegation
+
+A registered scope MAY delegate sub-namespaces one level deep by
+declaring a `delegations` map in its registry manifest. The parent
+scope retains governance responsibility; the delegated registry
+MUST pass ARCTS before the delegation is published.
+
+<pre class="code-block" set:html={delegationsSource} />
+
+Four-component identifiers like `@a/b/c/Name` are invalid per the
+ABNF. Delegated registries cannot further sub-delegate.
+
+{/* ─── Identifier grammar ─────────────────────────────── */}
+
+<h3 id="afrp-grammar">Identifier grammar</h3>
+
+A font reference is a font identifier optionally augmented with
+typographic axis qualifiers. The identifier locates the asset;
+qualifiers select its typographic state. ABNF summary (RFC 5234):
+
+<pre class="code-block" set:html={abnfSource} />
+
+#### Version specifiers
+
+<FieldTable
+  caption="Version specifier forms"
+  fields={[
+    { name: '@X.Y.Z', type: 'exact', required: false, description: 'Resolves to exactly version X.Y.Z. MUST fail with VERSION_NOT_FOUND if that version is absent from the manifest.' },
+    { name: '@^X[.Y[.Z]]', type: 'caret range', required: false, description: 'Highest version ≥ X[.Y[.Z]] and < (X+1).0.0. Major version fixed. Forward-compatible with minor and patch updates.' },
+    { name: '@~X.Y[.Z]', type: 'tilde range', required: false, description: 'Highest version ≥ X.Y[.Z] and < X.(Y+1).0. Minor version fixed. Accepts patch updates only.' },
+    { name: '@latest', type: 'symbolic', required: false, description: 'Highest stable version available. SHOULD NOT be used in documents intended for signing. When a version specifier is absent entirely, behavior is equivalent to @latest.' },
+    { name: '@pinned', type: 'symbolic', required: false, description: 'Version recorded in document execution metadata. Valid only in EXECUTED state. A resolver encountering @pinned in a DRAFT document emits PINNED_IN_DRAFT and treats it as @latest.' },
+  ]}
+/>
+
+Pre-release versions MUST NOT be matched by caret or tilde ranges
+unless the range itself is pre-release qualified. The version
+portion follows SemVer 2.0.0 exactly.
+
+#### Reserved names
+
+<ul>
+  <li>
+    <strong>Scope reserved:</strong> <code>atto</code>,{' '}
+    <code>official</code>, <code>authority</code>,{' '}
+    <code>registry</code>, <code>root</code>, <code>sys</code>,{' '}
+    <code>localhost</code>. Only the Atto Protocol Authority may
+    use these.
+  </li>
+  <li>
+    <strong>Version reserved:</strong> <code>latest</code> and{' '}
+    <code>pinned</code> MUST NOT appear as typeface names or
+    scope names.
+  </li>
+  <li>
+    <strong>Case sensitivity:</strong> scopes are lowercase-only.
+    Typeface names are case-sensitive and preserved exactly.
+    Registered four-character axis tags use lowercase; custom
+    axes registered by foundries use uppercase (e.g.{' '}
+    <code>GRAD</code>, <code>YOPQ</code>).
+  </li>
+</ul>
+
+{/* ─── Axis qualifiers ────────────────────────────────── */}
+
+<h3 id="afrp-axes">Axis qualifiers</h3>
+
+Variable-font axes are selected by whitespace-separated qualifiers
+of the form `tag=value` following the font identifier. Each
+qualifier pins a single OpenType registered axis. Values absent
+from a font reference default to the manifest's
+`variable_axes.default` for that axis — or, if the manifest
+declares none, to the OpenType-registered default (`wght=400`,
+`opsz=12`, `ital=0`).
+
+<FieldTable
+  caption="Registered OpenType axes"
+  fields={[
+    { name: 'wght', type: '100–900', required: false, description: 'Weight from Thin (100) to Black (900). Alias: weight=. Equivalent to CSS font-weight.' },
+    { name: 'wdth', type: '75–125', required: false, description: 'Width from Condensed (75) to Extended (125). Equivalent to CSS font-stretch.' },
+    { name: 'opsz', type: '6–72', required: false, description: 'Optical size — letterforms optimized for the given point size.' },
+    { name: 'ital', type: '0–1', required: false, description: '0 = upright, 1 = fully italic. Continuous axis. Aliases: style=italic → ital=1; style=normal → ital=0.' },
+    { name: 'slnt', type: '−15–0', required: false, description: 'Slant angle in degrees. Negative values lean right. Alias: style=oblique → slnt=−12 (registries MAY override the default oblique angle).' },
+    { name: 'GRAD', type: '−50–150', required: false, description: 'Grade — adjusts weight without changing character advance widths. Useful for dark-on-light vs. light-on-dark compensation.' },
+  ]}
+/>
+
+**Critical for execution integrity.** In EXECUTED state, *every*
+axis value — including those not explicitly qualified at the
+reference site — MUST be recorded in the execution metadata pin.
+An absent qualifier means "use the manifest default," and that
+default must be frozen at signing so later manifest edits cannot
+alter visual output.
+
+For non-variable fonts, only `wght` and `ital` are meaningful —
+they drive static-style selection. All other axis qualifiers MUST
+be ignored and an `AXIS_NOT_SUPPORTED` informational event is
+emitted.
+
+{/* ─── Declaration block ──────────────────────────────── */}
+
+<h3 id="afrp-declaration">Font declaration block</h3>
+
+Every AD declares its font requirements in a dedicated
+`---atto-meta` header block. The `fonts` array binds
+document-local names (`id`) to font references. Inline markup
+then refers to fonts by that id.
+
+<FieldTable
+  caption="Font declaration fields (atto-meta.fonts[])"
+  fields={[
+    { name: 'id', type: 'string', required: true, description: 'Document-local name, unique within the fonts block. Used in inline markup as {font=body}.' },
+    { name: 'ref', type: 'font-identifier', required: true, description: 'AFRP font identifier conforming to the §3.2 ABNF grammar.' },
+    { name: 'weight', type: 'integer | integer[]', required: false, description: 'CSS weight 100–900. If an array, the renderer loads all listed weights. Defaults to 400.' },
+    { name: 'style', type: "'normal' | 'italic' | 'oblique' | string[]", required: false, description: 'If an array, the renderer loads all listed styles. Defaults to normal.' },
+    { name: 'axes', type: 'object (tag → number)', required: false, description: 'Explicit OpenType axis values for variable fonts. Absent axes default per §5.4. In EXECUTED state the complete resolved axis set MUST appear in the pin.' },
+    { name: 'fallback', type: 'font-identifier[]', required: false, description: 'Ordered fallback chain evaluated per §7.1. Each entry MUST be a valid font identifier or a system: reference.' },
+    { name: 'inline_manifest', type: 'object', required: false, description: 'Inline manifest for Form C fonts unreachable via well-known or per-font endpoints. MUST match execution metadata for EXECUTED documents.' },
+    { name: 'fallback_to_atto', type: 'boolean', required: false, description: 'Per-font override of the document-level fallback_to_atto flag.' },
+  ]}
+/>
+
+<AttoDemo layout="split" filename="atto-meta-fonts.atto">
+  <article class="atto-doc" slot="rendered">
+    <header class="atto-doc-head">
+      <p class="atto-doc-kicker">Services Agreement · Fonts declared</p>
+      <h1 class="atto-doc-title">Services Agreement</h1>
+    </header>
+    <section class="atto-doc-section">
+      <h2>Typography</h2>
+      <p>Body text is set in <span class="atto-font-ref" data-tier="canonical">@/Lineal</span> at <code>wght=400 opsz=14</code> (canonical, variable). Display headings use <span class="atto-font-ref" data-tier="scoped">@velvetyne/Bagnard@2.1.0</span> (governed scope). A third entry declares an in-house monospace with a system fallback.</p>
+    </section>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={fontsDeclSource} />
+</AttoDemo>
+
+A parser MUST reject a document with duplicate `id` values in the
+`fonts` block and MUST emit `MISSING_REF` for any declaration
+missing a `ref`.
+
+{/* ─── Inline references ──────────────────────────────── */}
+
+<h3 id="afrp-inline">Inline font references</h3>
+
+Font identifiers may appear inline via the AF span annotation
+notation <code>{'{font=...}'}</code>. An annotation accepts either
+a declared id or a direct font reference (identifier + optional
+axis qualifiers). Both forms resolve identically through the
+algorithm in §08.7.
+
+{/* The split layout here renders the source on the left and the
+    rendered output on the right so readers can see the protocol
+    notation and its typographic effect side-by-side. The spans
+    wrapped in .font-demo-* classes below load open-source
+    typefaces (EB Garamond, Playfair Display, Geist Mono) via
+    the page-level head slot as visual stand-ins for the
+    registry-resolved binaries a production renderer would pin. */}
+<AttoDemo layout="split" filename="inline-font-refs.atto">
+  <pre class="code-block" slot="source" set:html={inlineRefsSource} />
+
+  <article class="atto-doc atto-doc-split-demo" slot="rendered">
+    <p>Primary clause — this <span class="font-demo-garamond">Services Agreement</span> governs the relationship between the parties.</p>
+    <p>Defined term — the phrase <span class="font-demo-bagnard">Corporate Steed</span> refers to the vehicle described in Exhibit A.</p>
+    <p>Record ID — transaction <span class="font-demo-mono">SEC-2025-0412</span> requires counter-signature.</p>
+  </article>
+</AttoDemo>
+
+<p class="afrp-inline-note"><strong>Note.</strong> The rendered preview above uses open-source stand-ins (EB Garamond for <code>@adobe/Garamond</code>, Playfair Display for <code>@velvetyne/Bagnard</code>, Geist Mono for the document-declared <code>mono</code>) purely to illustrate the typographic switch. A production AFRP resolver would pin the exact binary hashes declared by each registry per §08.6 and §08.8.</p>
+
+When a declared `id` is used, the resolver MUST use the `ref`,
+`weight`, and `style` from the corresponding declaration entry
+unless inline qualifiers explicitly override them for that span.
+Direct inline references in DRAFT mode activate
+`fallback_to_atto: true` behavior.
+
+{/* ─── Registry manifest ──────────────────────────────── */}
+
+<h3 id="afrp-manifest">Registry manifest</h3>
+
+A compliant AFRP registry serves a registry-level manifest at the
+well-known path `/.well-known/atto-font-registry.json`, returned
+with `Content-Type: application/atto-font-manifest+json`.
+Manifests MUST be served over HTTPS with valid TLS, carry
+`Cache-Control` headers, and set
+`Access-Control-Allow-Origin: *` for browser-based renderers.
+
+Registries MAY additionally serve per-typeface manifests at
+`/<TypefaceName>/manifest.json`. When available, resolvers SHOULD
+prefer this endpoint to reduce bandwidth; a per-font response
+takes precedence over the registry-level manifest for that
+typeface.
+
+<pre class="code-block" set:html={manifestSource} />
+
+There is no manifest-level signature. Trust in the manifest flows
+from TLS certificate validation, HSTS, and certificate transparency
+monitoring — not from a JCS-canonicalized wire signature. Per-asset
+`integrity` hashes guarantee binary authenticity downstream of the
+manifest fetch.
+
+{/* ─── Resolution algorithm ───────────────────────────── */}
+
+<h3 id="afrp-resolution">Resolution algorithm</h3>
+
+Resolution behavior depends on document state. An EXECUTED
+document renders identically at any future time using exactly the
+binaries present at signing.
+
+<table class="spec-table">
+  <thead>
+    <tr>
+      <th>Behavior</th>
+      <th>DRAFT mode</th>
+      <th>EXECUTED mode</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>fallback_to_atto</code> default</td>
+      <td><code>true</code></td>
+      <td><code>false</code></td>
+    </tr>
+    <tr>
+      <td>System font substitution</td>
+      <td>Permitted</td>
+      <td>Forbidden</td>
+    </tr>
+    <tr>
+      <td>All-failure outcome</td>
+      <td>System sans-serif</td>
+      <td>Visible error; rendering halted</td>
+    </tr>
+    <tr>
+      <td>TLS validation skip</td>
+      <td>Permitted (with warning)</td>
+      <td>Forbidden</td>
+    </tr>
+    <tr>
+      <td><code>@pinned</code> specifier</td>
+      <td>Treated as <code>@latest</code></td>
+      <td>MUST use pinned version</td>
+    </tr>
+    <tr>
+      <td><code>full_integrity</code> check</td>
+      <td>Optional</td>
+      <td>MUST be applied</td>
+    </tr>
+  </tbody>
+</table>
+
+The 11-step algorithm in AFRP §5.2 is non-negotiable. Every
+compliant resolver MUST:
+
+<ol class="spec-steps">
+  <li>Parse the font reference per the §3.2 ABNF. Fail fast on syntax errors.</li>
+  <li>Translate reserved aliases (<code>weight=</code> → <code>wght=</code>, <code>style=italic</code> → <code>ital=1</code>).</li>
+  <li>Classify as Form A / Form B / Form C and derive the registry base URL.</li>
+  <li>Fetch the manifest (see three-step discovery below), validate schema, protocol version, integrity-field format, and URL scheme.</li>
+  <li>Locate the font entry by typeface name.</li>
+  <li>Select a version satisfying the specifier per SemVer precedence.</li>
+  <li>Select a style entry, then a format entry (<code>woff2</code> preferred).</li>
+  <li>Download the binary, compute SHA-256 over the decompressed body, compare constant-time against <code>integrity</code>.</li>
+  <li><strong>EXECUTED only:</strong> compare against <code>full_integrity</code> from the pin. Mismatch → <code>INTEGRITY_VIOLATION</code>, halt rendering.</li>
+  <li>If <code>license_info.commerce</code> is present, validate the license token or acquire a <code>use_receipt</code> from <code>payment_endpoint</code>.</li>
+  <li>Cache the verified asset keyed by <code>(registry, typeface, version, format, weight, style, integrity)</code>.</li>
+</ol>
+
+#### Form C manifest discovery
+
+For Form C identifiers, the resolver attempts manifest discovery
+in three ordered steps. The first success ends the search:
+
+<ol class="spec-steps">
+  <li>
+    <strong>Well-known:</strong> GET{' '}
+    <code>https://host/.well-known/atto-font-registry.json</code>.
+    If the typeface appears in the <code>fonts[]</code> array,
+    resolution proceeds against this manifest.
+  </li>
+  <li>
+    <strong>Per-typeface:</strong> GET{' '}
+    <code>https://host/&lt;TypefaceName&gt;/manifest.json</code>.
+    Takes precedence over the registry-level manifest when
+    available.
+  </li>
+  <li>
+    <strong>Inline:</strong> use the{' '}
+    <code>inline_manifest</code> declared in the document's{' '}
+    <code>fonts[]</code> block. Final fallback. MUST match
+    execution metadata in EXECUTED documents.
+  </li>
+</ol>
+
+All three attempts failing → `REGISTRY_UNREACHABLE`. Resolvers
+MUST NOT construct heuristic URLs based on scope names. TLS
+relaxations apply only to `localhost` and loopback addresses in
+DRAFT mode.
+
+{/* ─── Integrity & pin ────────────────────────────────── */}
+
+<h3 id="afrp-integrity">Integrity &amp; execution pin</h3>
+
+AFRP uses **SHA-256** subresource integrity hashes throughout, in
+the canonical SRI format `sha256-<base64>`. Hash comparison MUST
+use constant-time equality to prevent timing side-channels. A
+resolver MUST NOT cache or render with any asset whose hash fails
+verification.
+
+When an AD is sealed to EXECUTED state, the signer freezes a
+complete execution pin for each declared font. The pin is covered
+by the document signature — tampering invalidates the whole
+document.
+
+<pre class="code-block" set:html={pinSource} />
+
+<FieldTable
+  caption="Execution pin fields"
+  fields={[
+    { name: '_resolved_version', type: 'semver string', required: true, description: 'The concrete SemVer version selected by the resolver at signing time. The pinned version takes precedence over the ref specifier at render time.' },
+    { name: 'pinned_format', type: "'woff2' | 'woff' | 'ttf' | 'otf'", required: true, description: 'Format type selected at signing. Silent format fallback is forbidden in EXECUTED mode — PINNED_FORMAT_UNAVAILABLE halts rendering.' },
+    { name: 'full_integrity', type: 'sha256 SRI', required: true, description: 'SHA-256 SRI hash of the complete, unmodified font binary fetched from the registry. Verified against the current registry binary at render time.' },
+    { name: 'subset_integrity', type: 'sha256 SRI', required: false, description: 'SHA-256 SRI hash of the subsetted binary embedded in this export. Subsetting is an export-time operation (PDF/DOCX) — MUST NOT occur during in-protocol resolution.' },
+    { name: 'subset_glyph_ids', type: 'integer[]', required: false, description: 'Array of glyph IDs included in the subset. A validator MAY verify the subset contains all glyphs present in document text and no extras.' },
+    { name: 'subset_unicode_ranges', type: 'string[]', required: false, description: 'Human-readable summary of covered Unicode ranges, e.g. ["U+0020-007E", "U+00A0-00FF"].' },
+    { name: 'use_receipt', type: 'object', required: false, description: 'For per_execution or royalty commerce-model fonts: the Ed25519-signed receipt returned by payment_endpoint, verified against license_authority_key.' },
+  ]}
+/>
+
+**Two-layer integrity.** `subset_integrity` alone is insufficient
+— it proves only that the embedded binary is unaltered, not that
+it was derived from the legitimate source. Both `full_integrity`
+and `subset_integrity` MUST be verified together for a complete
+integrity assertion.
+
+{/* ─── Fallback policy ───────────────────────────────── */}
+
+<h3 id="afrp-fallback">Fallback policy</h3>
+
+When primary resolution fails with an ERROR-level code, the
+resolver evaluates a four-step fallback chain. The first success
+ends the chain:
+
+<ol class="spec-steps">
+  <li>
+    <strong>F1 — Document-declared fallback.</strong> Each entry
+    in the declaration's <code>fallback[]</code> array is resolved
+    sequentially through the full §5.2 algorithm.
+  </li>
+  <li>
+    <strong>F2 — Implicit Atto fallback (Form B only).</strong>{' '}
+    If the primary is Form B and <code>fallback_to_atto</code> is
+    true, attempt to resolve <code>{'@/{TypefaceName}'}</code>{' '}
+    against the canonical Atto registry. Form A and Form C MUST
+    NOT trigger this step.
+  </li>
+  <li>
+    <strong>F3 — System font reference.</strong> If{' '}
+    <code>fallback[]</code> contains a <code>system:</code> entry
+    (§7.3) and prior attempts failed, substitute the system font.{' '}
+    <em>DRAFT only.</em>
+  </li>
+  <li>
+    <strong>F4 — Terminal failure.</strong> DRAFT: system
+    sans-serif + <code>FONT_UNRESOLVED</code> warning. EXECUTED:
+    visible error indicator, rendering halted for that region.
+    MUST NOT substitute any font.
+  </li>
+</ol>
+
+#### System font references
+
+System fonts use the `system:` prefix and are valid only as
+fallback entries. They MUST NOT appear as primary identifiers and
+MUST NOT be the sole font entry in a document intended for
+EXECUTED state — system fonts vary across platforms and cannot be
+integrity-pinned.
+
+<FieldTable
+  caption="System font references"
+  fields={[
+    { name: 'system:sans-serif', type: 'fallback-only', required: false, description: 'System default proportional sans-serif. Equivalent to CSS font-family: sans-serif.' },
+    { name: 'system:serif', type: 'fallback-only', required: false, description: 'System default proportional serif.' },
+    { name: 'system:monospace', type: 'fallback-only', required: false, description: 'System default monospace.' },
+    { name: 'system:ui', type: 'fallback-only', required: false, description: 'System default UI font (San Francisco, Segoe UI, etc.).' },
+  ]}
+/>
+
+**Offline fallback.** Every compliant AFRP renderer MUST bundle a
+copy of `@/Lineal` with an integrity hash baked into the renderer
+build. DRAFT-mode offline resolution falls back first to this
+bundled binary (emitting `FONT_SUBSTITUTED`), then to the host
+system's sans-serif. EXECUTED mode forbids all offline
+substitution.
+
+{/* ─── Font Commerce Layer ───────────────────────────── */}
+
+<h3 id="afrp-commerce">Font Commerce Layer</h3>
+
+AFRP embeds a native payments surface for fonts. A
+`license_info.commerce` block in the manifest declares one of
+five pricing models. Resolvers enforce the commerce contract
+during resolution (§5.2 step 10); the resulting `use_receipt` is
+embedded in the executed document's pin.
+
+<FieldTable
+  caption="Commerce models"
+  fields={[
+    { name: 'free', type: 'no-cost', required: false, description: 'No action. Resolution proceeds normally.' },
+    { name: 'seat', type: 'license-token', required: false, description: 'Resolver validates the document-declared license_token against payment_endpoint. Absent or invalid → LICENSE_REQUIRED (DRAFT) or execution blocked (EXECUTED).' },
+    { name: 'per_execution', type: 'per-use', required: false, description: 'Resolver POSTs to payment_endpoint with document ID + execution timestamp. On success, the returned use_receipt is embedded in execution metadata. On failure → LICENSE_PAYMENT_FAILED, execution blocked.' },
+    { name: 'subscription', type: 'token', required: false, description: 'Resolver validates subscription token against payment_endpoint. On failure → LICENSE_REQUIRED, execution blocked.' },
+    { name: 'royalty', type: 'per-use', required: false, description: 'Same acquisition flow as per_execution. Royalty terms carry distinct accounting semantics downstream of AFRP.' },
+  ]}
+/>
+
+All `use_receipt` objects returned by `payment_endpoint` MUST be
+verified against the `license_authority_key` Ed25519 public key
+declared in the manifest before embedding. An unverifiable receipt
+is treated as `LICENSE_PAYMENT_FAILED`. A manifest declaring
+`commercial_use: false` on a document declaring
+`commercial_use: true` fails resolution with `LICENSE_INCOMPATIBLE`.
+
+<pre class="code-block" set:html={commerceSource} />
+
+{/* ─── Tier 1 ratification ───────────────────────────── */}
+
+<h3 id="afrp-registration">Tier 1 ratification</h3>
+
+**Tier 1 `@scope` grants are not available by self-serve
+application.** They are initiated by the Atto Protocol Authority
+or by invitation, reviewed against the criteria below, and
+ratified by the Technical Review Panel. An entity may express
+interest by emailing
+[`registry@atto.tech`](mailto:registry@atto.tech), but interest
+does not constitute an application and does not guarantee review.
+Tier 1 is reserved for foundational infrastructure providers —
+for self-serve hosting, see the
+[Hosted Registry Service](#afrp-hosted).
+
+The criteria govern identity, permanence, transparency, and
+technical compliance — none of them are content-restrictive.
+Catalog depth and originality were criteria in earlier drafts;
+they have been removed because they are content determinations
+the Authority is not positioned to make equitably across all
+cultural and organizational contexts. A Tier 1 grant requires
+satisfaction of all five criteria below.
+
+<ol class="spec-steps">
+  <li><strong>Infrastructure permanence.</strong> A foundational font infrastructure provider whose registry is expected to remain operational, publicly accessible, and independently maintained indefinitely. Evidence: organizational age of at least five years, institutional backing or endowment, a public commitment to long-term stewardship.</li>
+  <li><strong>Identity verification.</strong> The scope name MUST correspond to the applicant's verified legal or organizational identity (e.g. <code>@adobe</code> for Adobe Inc., <code>@velvetyne</code> for Velvetyne Type Foundry). Verified by trademark, WHOIS-verified domain, or equivalent documentary evidence. Invented or speculative scope names are not eligible.</li>
+  <li><strong>License transparency.</strong> Every font served MUST include machine-readable SPDX metadata. Proprietary licenses MUST accurately declare <code>commercial_use</code>, <code>embedding_allowed</code>, and <code>web_embedding_allowed</code>. False declarations are grounds for revocation.</li>
+  <li><strong>Protocol compliance.</strong> Registry MUST pass the <strong>ARCTS</strong> test suite — schema conformance, per-asset integrity verification, TLS validity, version resolution behavior, cache headers, CORS. A passing report dated within 30 days of submission is required.</li>
+  <li><strong>Code of Conduct.</strong> Digitally signed agreement. Prohibits malware payloads, obfuscated binaries, homoglyph phishing fonts, false metadata, and using a granted scope inconsistently with the applicant's verified identity.</li>
+</ol>
+
+#### Fee structure
+
+Tier 1 grants are not tiered by catalog size or commercial
+status. The fee reflects the ongoing operational cost of
+maintaining the scope holder's entry in the shorthand registry,
+running monthly ARCTS checks, weekly integrity spot-checks, and
+quarterly license audits — the same cost regardless of whether
+the holder is a two-person foundry or a global platform.
+
+<table class="spec-table">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Annual fee</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>All registered Tier 1 scope holders</td>
+      <td>$2,500 / year</td>
+    </tr>
+  </tbody>
+</table>
+
+The fee is not a revenue instrument. It funds the compliance
+monitoring infrastructure and ensures scope holders maintain a
+continuing operational relationship with the registry. Suspended
+scopes may be reinstated within 180 days for the outstanding fee
+plus a $500 reinstatement charge; after 180 days, the scope
+enters a 12-month quarantine during which it cannot be granted
+to any party.
+
+#### Ratification procedure
+
+Express interest at
+[`registry@atto.tech`](mailto:registry@atto.tech). The Authority
+MUST acknowledge within ten business days; full ratification
+review MUST be completed within sixty calendar days of a complete
+submission. Approved scopes are added to the shorthand registry
+within two business days of ratification. Appeals are heard by
+the three-person Technical Review Panel with balanced open-source
+and commercial representation; panel decisions are final.
+
+{/* ─── Hosted Registry Service ────────────────────────── */}
+
+<h3 id="afrp-hosted">Hosted Registry Service</h3>
+
+The **Atto Hosted Registry Service (AHRS)** provides managed,
+AFRP-compliant registry hosting for font publishers who have
+high-quality original fonts but lack the infrastructure or
+technical resources to operate a self-hosted Form C registry at
+production availability. The publisher provides font binary files
+and manifest metadata; Atto operates the registry infrastructure,
+computes integrity hashes, serves compliant manifests, maintains
+SLA guarantees, and runs ongoing ARCTS compliance verification.
+
+Hosted registries resolve as **Form C** identifiers under
+<code>{'hosted.fonts.atto.tech/{publisher-slug}/'}</code>. Studio
+tier and above may configure a CNAME so that
+`fonts.theirfoundry.com/TypefaceName` resolves through Atto-hosted
+infrastructure. AHRS does not confer Tier 1 `@scope` shorthand
+eligibility — Tier 1 governance is independent (see
+[§6](#afrp-registration)).
+
+#### Service tiers
+
+<table class="spec-table">
+  <thead>
+    <tr>
+      <th>Tier</th>
+      <th>Families</th>
+      <th>Storage</th>
+      <th>Bandwidth</th>
+      <th>SLA</th>
+      <th>Custom domain</th>
+      <th>Annual / Monthly</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Indie</strong></td>
+      <td>3</td>
+      <td>1 GB</td>
+      <td>10 GB / mo</td>
+      <td>99.9%</td>
+      <td>—</td>
+      <td>$99 / $12</td>
+    </tr>
+    <tr>
+      <td><strong>Studio</strong></td>
+      <td>20</td>
+      <td>10 GB</td>
+      <td>100 GB / mo</td>
+      <td>99.9%</td>
+      <td>Yes</td>
+      <td>$399 / $49</td>
+    </tr>
+    <tr>
+      <td><strong>Foundry</strong></td>
+      <td>Unlimited</td>
+      <td>50 GB</td>
+      <td>1 TB / mo</td>
+      <td>99.95%</td>
+      <td>Yes — priority DNS</td>
+      <td>$1,599 / $199</td>
+    </tr>
+    <tr>
+      <td><strong>Enterprise</strong></td>
+      <td>Unlimited</td>
+      <td>Negotiated</td>
+      <td>Negotiated</td>
+      <td>Negotiated</td>
+      <td>Yes</td>
+      <td>Negotiated</td>
+    </tr>
+  </tbody>
+</table>
+
+Bandwidth overages are billed at `$0.08/GB`; storage overages at
+`$0.20/GB/mo`. Overage rates apply to Studio and Foundry only —
+Enterprise negotiates inclusive limits.
+
+#### Onboarding
+
+<ol class="spec-steps">
+  <li><strong>Publisher registration.</strong> Identity verification matching the intended publisher slug. The slug must correspond to the publisher's verified name or a name they demonstrably control. Squatting a slug to prevent a legitimate entity from using their own name is prohibited and grounds for termination.</li>
+  <li><strong>Font file submission.</strong> Publisher provides woff2 (required), woff (recommended), and ttf (optional) binaries for each typeface family and style.</li>
+  <li><strong>Metadata declaration.</strong> Per-font manifest metadata: designer, foundry, SPDX license, commercial-use flags, variable-axis definitions where applicable.</li>
+  <li><strong>Atto manifest generation.</strong> Atto computes SHA-256 integrity hashes for all submitted binaries, generates the AFRP-compliant manifest, and provisions the hosted endpoint.</li>
+  <li><strong>ARCTS verification.</strong> Atto runs a full ARCTS suite against the newly provisioned registry before making it publicly resolvable.</li>
+  <li><strong>Publisher review.</strong> Publisher confirms manifest accuracy — particularly license metadata — before the registry goes live.</li>
+</ol>
+
+Onboarding acknowledgement within **two business days**; registry
+live within **five business days** of complete submission. Apply
+at [`registry.atto.tech/apply`](/apply).
+
+#### Publisher obligations
+
+Publishers using AHRS agree that submitted font binaries are
+original designs (or open-source fonts the publisher has rights
+to distribute), that license metadata accurately reflects actual
+distribution terms, that font files contain no malware or
+homoglyph phishing payloads, and that publisher slugs correspond
+to verified identity. False declarations are grounds for
+immediate termination — terminated registries return
+`REGISTRY_UNREACHABLE` in EXECUTED-mode rendering, so publishers
+are advised to keep local copies of submitted binaries to ease
+migration to self-hosted infrastructure.
+
+#### Upgrade path to Tier 1
+
+A publisher operating under AHRS may apply for Tier 1 `@scope`
+ratification if they subsequently meet the criteria in
+[§6](#afrp-registration). AHRS history is neither a prerequisite
+nor an accelerator. The infrastructure permanence criterion is
+evaluated independently of Atto-hosted infrastructure — an
+applicant relying exclusively on AHRS does not satisfy permanence,
+since their registry's availability depends on a commercial
+relationship with Atto rather than their own independently
+operated infrastructure. Upon ratification, existing AHRS-hosted
+Form C identifiers remain valid indefinitely and a forwarding
+manifest redirects resolvers to the new `@scope` endpoint.
+
+{/* ─── Error codes ───────────────────────────────────── */}
+
+<h3 id="afrp-errors">Error codes</h3>
+
+AFRP emits codes at three severity levels. **ERROR** halts
+resolution or rendering. **WARNING** indicates degraded,
+user-visible behavior. **INFO** is diagnostic or audit-only. A
+curated ERROR-level subset follows; the full table lives in AFRP
+§5.8.
+
+<table class="spec-table">
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Level</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>INVALID_IDENTIFIER</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>Identifier does not conform to the §3.2 ABNF grammar.</td>
+    </tr>
+    <tr>
+      <td>SCOPE_NOT_FOUND</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>Form B scope not present in the shorthand registry.</td>
+    </tr>
+    <tr>
+      <td>VERSION_NOT_FOUND</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>No version in the manifest satisfies the specified range.</td>
+    </tr>
+    <tr>
+      <td>REGISTRY_UNREACHABLE</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>All three Form C discovery steps failed; no manifest obtained.</td>
+    </tr>
+    <tr>
+      <td>MANIFEST_SCHEMA_ERROR</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>Manifest response body does not conform to the §4.2 JSON Schema.</td>
+    </tr>
+    <tr>
+      <td>MALFORMED_INTEGRITY_FIELD</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>A <code>format-entry.integrity</code> value does not match the SRI SHA-256 pattern.</td>
+    </tr>
+    <tr>
+      <td>INSECURE_ASSET_URL</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>A <code>format-entry.url</code> uses a non-HTTPS scheme for a non-localhost registry.</td>
+    </tr>
+    <tr>
+      <td>INTEGRITY_VIOLATION</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>SHA-256 of the downloaded asset does not match the manifest or pin. Halts rendering in EXECUTED.</td>
+    </tr>
+    <tr>
+      <td>PINNED_FONT_UNAVAILABLE</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>In EXECUTED mode, the pinned binary is unavailable. No substitution permitted.</td>
+    </tr>
+    <tr>
+      <td>LICENSE_PAYMENT_FAILED</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>Commerce <code>payment_endpoint</code> request failed or returned an unverifiable receipt. Blocks execution.</td>
+    </tr>
+    <tr>
+      <td>LICENSE_INCOMPATIBLE</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>Font's <code>commercial_use: false</code> conflicts with document's <code>commercial_use: true</code>.</td>
+    </tr>
+    <tr>
+      <td>TLS_CERTIFICATE_ERROR</td>
+      <td><span data-level="error">ERROR</span></td>
+      <td>TLS validation failed for the registry or asset host.</td>
+    </tr>
+    <tr>
+      <td>FONT_UNRESOLVED</td>
+      <td><span data-level="warning">WARNING</span></td>
+      <td>All resolution attempts including the fallback chain failed. Terminal DRAFT-mode outcome.</td>
+    </tr>
+    <tr>
+      <td>FONT_SUBSTITUTED</td>
+      <td><span data-level="info">INFO</span></td>
+      <td>A font was unavailable and an offline fallback was applied (DRAFT only). Payload names the substitute.</td>
+    </tr>
+  </tbody>
+</table>

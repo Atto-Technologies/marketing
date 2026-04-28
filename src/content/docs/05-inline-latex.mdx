@@ -1,0 +1,43 @@
+---
+order: 5
+id: inline-latex
+label: Inline LaTeX
+title: Inline LaTeX.
+---
+
+import AttoDemo from '../../components/AttoDemo.astro';
+
+Wrap an expression in single dollar signs: `$…$`. Renders in-line
+with surrounding prose at body text size. Dollar signs inside the
+expression must be escaped as `\$`.
+
+### Variables and operators
+
+<AttoDemo layout="split" filename="math-simple.atto">
+  <article class="atto-doc" slot="rendered">
+    <p>The late fee is <span class="atto-math">L = B × 0.015</span> per day. Present value equals <span class="atto-math">PV = FV / (1 + r)<sup>n</sup></span>.</p>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={`<code>The late fee is <span class="tok-math">$L = B \\times 0.015$</span> per day.
+Present value equals <span class="tok-math">$PV = FV / (1 + r)^n$</span>.</code>`} />
+</AttoDemo>
+
+### Greek letters and fractions
+
+<AttoDemo layout="split" filename="math-greek.atto">
+  <article class="atto-doc" slot="rendered">
+    <p>Interest accrues at rate <span class="atto-math">α = r / n</span> where <span class="atto-math">n</span> is the number of compounding periods and <span class="atto-math">β ≈ 0.05</span> is the service margin.</p>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={`<code>Interest accrues at rate <span class="tok-math">$\\alpha = \\frac&#123;r&#125;&#123;n&#125;$</span> where <span class="tok-math">$n$</span> is the number of compounding periods and <span class="tok-math">$\\beta \\approx 0.05$</span> is the service margin.</code>`} />
+</AttoDemo>
+
+### Subscripts and aggregates
+
+<AttoDemo layout="split" filename="math-sub.atto">
+  <article class="atto-doc" slot="rendered">
+    <p>Total liability is bounded by <span class="atto-math">L<sub>max</sub> = Σ C<sub>i</sub></span> across all invoices <span class="atto-math">i ∈ &#123;1, …, n&#125;</span>.</p>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={`<code>Total liability is bounded by <span class="tok-math">$L_&#123;max&#125; = \\sum C_i$</span> across all invoices <span class="tok-math">$i \\in \\&#123;1, \\ldots, n\\&#125;$</span>.</code>`} />
+</AttoDemo>

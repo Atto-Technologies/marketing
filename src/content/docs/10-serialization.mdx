@@ -1,0 +1,22 @@
+---
+order: 10
+id: serialization
+label: Serialization Rules
+title: Serialization rules.
+---
+
+{/* ─── Serialization ──────────────────────────────────────
+    Determinism rationale: byte-identical output is what makes
+    `content_hash` a meaningful integrity primitive. Drift in
+    formatting cannot become drift in cryptographic identity. */}
+
+Serialization is deterministic. Two ASTs that are structurally
+equal serialize to byte-identical output. The implications:
+
+- Trailing whitespace is stripped on every line.
+- Every block is separated by exactly one blank line.
+- YAML keys inside `::atto-doc` and directives are sorted alphabetically.
+- Line endings are `LF`, encoding is `UTF-8`.
+- The final byte is a single newline.
+
+This makes `git diff` reflect semantic change, not formatting drift.

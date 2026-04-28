@@ -1,0 +1,201 @@
+---
+order: 2
+id: document-header
+label: Document Header
+title: Document Header.
+sub:
+  - { id: document-header-fields, label: 'Core fields' }
+  - { id: document-header-parties, label: 'Parties schema' }
+  - { id: document-header-rules, label: 'Parser rules' }
+  - { id: document-header-inheritance, label: 'Reference & inheritance' }
+---
+
+import AttoDemo from '../../components/AttoDemo.astro';
+import FieldTable from '../../components/FieldTable.astro';
+import SignatureWidget from '../../components/SignatureWidget.astro';
+
+{/* ─── Document Header ─────────────────────────────────────
+    The mandatory first block of every Atto document. Declares
+    document-level metadata (title, type, jurisdiction, effective
+    date) and the cast of parties. Replaces the YAML-frontmatter
+    concept used in earlier drafts: there is no `---` frontmatter
+    in v0; everything that used to live there now lives inside
+    ::atto-doc, which the parser treats as YAML between the open
+    `::atto-doc` line and the closing `::`. */}
+
+{/* Source-code HTML strings are stashed as top-level constants
+    so leading-whitespace on continuation lines (the nested YAML
+    list items inside `parties:`) survives the MDX compile
+    pipeline. Inlining the same string as a JSX `set:html={\`…\`}`
+    template-literal expression triggers MDX whitespace
+    normalization on continuation lines (see §06 alignedSource
+    for the same workaround). */}
+export const attoDocSource = `<code><span class="tok-directive">::atto-doc</span>
+  <span class="tok-key">title:</span> <span class="tok-string">Residential Lease Agreement</span>
+  <span class="tok-key">type:</span> <span class="tok-string">lease</span>
+  <span class="tok-key">jurisdiction:</span> <span class="tok-string">California</span>
+  <span class="tok-key">effective-date:</span> <span class="tok-string">2026-06-01</span>
+  <span class="tok-key">parties:</span>
+    <span class="tok-key">- id:</span> <span class="tok-string">landlord</span>
+      <span class="tok-key">name:</span> <span class="tok-string">Meridian Property Group LLC</span>
+      <span class="tok-key">role:</span> <span class="tok-string">Landlord</span>
+      <span class="tok-key">email:</span> <span class="tok-string">leasing@meridianpg.com</span>
+    <span class="tok-key">- id:</span> <span class="tok-string">tenant</span>
+      <span class="tok-key">name:</span> <span class="tok-string">Jordan Ellis</span>
+      <span class="tok-key">role:</span> <span class="tok-string">Tenant</span>
+      <span class="tok-key">email:</span> <span class="tok-string">jordan.ellis@email.com</span>
+<span class="tok-directive">::</span></code>`;
+
+{/* Inheritance examples — the :::section and ::signature-block
+    snippets demonstrate how downstream constructs reference
+    parties by id and inherit the role label. The supplement
+    example shows the "(Tenant) — Disclosing Party" rendering
+    where the canonical role stays visible. */}
+export const sectionRefSource = `<code><span class="tok-directive">:::section</span> <span class="tok-key">id</span>=<span class="tok-string">"signatures"</span> <span class="tok-key">required-signatory</span>=<span class="tok-string">"tenant landlord"</span></code>`;
+
+export const signatureInheritSource = `<code><span class="tok-directive">::signature-block</span>
+  <span class="tok-key">party:</span> <span class="tok-string">tenant</span>
+  <span class="tok-key">sign_order:</span> <span class="tok-string">1</span>
+  <span class="tok-key">date-required:</span> <span class="tok-string">true</span>
+<span class="tok-directive">::</span></code>`;
+
+export const signatureSupplementSource = `<code><span class="tok-directive">::signature-block</span>
+  <span class="tok-key">party:</span> <span class="tok-string">tenant</span>
+  <span class="tok-key">label:</span> <span class="tok-string">Disclosing Party</span>
+  <span class="tok-key">sign_order:</span> <span class="tok-string">1</span>
+  <span class="tok-key">date-required:</span> <span class="tok-string">true</span>
+<span class="tok-directive">::</span></code>`;
+
+Every Atto document MUST begin with a `::atto-doc` block. It
+declares document-level metadata and the cast of parties, and it
+MUST appear before any body content, sections, or directives. The
+content between `::atto-doc` and the closing `::` is parsed as
+YAML.
+
+<AttoDemo layout="split" filename="atto-doc.atto">
+  <article class="atto-doc" slot="rendered">
+    <header class="atto-doc-head">
+      <p class="atto-doc-kicker">Lease · Effective 2026-06-01 · California</p>
+      <h1 class="atto-doc-title">Residential Lease Agreement</h1>
+    </header>
+    <aside class="atto-parties" aria-label="Parties">
+      <p class="atto-parties-label">Parties</p>
+      <div class="atto-party">
+        <span class="atto-party-role">Landlord</span>
+        <span class="atto-party-name">Meridian Property Group LLC</span>
+      </div>
+      <div class="atto-party">
+        <span class="atto-party-role">Tenant</span>
+        <span class="atto-party-name">Jordan Ellis</span>
+      </div>
+    </aside>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={attoDocSource} />
+</AttoDemo>
+
+{/* ─── Core fields ─────────────────────────────────────── */}
+
+<h3 id="document-header-fields">Core fields</h3>
+
+<FieldTable
+  caption="::atto-doc fields"
+  fields={[
+    { name: 'title', type: 'string', required: true, description: 'Human-readable document title. Displayed in the platform UI and audit chain entries.' },
+    { name: 'type', type: 'string', required: true, description: 'Document type identifier. Drives schema validation and platform behavior. Examples: lease, contract, invoice, report.' },
+    { name: 'effective-date', type: 'date (YYYY-MM-DD)', required: false, description: 'The date on which the document takes legal effect. ISO 8601 format.' },
+    { name: 'jurisdiction', type: 'string', required: false, description: 'Governing jurisdiction. Plain text. Used by platform tooling for jurisdiction-aware validation.' },
+    { name: 'parties', type: 'list', required: 'conditional', description: 'Required if the document contains any ::signature-block, required-signatory attribute, or :::credit-check directive. Omit for documents with no execution or signing requirements.' },
+  ]}
+/>
+
+{/* ─── Parties schema ──────────────────────────────────── */}
+
+<h3 id="document-header-parties">Parties schema</h3>
+
+The `parties` list within `::atto-doc` is the **single source of
+truth** for party identity in the document. The parser resolves
+every party id reference in the document body — in
+`::signature-block`, `required-signatory`, and `:::credit-check`
+— against this declaration.
+
+<FieldTable
+  caption="parties entry fields"
+  fields={[
+    { name: 'id', type: 'string (kebab-case)', required: true, description: 'Machine-readable identifier. Referenced by ::signature-block, required-signatory, and chain entries. Lowercase letters, digits, and hyphens only.' },
+    { name: 'name', type: 'string', required: true, description: 'Legal name of the party. Always the primary identifier in rendered output and chain entries.' },
+    { name: 'role', type: 'string', required: true, description: 'Document-level role label. Displayed alongside the legal name in all rendered views. Cannot be overridden — only supplemented by a local label on a ::signature-block.' },
+    { name: 'email', type: 'string', required: false, description: 'Contact address used by the platform to deliver recipient tokens and signing notifications.' },
+  ]}
+/>
+
+{/* ─── Parser rules ────────────────────────────────────── */}
+
+<h3 id="document-header-rules">Parser rules</h3>
+
+`::atto-doc` MUST appear as the first line of the file. The
+parser MUST reject any document where:
+
+- `::atto-doc` is absent,
+- `::atto-doc` appears after body content,
+- `::atto-doc` appears more than once,
+- the `parties` list contains duplicate `id` values, or
+- a `::signature-block`, `required-signatory`, or
+  `:::credit-check` references an undeclared party id.
+
+The content between `::atto-doc` and the closing `::` is parsed
+as YAML. Keys are serialized alphabetically on output for
+canonical byte stability. Unknown keys are preserved and
+round-tripped without modification but produce no platform
+behavior.
+
+{/* ─── Reference & inheritance ─────────────────────────── */}
+
+<h3 id="document-header-inheritance">Reference & inheritance</h3>
+
+Downstream constructs reference parties by `id` and inherit the
+canonical `role` label automatically. The party is declared once
+in `::atto-doc.parties`; every other place it appears resolves
+through that declaration.
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-5) var(--space-2);">Sections inherit the label</h4>
+
+<pre class="code-block" set:html={sectionRefSource} />
+
+The platform displays this section as **Required: Tenant,
+Landlord** by resolving each id through `::atto-doc.parties`. The
+`:::section` block does not re-declare the labels.
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-5) var(--space-2);">Signature blocks inherit the name</h4>
+
+<pre class="code-block" set:html={signatureInheritSource} />
+
+The rendered signature line reads **Tenant — Jordan Ellis**,
+pulled from `::atto-doc.parties`. The signature block does not
+re-state the name.
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-5) var(--space-2);">Local supplemental labels</h4>
+
+The canonical `role` cannot be overridden. A `::signature-block`
+MAY supplement it with a `label` for one specific signing
+context — e.g., *Disclosing Party* in an NDA appendix. The render
+appends the supplemental label after the role; it never replaces
+it.
+
+<AttoDemo layout="split" filename="supplemental-label.atto">
+  <SignatureWidget
+    slot="rendered"
+    party="Tenant"
+    signer="Jordan Ellis"
+    label="Disclosing Party"
+    order={1}
+    totalSigners={1}
+  />
+
+  <pre class="code-block" slot="source" set:html={signatureSupplementSource} />
+</AttoDemo>
+
+The canonical role stays visible alongside the supplemental
+label so a reader — or an auditor reviewing the chain — can
+always trace the contextual label back to the underlying party
+declared in `::atto-doc.parties`.

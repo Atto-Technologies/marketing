@@ -1,8 +1,10 @@
 ---
+export type FieldRequirement = boolean | 'conditional';
+
 export interface Field {
   name: string;
   type: string;
-  required: boolean;
+  required: FieldRequirement;
   description: string;
 }
 
@@ -12,6 +14,11 @@ export interface Props {
 }
 
 const { fields, caption } = Astro.props;
+
+function requirementLabel(req: FieldRequirement): 'required' | 'optional' | 'conditional' {
+  if (req === 'conditional') return 'conditional';
+  return req ? 'required' : 'optional';
+}
 ---
 <div class="atto-fields" role="table" aria-label={caption ?? 'Field reference'}>
   <div class="atto-fields-head" role="row">
@@ -20,18 +27,21 @@ const { fields, caption } = Astro.props;
     <span role="columnheader">Required</span>
     <span role="columnheader">Description</span>
   </div>
-  {fields.map((f) => (
-    <div class="atto-fields-row" role="row">
-      <span role="cell"><code>{f.name}</code></span>
-      <span role="cell" class="atto-fields-type">{f.type}</span>
-      <span
-        role="cell"
-        class="atto-fields-req"
-        data-required={String(f.required)}
-      >
-        {f.required ? 'required' : 'optional'}
-      </span>
-      <span role="cell" class="atto-fields-desc">{f.description}</span>
-    </div>
-  ))}
+  {fields.map((f) => {
+    const label = requirementLabel(f.required);
+    return (
+      <div class="atto-fields-row" role="row">
+        <span role="cell"><code>{f.name}</code></span>
+        <span role="cell" class="atto-fields-type">{f.type}</span>
+        <span
+          role="cell"
+          class="atto-fields-req"
+          data-required={label}
+        >
+          {label}
+        </span>
+        <span role="cell" class="atto-fields-desc">{f.description}</span>
+      </div>
+    );
+  })}
 </div>

@@ -1,0 +1,18 @@
+---
+order: 1
+id: overview
+label: Overview
+title: Atto Documents.
+headingLevel: 1
+versionBadge: v0
+---
+
+{/* The first paragraph carries the .lede class for typographic
+    emphasis. Markdown <p> tags can't take a className, so the lede
+    is authored as raw HTML — every other paragraph below uses
+    plain Markdown and inherits the default body styling. */}
+<p class="lede">Atto Documents combine three layers into a single plain-text format, the Atto Format (AF). Markdown carries prose, LaTeX carries notation, and Atto directives carry structure. The parser walks them in order and produces a single deterministic Abstract Syntax Tree (AST).</p>
+
+Every Atto Document (AD) is a `.atto` file: human-readable,
+git-diffable, and stable under round-trip serialization. Equal ASTs
+produce equal byte streams.

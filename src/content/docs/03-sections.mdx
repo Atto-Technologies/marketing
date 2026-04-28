@@ -1,0 +1,183 @@
+---
+order: 3
+id: sections
+label: Sections
+title: Sections.
+sub:
+  - { id: sections-basic, label: 'Basic sections' }
+  - { id: sections-named, label: 'Named sections' }
+  - { id: sections-protocol, label: ':::section block' }
+  - { id: sections-identity, label: 'Identity & stability' }
+---
+
+import AttoDemo from '../../components/AttoDemo.astro';
+import FieldTable from '../../components/FieldTable.astro';
+
+{/* Section identity is layered: Markdown depth tree (Part A) →
+    authored {#id} anchors (Part B) → fenced :::section block
+    that lifts a region into a first-class protocol unit (Part C).
+    Each layer is additive — a document with only Part A is valid
+    and complete. */}
+
+{/* Source-code HTML strings are stashed at module scope so MDX's
+    expression parser doesn't interpret literal `{` inside the code
+    samples (e.g. the `{#payment-terms}` heading-ID syntax) as the
+    start of a JSX expression. Same workaround used in §06–§10. */}
+export const basicSource = `<code><span class="tok-heading">## Payment Terms</span>
+
+Client shall pay within 15 days of invoice.
+
+<span class="tok-heading">### Late Fees</span>
+
+Overdue amounts accrue at 1.5% per day.
+
+<span class="tok-heading">### Currency</span>
+
+All amounts are in USD unless otherwise stated.</code>`;
+
+export const namedSource = `<code><span class="tok-heading">## Payment Terms</span> &#123;<span class="tok-key">#payment-terms</span>&#125;
+
+Client shall pay within 15 days of invoice.
+
+<span class="tok-heading">### Late Fees</span> &#123;<span class="tok-key">#late-fees</span>&#125;
+
+Overdue amounts accrue at 1.5% per day.</code>`;
+
+export const protocolMinimalSource = `<code><span class="tok-directive">:::section</span> <span class="tok-key">id</span>=<span class="tok-string">"payment-terms"</span> <span class="tok-key">title</span>=<span class="tok-string">"Payment Terms"</span>
+
+<span class="tok-heading">## Payment Terms</span>
+
+Client shall pay within 15 days of invoice.
+
+<span class="tok-directive">:::</span></code>`;
+
+export const protocolSignatorySource = `<code><span class="tok-directive">:::section</span> <span class="tok-key">id</span>=<span class="tok-string">"signatures"</span> <span class="tok-key">title</span>=<span class="tok-string">"Signatures"</span> <span class="tok-key">required-signatory</span>=<span class="tok-string">"tenant landlord"</span>
+
+<span class="tok-heading">## Signatures</span>
+
+<span class="tok-directive">::signature-block</span>
+  <span class="tok-key">party:</span> <span class="tok-string">tenant</span>
+  <span class="tok-key">sign_order:</span> <span class="tok-string">1</span>
+  <span class="tok-key">date-required:</span> <span class="tok-string">true</span>
+<span class="tok-directive">::</span>
+
+<span class="tok-directive">::signature-block</span>
+  <span class="tok-key">party:</span> <span class="tok-string">landlord</span>
+  <span class="tok-key">sign_order:</span> <span class="tok-string">2</span>
+  <span class="tok-key">date-required:</span> <span class="tok-string">true</span>
+<span class="tok-directive">::</span>
+
+<span class="tok-directive">:::</span></code>`;
+
+Atto documents are divided into sections. At the simplest level, a
+section is a Markdown heading. At the protocol level, a section is
+a named, addressable unit of the document with its own identity in
+the audit chain. You choose how much structure you need.
+
+{/* ─── Basic sections ──────────────────────────────────── */}
+
+<h3 id="sections-basic">Basic sections</h3>
+
+Sections use standard Markdown headings, `##` through `######`.
+The parser tracks heading depth to build the section tree. Heading
+text becomes the section label in the sidebar and table of
+contents. The document title comes from `::atto-doc` (§02); body
+sections start at `##`.
+
+<AttoDemo layout="split" filename="sections.atto">
+  <article class="atto-doc" slot="rendered">
+    <section class="atto-doc-section">
+      <h2>Payment Terms</h2>
+      <p>Client shall pay within 15 days of invoice.</p>
+      <h3>Late Fees</h3>
+      <p>Overdue amounts accrue at 1.5% per day.</p>
+      <h3>Currency</h3>
+      <p>All amounts are in USD unless otherwise stated.</p>
+    </section>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={basicSource} />
+</AttoDemo>
+
+{/* ─── Named sections ──────────────────────────────────── */}
+
+<h3 id="sections-named">Named sections</h3>
+
+Add a stable ID to any heading using the <code>{'{#id}'}</code>
+attribute. The platform uses this ID to label diffs, generate deep
+links, and track the section across publishes. Without a stable
+ID, the platform assigns one automatically — but authored IDs
+survive heading renames and reorders.
+
+Use a named section whenever you expect the section to be
+referenced, linked, or signed independently.
+
+{/* Rendered pane intentionally identical to Basic Sections —
+    the point of {#id} is precisely that it adds a stable anchor
+    without changing visible output. The caption below the demo
+    carries the pedagogical load. */}
+<AttoDemo layout="split" filename="named-sections.atto">
+  <article class="atto-doc" slot="rendered">
+    <section class="atto-doc-section">
+      <h2 id="payment-terms-demo">Payment Terms</h2>
+      <p>Client shall pay within 15 days of invoice.</p>
+      <h3 id="late-fees-demo">Late Fees</h3>
+      <p>Overdue amounts accrue at 1.5% per day.</p>
+    </section>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={namedSource} />
+</AttoDemo>
+
+The rendered output is identical to a basic section. The
+difference is downstream: section links now resolve to
+<code>{'/doc/{id}/v/{seq}#payment-terms'}</code> — stable across
+edits, diff-friendly, deep-linkable.
+
+{/* ─── Protocol sections ───────────────────────────────── */}
+
+<h3 id="sections-protocol"><code>:::section</code> block</h3>
+
+Wrap a section in a `:::section` block to make it a protocol-aware
+unit. Protocol sections can declare a required signatory, appear
+in the audit chain at publish time, and be shared as scoped
+recipient links. The content inside is identical to a basic
+section — the block adds metadata, not syntax.
+
+A document with no `:::section` blocks is complete and valid.
+Protocol sections are additive.
+
+<FieldTable
+  caption=":::section block fields"
+  fields={[
+    { name: 'id', type: 'string (kebab-case)', required: false, description: 'Recommended. Stable identifier that survives heading renames and reorders. Without one, the platform auto-assigns an ID at first publish.' },
+    { name: 'title', type: 'string', required: false, description: 'Display name in TOC and sidebar. Defaults to the first heading text inside the block.' },
+    { name: 'required-signatory', type: 'space-separated party IDs', required: false, description: 'Party IDs from ::atto-doc.parties. The document cannot execute until every named party has signed this section. The platform resolves each id through the document header to display labels — e.g., "Required: Tenant, Landlord".' },
+  ]}
+/>
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-5) var(--space-2);">Minimal example</h4>
+
+<pre class="code-block" set:html={protocolMinimalSource} />
+
+<h4 style="font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); margin-block: var(--space-5) var(--space-2);">With required signatories</h4>
+
+<pre class="code-block" set:html={protocolSignatorySource} />
+
+{/* ─── Identity & stability ────────────────────────────── */}
+
+<h3 id="sections-identity">Section identity & stability</h3>
+
+Section IDs follow a clear precedence:
+
+1. Authored ID on the `:::section` block (`id="..."`).
+2. Authored ID on the heading (<code>{'{#...}'}</code>).
+3. Auto-generated ID derived from heading text at first publish.
+
+Auto-generated IDs are stable within a publish version but may
+shift if the heading text changes. If a section will be signed or
+linked, always declare an explicit `id`.
+
+If a section with an explicit ID is deleted in a later publish,
+any recipient tokens scoped to that section are automatically
+revoked and a revocation entry is written to the audit chain.

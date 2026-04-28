@@ -579,6 +579,17 @@ a, button, [role="button"] {
   margin-bottom: 0;
 }
 
+/* Direct-child paragraphs sit in the .atto-doc flex column, so the
+   parent's `gap` already handles vertical rhythm. Zero out the
+   margin-bottom from the unscoped rule above to prevent additive
+   spacing (gap + margin) between adjacent direct-child paragraphs.
+   Paragraphs nested inside .atto-doc-section, .atto-callout, etc.
+   keep the margin-based spacing because they're not direct flex
+   items of .atto-doc. */
+.atto-doc > p {
+  margin-bottom: 0;
+}
+
 .atto-doc strong {
   font-weight: 700;
   color: var(--color-text);
@@ -1078,12 +1089,16 @@ a, button, [role="button"] {
   text-transform: uppercase;
 }
 
-.atto-fields-req[data-required="true"] {
+.atto-fields-req[data-required="required"] {
   color: var(--color-primary);
 }
 
-.atto-fields-req[data-required="false"] {
+.atto-fields-req[data-required="optional"] {
   color: var(--color-text-muted);
+}
+
+.atto-fields-req[data-required="conditional"] {
+  color: var(--color-accent, var(--color-primary));
 }
 
 .atto-fields-desc {

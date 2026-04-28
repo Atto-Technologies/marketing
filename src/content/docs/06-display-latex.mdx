@@ -1,0 +1,82 @@
+---
+order: 6
+id: display-latex
+label: Display LaTeX
+title: Display LaTeX.
+---
+
+import AttoDemo from '../../components/AttoDemo.astro';
+
+{/* Aligned LaTeX needs literal 2-space indentation inside the source
+    `<pre>` to align the `&` columns visually. When the source is
+    inlined as a JSX template-literal expression (`set:html={\`…\`}`),
+    something in the MDX → JS pipeline normalizes leading whitespace
+    on continuation lines and the indent disappears. Stashing the
+    string in a top-level `export const` bypasses that path: it's a
+    plain JS module-scoped string by the time set:html sees it. */}
+export const alignedSource = `<code>The late-fee calculation, written out:
+
+<span class="tok-math">$$
+\\begin&#123;aligned&#125;
+L &amp;= B \\times r \\\\
+  &amp;= B \\times 0.015 \\\\
+  &amp;= 0.015 B \\quad \\text&#123;(per day)&#125;
+\\end&#123;aligned&#125;
+$$</span></code>`;
+
+Wrap an expression in double dollar signs: `$$…$$` on their own
+lines. Renders as a centered display block, isolated from
+surrounding prose.
+
+### Compound interest
+
+<AttoDemo layout="split" filename="display-compound.atto">
+  <article class="atto-doc" slot="rendered">
+    <p>The value after <span class="atto-math">t</span> years of compounding:</p>
+    <span class="atto-math-display">
+      A = P(1 + <sup>r</sup>&frasl;<sub>n</sub>)<sup>nt</sup>
+    </span>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={`<code>The value after <span class="tok-math">$t$</span> years of compounding:
+
+<span class="tok-math">$$
+A = P\\left(1 + \\frac&#123;r&#125;&#123;n&#125;\\right)^&#123;nt&#125;
+$$</span></code>`} />
+</AttoDemo>
+
+### Summation
+
+<AttoDemo layout="split" filename="display-sum.atto">
+  <article class="atto-doc" slot="rendered">
+    <p>Post-money valuation aggregates pre-money plus all investment tranches:</p>
+    <span class="atto-math-display">
+      V<sub>post</sub> = V<sub>pre</sub> +&nbsp;
+      <span style="font-size: 1.4em; vertical-align: -0.2em;">Σ</span>
+      <sub style="font-size: 0.7em;">i=1</sub>
+      <sup style="font-size: 0.7em;">n</sup>
+      &nbsp;I<sub>i</sub>
+    </span>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={`<code>Post-money valuation aggregates pre-money plus all investment tranches:
+
+<span class="tok-math">$$
+V_&#123;post&#125; = V_&#123;pre&#125; + \\sum_&#123;i=1&#125;^&#123;n&#125; I_i
+$$</span></code>`} />
+</AttoDemo>
+
+### Aligned equations
+
+<AttoDemo layout="split" filename="display-aligned.atto">
+  <article class="atto-doc" slot="rendered">
+    <p>The late-fee calculation, written out:</p>
+    <span class="atto-math-display" style="text-align: left; padding-left: var(--space-8);">
+      L &nbsp;&nbsp;= B × r<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= B × 0.015<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 0.015B&nbsp;&nbsp;(per day)
+    </span>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={alignedSource} />
+</AttoDemo>

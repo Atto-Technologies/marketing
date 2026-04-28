@@ -1,0 +1,36 @@
+---
+order: 12
+id: mvp-scope
+label: MVP Scope
+title: MVP scope.
+---
+
+{/* MVP scope is the contract between the v0 parser/runtime and
+    the rest of the protocol surface — keep this section in sync
+    with whatever the runtime actually emits. */}
+
+The v0 parser implements the full set described above. The MVP
+runtime implements: the `::atto-doc` document header (§02),
+sections, inline formatting, inline and display LaTeX, the two
+content blocks (§07), and the three protocol blocks (§08).
+Anything outside that set is a post-v0 extension.
+
+In v0 the signing pipeline targets `::signature-block`; the
+remaining protocol blocks (`::attachment`, `:::credit-check`)
+parse, validate, and render but do not yet emit their audit-chain
+events. `attachment.added` and `directive.credit_check` land with
+the post-v0 ALP runtime. The `::atto-doc` header and the content
+blocks never produce chain events by design — they declare bound
+context that other constructs reference.
+
+Font references parse in v0 with the full identifier grammar, but
+the AFRP resolver — manifest fetch, schema validation, SHA-256
+integrity checks, execution-pin freezing at signing — ships as a
+follow-on milestone. Documents authored today that declare font
+references will be compatible with the resolver when it lands.
+
+`:::` protocol blocks parse in v0 with validation, compile to
+their target `::` directives, and render their UI components.
+Live precondition evaluation (PDEE dispatch, bureau integration)
+is coordinated through the Atto Leasing Protocol spec and ships
+in the ALP runtime.

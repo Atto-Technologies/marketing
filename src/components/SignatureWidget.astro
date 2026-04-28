@@ -5,9 +5,18 @@ export interface Props {
   title?: string;
   order?: number;
   totalSigners?: number;
+  /**
+   * Optional supplemental label for this signing context.
+   *
+   * The canonical role on `party` is always displayed; this label is
+   * appended after an em-dash so the underlying party stays traceable.
+   * Used when a single signature plays a more specific role inside one
+   * section — e.g. *Disclosing Party* in an NDA appendix.
+   */
+  label?: string;
 }
 
-const { party, signer, title, order, totalSigners } = Astro.props;
+const { party, signer, title, order, totalSigners, label } = Astro.props;
 
 const uid = Math.random().toString(36).slice(2, 10);
 const inputId = `sig-input-${uid}`;
@@ -26,7 +35,15 @@ const uploadPanelId = `sig-panel-upload-${uid}`;
   </div>
 
   <div class="sig-identity">
-    <p class="sig-party">{party}</p>
+    <p class="sig-party">
+      <span class="sig-party-role">{party}</span>
+      {label && (
+        <>
+          <span class="sig-party-sep" aria-hidden="true">—</span>
+          <span class="sig-party-supplemental">{label}</span>
+        </>
+      )}
+    </p>
     <p class="sig-signer">
       <span>{signer}</span>
       {title && <span class="sig-title">· {title}</span>}
@@ -324,10 +341,23 @@ const uploadPanelId = `sig-panel-upload-${uid}`;
   }
 
   .sig-party {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
     font-family: var(--font-display);
     font-weight: 700;
     font-size: var(--text-base);
     color: var(--color-text);
+  }
+
+  .sig-party-sep {
+    color: var(--color-text-faint);
+    font-weight: 400;
+  }
+
+  .sig-party-supplemental {
+    color: var(--color-primary);
   }
 
   .sig-signer {

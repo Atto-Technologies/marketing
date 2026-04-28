@@ -1,0 +1,30 @@
+---
+order: 11
+id: ast-mapping
+label: AST Mapping
+title: Abstract Syntax Tree mapping.
+---
+
+{/* AST mapping table is rendered via a top-level `export const` so
+    the literal `&#123;`/`&#125;` HTML entities — which decode to
+    `{`/`}` and would otherwise collide with MDX expression syntax
+    — survive untouched. */}
+export const astMapSource = `<code><span class="tok-key">document</span>      → Document &#123; header, children[] &#125;
+<span class="tok-key">::atto-doc</span>    → AttoDoc &#123; title, type, jurisdiction, effective_date, parties[] &#125;
+<span class="tok-key">##...######</span>   → Section &#123; depth, title, children[] &#125;
+<span class="tok-key">paragraph</span>     → Paragraph &#123; inlines[] &#125;
+<span class="tok-key">**x**</span>         → Strong &#123; children[] &#125;
+<span class="tok-key">*x*</span>           → Emphasis &#123; children[] &#125;
+<span class="tok-key">\`x\`</span>           → Code &#123; value &#125;
+<span class="tok-key">[text](url)</span>   → Link &#123; url, children[] &#125;
+<span class="tok-key">$x$</span>           → MathInline &#123; tex &#125;
+<span class="tok-key">$$x$$</span>         → MathDisplay &#123; tex &#125;
+<span class="tok-key">::name</span>        → Directive &#123; name, attrs, body &#125;
+<span class="tok-key">:::name</span>       → ProtocolBlock &#123; name, fields, compiled[] &#125;
+<span class="tok-key">@/.../...</span>     → FontReference &#123; tier, scope, name, version &#125;</code>`;
+
+Each surface construct maps to a node type. The set is closed:
+the parser rejects unknown directives rather than silently passing
+them through.
+
+<pre class="code-block" set:html={astMapSource} />

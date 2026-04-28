@@ -1,0 +1,44 @@
+---
+order: 4
+id: inline-formatting
+label: Inline Formatting
+title: Inline formatting.
+---
+
+import AttoDemo from '../../components/AttoDemo.astro';
+import FieldTable from '../../components/FieldTable.astro';
+
+Standard Markdown inline syntax: `**bold**`, `*italic*`, `` `code` ``,
+and `[text](url)`. Raw HTML is rejected — the parser does not pass
+through tags. If Markdown cannot express what you need, use a
+directive.
+
+<FieldTable
+  caption="Inline syntax reference"
+  fields={[
+    { name: '**bold**', type: 'Strong', required: false, description: 'Strong emphasis. Renders bold.' },
+    { name: '*italic*', type: 'Emphasis', required: false, description: 'Emphasis. Renders italic.' },
+    { name: '`code`', type: 'Code', required: false, description: 'Inline code span. Uses the mono font.' },
+    { name: '[text](url)', type: 'Link', required: false, description: 'Hyperlink. The parser validates URLs are absolute or atto://.' },
+    { name: '~~strike~~', type: 'Strikethrough', required: false, description: 'Strikethrough for redlines and deletions.' },
+  ]}
+/>
+
+### Example
+
+{/* Each <p> is intentionally on a single source line. MDX's
+    Markdown pipeline wraps the inner text of any multi-line JSX
+    element in another <p>, producing invalid `<p><p>...</p></p>`
+    nesting that the browser renders as two empty paragraphs.
+    Single-line JSX bypasses that paragraph wrapping. */}
+<AttoDemo layout="split" filename="inline.atto">
+  <article class="atto-doc" slot="rendered">
+    <p>Client shall pay within <strong>15 days</strong> of invoice. See the <a href="#">master agreement</a> for definitions, including <em>reasonable notice</em>.</p>
+    <p>Amounts invoiced under clause <code>3.1.a</code> are non-refundable once <del>delivered</del> accepted in writing.</p>
+  </article>
+
+  <pre class="code-block" slot="source" set:html={`<code>Client shall pay within <span class="tok-emph">**15 days**</span> of invoice.
+See the <span class="tok-emph">[master agreement](https://example.com)</span> for definitions, including <span class="tok-emph">*reasonable notice*</span>.
+
+Amounts invoiced under clause <span class="tok-emph">\`3.1.a\`</span> are non-refundable once <span class="tok-emph">~~delivered~~</span> accepted in writing.</code>`} />
+</AttoDemo>
