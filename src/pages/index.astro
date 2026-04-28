@@ -176,12 +176,11 @@ const noteNumber: Record<string, number> = Object.fromEntries(
           />
         </article>
 
-        <pre class="code-block" slot="source"><code><span class="tok-comment">---</span>
-<span class="tok-key">title:</span> <span class="tok-string">Services Agreement</span>
-<span class="tok-key">document_type:</span> <span class="tok-string">services_agreement</span>
-<span class="tok-key">authoring_mode:</span> <span class="tok-string">hybrid</span>
-<span class="tok-key">effective_date:</span> <span class="tok-string">2026-04-23</span>
-<span class="tok-comment">---</span>
+        <pre class="code-block" slot="source"><code><span class="tok-directive">::atto-doc</span>
+  <span class="tok-key">title:</span> <span class="tok-string">Services Agreement</span>
+  <span class="tok-key">type:</span> <span class="tok-string">services_agreement</span>
+  <span class="tok-key">effective-date:</span> <span class="tok-string">2026-04-23</span>
+<span class="tok-directive">::</span>
 
 <span class="tok-heading">## Payment Terms</span>
 

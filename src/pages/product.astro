@@ -74,11 +74,10 @@ import CreditCheckBlock from '../components/CreditCheckBlock.astro';
           </section>
         </article>
 
-        <pre class="code-block" slot="source"><code><span class="tok-comment">---</span>
-<span class="tok-key">title:</span> <span class="tok-string">Series A Term Sheet</span>
-<span class="tok-key">document_type:</span> <span class="tok-string">term_sheet</span>
-<span class="tok-key">authoring_mode:</span> <span class="tok-string">hybrid</span>
-<span class="tok-comment">---</span>
+        <pre class="code-block" slot="source"><code><span class="tok-directive">::atto-doc</span>
+  <span class="tok-key">title:</span> <span class="tok-string">Series A Term Sheet</span>
+  <span class="tok-key">type:</span> <span class="tok-string">term_sheet</span>
+<span class="tok-directive">::</span>
 
 <span class="tok-directive">::parties</span>
 <span class="tok-key">- role:</span> <span class="tok-string">Company</span>
